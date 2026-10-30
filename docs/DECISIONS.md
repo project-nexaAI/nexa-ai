@@ -21,3 +21,5 @@
 - Web: skrip gerak dan scene three.js desain dipakai verbatim di `lib/landing-motion.ts` dan `lib/landing-3d.ts` dengan `// @ts-nocheck` (pengecualian dari TypeScript strict, untuk menjaga perilaku desainer). three.js dari npm (0.165.0) menggantikan import map CDN. `reactStrictMode: false` karena skrip memanipulasi DOM sekali saat mount.
 - Web: tanpa `NEXT_PUBLIC_X_HANDLE`, tautan X menjadi `#` (tidak menebak akun).
 - Fixture `/proof` default = keadaan kosong (sama dengan desain); varian terisi lewat `FIXTURE_PROOF=populated` (env server, dibaca saat runtime).
+- API: id publik prediksi = id NexaLedger (bukan id DB). Hanya status committed/posted/revealed dengan tx commit yang tampil; draft tidak pernah. `returnBps` di API searah klaim (turun yang benar = positif), identik dengan `sumReturnBps` di kontrak; DB menyimpan return harga mentah.
+- API: `/burn` mengembalikan keadaan nol sampai BurnVault ada (Tahap 4), bukan data karangan. Simbol aset reveal dari env `ASSET_SYMBOLS`, jika tidak ada ditampilkan alamat pendek.

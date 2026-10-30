@@ -115,6 +115,10 @@ export const predictions = pgTable(
     maturesAt: ts('matures_at'),
     // Preimage (teks, aset, arah, horizon, salt) terenkripsi. Salt tidak pernah disimpan/di-log plaintext.
     preimageEncrypted: text('preimage_encrypted').notNull(),
+    // Data publik yang dibuka saat reveal (API tidak pernah mendekripsi preimage).
+    revealedText: text('revealed_text'),
+    revealedAsset: text('revealed_asset'),
+    revealedDirection: integer('revealed_direction'), // 1 = up, 2 = down
     revealTxHash: text('reveal_tx_hash'),
     revealedAt: ts('revealed_at'),
     startRoundId: amount('start_round_id'),

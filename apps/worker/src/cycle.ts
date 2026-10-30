@@ -189,6 +189,9 @@ export async function revealMatured(deps: CycleDeps): Promise<number[]> {
       .update(predictions)
       .set({
         status: 'revealed',
+        revealedText: pre.text,
+        revealedAsset: pre.asset,
+        revealedDirection: pre.direction,
         revealTxHash: res.txHash,
         revealedAt: new Date(),
         startRoundId: res.startRoundId.toString(),

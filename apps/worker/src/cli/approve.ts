@@ -1,5 +1,6 @@
 import { createDb } from '@nexa-ai/db'
-import { approvePost, getPost, listPending, rejectPost } from '../queue'
+import { getPost, listPending, rejectPost } from '../queue'
+import { DryTelegram, TelegramBot, approveAndAlert, type Notifier } from '../telegram'
 
 const USAGE = `CLI persetujuan post NEXA
   pnpm --filter @nexa-ai/worker review list
@@ -15,6 +16,11 @@ if (!url) {
 
 const [cmd, idArg] = process.argv.slice(2)
 const { db, client } = createDb(url)
+// Telegram live hanya bila token & chat id diisi manusia; selain itu dry (hanya log).
+const notifier: Notifier =
+  process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID
+    ? new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, process.env.TELEGRAM_CHAT_ID)
+    : new DryTelegram()
 
 function idOrExit(): number {
   const id = Number(idArg)
@@ -41,7 +47,7 @@ try {
       break
     }
     case 'approve':
-      await approvePost(db, idOrExit())
+      await approveAndAlert(db, notifier, idOrExit())
       console.log(`Post #${idArg} disetujui.`)
       break
     case 'reject':

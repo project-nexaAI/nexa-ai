@@ -36,4 +36,10 @@
 - [ ] TASK: halaman Burn tracker, detail prediksi, NEXA vs KOL (butuh desain, lihat BLOCKERS #10)
 - [ ] TASK: `apps/api` (`/proof`, `/predictions/:id`) menggantikan fixture; lalu `NEXT_PUBLIC_USE_FIXTURES=false`
 
-## Dilanjutkan: Tahap 2 (Telegram dry + apps/api)
+## Tahap 2 — selesai (backend)
+- [x] `apps/worker/src/telegram.ts`: Notifier `DryTelegram`/`TelegramBot`, alert Pro saat post disetujui (CLI `review approve`); 3 test
+- [x] `apps/api` (Fastify): `/proof`, `/predictions/:id`, `/rug-radar`, `/burn` (nol sampai BurnVault), `/healthz`, CORS `WEB_ORIGIN`, `docs/api/openapi.json` (diuji sinkron), 16 test
+- [x] Migrasi `0001`: kolom data publik reveal (`revealed_text/asset/direction`); API tidak pernah mendekripsi preimage; draft tidak pernah terlihat publik
+- [x] Terbukti end-to-end: web (`NEXT_PUBLIC_USE_FIXTURES=false`) -> API -> Postgres menampilkan hash dan "Day 4"
+- [ ] Menunggu data: `/rug-radar` kosong sampai indexer Pons ada (BLOCKERS #7); tampilan web "Rug radar" masih ilustrasi
+- [ ] Syarat selesai Tahap 2 terpenuhi (siklus prediksi penuh lolos). Berikutnya: Tahap 3 butuh perintah "Deploy testnet" dan keystore/saldo; Tahap 1 (indexer, deploy testnet) menunggu blocker #2, #5, #7
