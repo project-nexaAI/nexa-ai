@@ -16,4 +16,5 @@
 - [x] Util hash TS (`computePredictionHash`) + Vitest memakai vektor yang sama (4 test lolos)
 - [x] Deploy localhost (Anvil, alamat di addresses/localhost.json; agent = akun Anvil 1)
 - [ ] Deploy testnet (butuh keystore deployer + saldo: BLOCKERS #2, #5)
-- [ ] Monorepo (Turborepo), Postgres + Drizzle, indexer Envio
+- [x] Turborepo, docker-compose Postgres, `@nexa-ai/db` (Drizzle, 8 tabel, migrasi 0000 teruji di Postgres Docker)
+- [ ] Indexer Envio (menunggu ABI + alamat Pons, BLOCKERS #6)
