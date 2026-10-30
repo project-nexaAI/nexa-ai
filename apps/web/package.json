@@ -8,7 +8,8 @@
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "visual": "node scripts/visual-compare.mjs"
+    "visual": "node scripts/visual-compare.mjs",
+    "og": "node scripts/og-image.mjs"
   },
   "dependencies": {
     "@nexa-ai/api-client": "workspace:*",

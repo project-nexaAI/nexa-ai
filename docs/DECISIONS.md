@@ -28,3 +28,4 @@
 - Tahap 4: `renounceOwnership` dinonaktifkan di BurnVault dan NexaLedger (tinjauan internal: bisa mengunci dana/rotasi). NexaLedger berubah setelah deploy lokal; deploy testnet belum terjadi, jadi tidak perlu redeploy.
 - Tahap 4: temuan token berpembatasan (Stock Token) dan rotasi keeper instan dicatat sebagai risiko diterima di `docs/audit/README.md`, bukan diubah di kontrak; keputusan akhir di tangan pemilik proyek dan auditor.
 - Tahap 4: `/burn` tetap nol sampai indexer membaca event `Burned` dari BurnVault.
+- Web: `public/og-image.png` (1200x630) dibuat oleh `apps/web/scripts/og-image.mjs` dari desain: scene 3D asli ditangkap lewat WebGL, logo = simbol `#nx-mark` dari sprite desain apa adanya, teks tagline brief ("Every call on-chain. No deleted tweets.") dengan Geist/Instrument Serif dan warna `--org-2`. Bukan aset dari desainer; menunggu persetujuan desainer, dan bisa diganti dengan berkas mereka.

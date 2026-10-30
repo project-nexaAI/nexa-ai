@@ -24,7 +24,7 @@ Data diambil lewat `@nexa-ai/api-client` (`NEXT_PUBLIC_USE_FIXTURES=true` → fi
 
 - `__X_HANDLE__` (7 tautan + `twitter:site`): diisi `NEXT_PUBLIC_X_HANDLE`. Handle belum diberikan, jadi tautan menjadi `#`.
 - `__SITE_URL__` (canonical, og:url, og:image): `NEXT_PUBLIC_SITE_URL`.
-- `/og-image.png` dirujuk metadata tetapi tidak ada di `docs/html-design/`.
+- `/og-image.png` dirujuk metadata tetapi tidak dikirim desainer: dibuat dari desain oleh `apps/web/scripts/og-image.mjs` (scene 3D asli + logo sprite + font desain). **Perlu persetujuan desainer.**
 - Halaman `/privacy` dirujuk footer tetapi tidak ada (butuh teks hukum dari pemilik proyek).
 - Halaman web lain di brief tanpa desain: detail prediksi (`/predictions/:id`), NEXA vs KOL (`/leaderboard`), Rug radar penuh, Burn tracker.
 - Font dari Google Fonts (Geist, Geist Mono, Instrument Serif) dipakai apa adanya.
