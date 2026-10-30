@@ -15,7 +15,7 @@ Hanya nama dan konfigurasi. **Tidak ada nilai rahasia di sini.**
 | Git | **Belum terhubung** (repo belum di-push). Deploy lewat CLI dari folder lokal |
 | Unggahan | Daftar putih di `.vercelignore`; `.env*`, `contracts/`, dan `.git` tidak pernah diunggah |
 
-Deploy preview pertama (tanpa API; data dari fixture): `https://nexa-ai-4dkae7pyo-fauzanbayu123-1072s-projects.vercel.app`
+Deploy preview pertama (tanpa API; data dari fixture): `https://nexa-ai-f4y8kljsq-fauzanbayu123-1072s-projects.vercel.app`
 (dilindungi Deployment Protection: buka dengan login Vercel).
 
 Perintah deploy ulang (dari ROOT):
