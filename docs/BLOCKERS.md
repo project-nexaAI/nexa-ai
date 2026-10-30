@@ -16,5 +16,5 @@
 | 12 | Alamat NVDA Stock Token (aset pasangan) dan feed Chainlink NVDA di mainnet belum terverifikasi; perilaku token (allowlist/pajak) belum diuji | Kirim alamat resmi; fork test sebelum launch (docs/launch-checklist.md B) | Terbuka |
 | 13 | Audit eksternal NexaLedger + splitter (wajib sebelum launch) | Pilih auditor; serahkan `docs/audit/README.md` | Terbuka (manusia) |
 | 14 | `TREASURY_ADDRESS` dan `KEEPER_ADDRESS` dibutuhkan untuk deploy kontrak fee (Final: Tahap 4) | Isi di `.env` | Terbuka |
-| 15 | `.env` memakai `LLM_MODEL_SMALL=mimo-v2.5-asr`: itu model **pengenal suara (ASR)**, bukan chat (HTTP 400). Model chat kecil yang tersedia di akun: `mimo-v2.6-flash` | Ganti di `.env` menjadi `LLM_MODEL_SMALL=mimo-v2.6-flash` (saya tidak mengedit `.env` Anda) | Terbuka |
+| 15 | `LLM_MODEL_SMALL` sebelumnya `mimo-v2.5-asr` (model suara, HTTP 400). Sudah diganti menjadi `mimo-v2.6-flash` oleh pemilik proyek; diverifikasi 2026-10-31 dengan smoke test (kecil dan besar menjawab, prediksi lolos RiskGuard) | — | **Selesai** |
 | 16 | Harga token MiMo tidak diketahui, jadi biaya LLM tercatat 0 USD (jumlah token tercatat benar). Asumsi brief: LLM ~$800/bulan perlu diukur | Berikan harga per 1 juta token (masuk/keluar) agar `LlmPricing` bisa diisi | Terbuka |
