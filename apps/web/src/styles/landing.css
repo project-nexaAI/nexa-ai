@@ -382,17 +382,33 @@ footer{padding:70px 0 36px}
 
 
 /* KOREKSI atas desain (bukan dari desainer): layar pendek.
-   Isi hero (teks + kartu statistik) lebih tinggi dari 100vh sehingga kartu "1 / day" dan "7 days"
-   terpotong dan tertimpa marquee. Hanya berlaku di tinggi <= 780px; ukuran lain tidak berubah. */
+   Di desain asli isi hero (teks + kartu statistik) lebih tinggi dari 100vh pada layar pendek, sehingga kartu
+   "1 / day" dan "7 days" terpotong dan tertimpa marquee. Tipografi dipertahankan sedekat mungkin dengan desain:
+   ukuran judul hanya turun bila perlu (hasil pengukuran: 100% di tinggi >= 700px, ~87-95% di 600-699px),
+   dan elemen yang tidak muat disembunyikan sebelum teks dikecilkan lebih jauh. Tinggi > 780px tidak berubah. */
 @media (min-width:621px) and (max-height:780px){
-  .stage-inner{padding-top:92px;padding-bottom:20px}
-  .copy-a h1{font-size:clamp(34px,min(5.4vw,8.4vh),78px);margin:16px 0 14px}
-  .copy-a .sub{font-size:14.5px;line-height:1.5;margin-bottom:18px}
-  .hstat{width:150px;padding:12px;border-radius:14px}
+  .stage-inner{padding-top:100px;padding-bottom:20px}
+  .copy-a h1{margin:18px 0 14px}
+  .copy-a .sub{font-size:15px;line-height:1.55;margin-bottom:20px}
+  .hstat{width:156px;padding:12px;border-radius:14px}
   .hstat .n{font-size:28px}
   .hstat p{margin-top:8px}
 }
-@media (min-width:621px) and (max-height:560px){
+@media (min-width:621px) and (max-height:719px){
+  .copy-a h1{font-size:clamp(44px,min(5.4vw,76px),78px)}
+}
+@media (min-width:621px) and (max-height:699px){
+  .copy-a h1{font-size:clamp(44px,min(5.4vw,68px),78px)}
+}
+@media (min-width:621px) and (max-height:599px){
+  .stage-inner{padding-top:96px;padding-bottom:18px}
+  .copy-a h1{margin:16px 0 12px}
+  .copy-a .sub{margin-bottom:16px}
   .hstats{display:none}
+}
+@media (min-width:621px) and (max-height:549px){
   .copy-a .sub{display:none}
+}
+@media (min-width:621px) and (max-height:419px){
+  .copy-a h1{font-size:clamp(30px,min(5.4vw,68px,9.4vh),78px)}
 }
