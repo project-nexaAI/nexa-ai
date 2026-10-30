@@ -13,6 +13,7 @@
 - [x] `NexaLedger` + 24 test (unit + fuzz) lolos, `forge snapshot`, ABI di `packages/contracts-abi/abi/`
 - [x] Vektor hash bersama `packages/shared/test-vectors/commit-reveal.json` (sisi Solidity)
 - [x] Script deploy `contracts/script/DeployNexaLedger.s.sol` (belum dijalankan: butuh keystore + saldo)
-- [ ] Util hash TS di `packages/shared` + Vitest memakai vektor yang sama
-- [ ] Deploy localhost (Anvil) dan testnet
+- [x] Util hash TS (`computePredictionHash`) + Vitest memakai vektor yang sama (4 test lolos)
+- [x] Deploy localhost (Anvil, alamat di addresses/localhost.json; agent = akun Anvil 1)
+- [ ] Deploy testnet (butuh keystore deployer + saldo: BLOCKERS #2, #5)
 - [ ] Monorepo (Turborepo), Postgres + Drizzle, indexer Envio

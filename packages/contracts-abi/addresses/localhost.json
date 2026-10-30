@@ -1,7 +1,9 @@
 {
   "network": "localhost",
   "deployer": "0x1f4cD14B5CDD15436950d626CBCb0e21084F462D",
-  "agent": null,
+  "agent": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
   "treasury": null,
-  "contracts": {}
+  "contracts": {
+    "NexaLedger": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  }
 }
