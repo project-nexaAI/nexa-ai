@@ -1,0 +1,15 @@
+{
+  "name": "nexa-ai",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "check:wallets": "node scripts/check-wallets.mjs",
+    "lint": "echo \"no lint targets yet\"",
+    "typecheck": "echo \"no typecheck targets yet\"",
+    "test": "echo \"no tests yet\""
+  },
+  "devDependencies": {
+    "viem": "^2.21.0"
+  }
+}

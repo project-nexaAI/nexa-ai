@@ -1,0 +1,3 @@
+#!/bin/sh
+# Buang baris atribusi AI dari pesan commit
+sed -i -E '/^Co-Authored-By:.*(Claude|Anthropic|noreply@anthropic\.com)/Id; /Generated with.*Claude/Id' "$1"
