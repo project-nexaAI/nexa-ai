@@ -2,10 +2,10 @@ import { createDb } from '@nexa-ai/db'
 import { approvePost, getPost, listPending, rejectPost } from '../queue'
 
 const USAGE = `CLI persetujuan post NEXA
-  pnpm --filter @nexa-ai/worker approve list
-  pnpm --filter @nexa-ai/worker approve show <id>
-  pnpm --filter @nexa-ai/worker approve approve <id>
-  pnpm --filter @nexa-ai/worker approve reject <id>`
+  pnpm --filter @nexa-ai/worker review list
+  pnpm --filter @nexa-ai/worker review show <id>
+  pnpm --filter @nexa-ai/worker review approve <id>
+  pnpm --filter @nexa-ai/worker review reject <id>`
 
 const url = process.env.DATABASE_URL
 if (!url) {

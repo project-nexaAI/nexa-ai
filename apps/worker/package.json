@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "approve": "tsx src/cli/approve.ts"
+    "review": "tsx src/cli/approve.ts"
   },
   "dependencies": {
     "@nexa-ai/db": "workspace:*",
