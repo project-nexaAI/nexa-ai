@@ -123,6 +123,26 @@ describe.skipIf(!dbUp)('antrian persetujuan', () => {
       expect((await getPost(db, r.id))?.predictionId).toBe(id)
     })
 
+    it('angka yang tidak ada di fakta tool result ditolak; yang ada diterima', async () => {
+      const id = await insertPrediction({ status: 'committed', commitTxHash: `0x${'ab'.repeat(32)}` })
+      const bad = await enqueuePost(db, {
+        kind: 'prediction',
+        mode: 'dry',
+        predictionId: id,
+        input: { ...predInput('NVDA premium DEX 35 bps (+3,5%). Horizon 7 hari. ' + NFA), facts: ['35 bps', '0.35%', '7'] },
+      })
+      expect(bad.status).toBe('rejected')
+      expect(bad.decision.reasons).toContain('NUMBER_UNTRACED')
+
+      const good = await enqueuePost(db, {
+        kind: 'prediction',
+        mode: 'dry',
+        predictionId: id,
+        input: { ...predInput('NVDA premium DEX 35 bps (0.35%). Horizon 7 hari. ' + NFA), facts: ['35 bps', '0.35%', '7'] },
+      })
+      expect(good.status).toBe('pending_approval')
+    })
+
     it('prediksi committed tapi teks melanggar RiskGuard tetap rejected', async () => {
       const id = await insertPrediction({ status: 'committed', commitTxHash: `0x${'ab'.repeat(32)}` })
       const r = await enqueuePost(db, { kind: 'prediction', mode: 'dry', predictionId: id, input: predInput('NVDA pasti naik') })

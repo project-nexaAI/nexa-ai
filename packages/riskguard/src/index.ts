@@ -30,6 +30,7 @@ export function evaluate(rawInput: RiskGuardInput, config: Partial<RiskGuardConf
     tokens: input.tokens,
     dataComplete: input.dataComplete,
     minTokenAgeSeconds: cfg.minTokenAgeSeconds,
+    facts: input.facts,
   })
   const allowed = reasons.length === 0
   const requiresApproval = !allowed || cfg.approvalMode === 'all' || ALWAYS_REVIEW.has(input.type)

@@ -2,11 +2,11 @@
 
 Panduan ini untuk **manusia**, bukan untuk Claude Code. Semua langkah yang menyentuh private key dilakukan sendiri di terminal atau dashboard Anda. Private key **tidak pernah** ditempel ke chat, Claude Code, repo, atau file `.env`.
 
-| Wallet | Alamat publik (0x…) masuk ke | Private key masuk ke |
-| --- | --- | --- |
-| Deployer | Sudah diisi di `CLAUDE.md` | Foundry keystore `deployer` (laptop Anda) |
-| Agent | `.env` → `AGENT_ADDRESS` | Foundry keystore `nexa-agent` (laptop Anda) **dan** Railway → `AGENT_PRIVATE_KEY` |
-| Treasury | `.env` → `TREASURY_ADDRESS` | **Tidak ke mana pun.** Tetap hanya di MetaMask |
+| Wallet   | Alamat publik (0x…) masuk ke    | Private key masuk ke                                                                         |
+| -------- | -------------------------------- | -------------------------------------------------------------------------------------------- |
+| Deployer | Sudah diisi di `CLAUDE.md`     | Foundry keystore `deployer` (laptop Anda)                                                  |
+| Agent    | `.env` → `AGENT_ADDRESS`    | Foundry keystore `nexa-agent` (laptop Anda) **dan** Railway → `AGENT_PRIVATE_KEY` |
+| Treasury | `.env` → `TREASURY_ADDRESS` | **Tidak ke mana pun.** Tetap hanya di MetaMask                                         |
 
 Alamat publik aman dibagikan. Private key tidak.
 
@@ -40,6 +40,7 @@ Dipakai untuk mengecek alamat dan untuk script yang dijalankan manual dari lapto
    # Jalankan di: terminal Anda (folder mana saja)
    cast wallet import nexa-agent --interactive
    ```
+
    Tempel private key (tidak terlihat saat diketik), lalu buat password keystore.
 3. Cek hasilnya. Output harus sama persis dengan `AGENT_ADDRESS`:
    ```bash
@@ -72,11 +73,11 @@ Jangan isi `AGENT_PRIVATE_KEY` di service `api` atau `indexer`, karena hanya `wo
 
 ## 5. Isi saldo
 
-| Wallet | Testnet | Mainnet (nanti) |
-| --- | --- | --- |
-| Deployer | ETH dari https://faucet.testnet.chain.robinhood.com | ETH secukupnya untuk deploy |
-| Agent | Sedikit ETH dari faucet | Sedikit ETH untuk gas commit/reveal |
-| Treasury | Tidak perlu | Tidak perlu (hanya menerima) |
+| Wallet   | Testnet                                             | Mainnet (nanti)                     |
+| -------- | --------------------------------------------------- | ----------------------------------- |
+| Deployer | ETH dari https://faucet.testnet.chain.robinhood.com | ETH secukupnya untuk deploy         |
+| Agent    | Sedikit ETH dari faucet                             | Sedikit ETH untuk gas commit/reveal |
+| Treasury | Tidak perlu                                         | Tidak perlu (hanya menerima)        |
 
 ---
 

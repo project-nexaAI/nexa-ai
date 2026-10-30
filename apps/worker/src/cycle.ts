@@ -2,7 +2,7 @@ import { and, eq, inArray, lte } from 'drizzle-orm'
 import type { Address, Hex } from 'viem'
 import { costLog, postQueue, predictions } from '@nexa-ai/db'
 import { computePredictionHash, DIRECTION, type Direction } from '@nexa-ai/shared'
-import { PERSONA_SYSTEM, buildPredictionPrompt, type PredictionCandidate } from '../prompts/persona'
+import { PERSONA_SYSTEM, buildPredictionPrompt, candidateFacts, type PredictionCandidate } from '../prompts/persona'
 import { z } from 'zod'
 import { decryptJson, encryptJson, randomSalt } from './crypto'
 import type { LedgerClient } from './ledger'
@@ -25,6 +25,8 @@ interface Preimage {
   direction: Direction
   horizon: number
   salt: Hex
+  /** Fakta tool result untuk pemeriksaan angka RiskGuard (bukan bagian dari hash). */
+  facts?: string[]
 }
 
 // ----------------------------------------------------------------------- biaya
@@ -63,7 +65,12 @@ export async function generatePredictionDraft(llm: LlmClient, db: Db, candidates
   await recordLlmCosts(db, usages)
   const chosen = candidates.find((c) => c.symbol === value.symbol)
   if (!chosen) throw new PipelineError(`LLM memilih simbol di luar data: ${value.symbol}`)
-  return { asset: chosen.asset, direction: DIRECTION[value.direction === 'up' ? 'UP' : 'DOWN'], text: value.text }
+  return {
+    asset: chosen.asset,
+    direction: DIRECTION[value.direction === 'up' ? 'UP' : 'DOWN'],
+    text: value.text,
+    facts: candidateFacts(chosen, PREDICTION_HORIZON_SECONDS / 86400),
+  }
 }
 
 // ----------------------------------------------------------------------- draft
@@ -71,7 +78,7 @@ export async function generatePredictionDraft(llm: LlmClient, db: Db, candidates
 /** Simpan prediksi sebagai draft. Salt acak dibuat di sini dan hanya disimpan terenkripsi. */
 export async function draftPrediction(
   deps: CycleDeps,
-  p: { text: string; asset: Address; direction: Direction; horizon?: number },
+  p: { text: string; asset: Address; direction: Direction; horizon?: number; facts?: string[] },
 ): Promise<{ id: number; hash: Hex }> {
   const preimage: Preimage = {
     text: p.text,
@@ -79,6 +86,7 @@ export async function draftPrediction(
     direction: p.direction,
     horizon: p.horizon ?? PREDICTION_HORIZON_SECONDS,
     salt: randomSalt(),
+    ...(p.facts ? { facts: p.facts } : {}),
   }
   const hash = computePredictionHash(preimage)
   const [row] = await deps.db
@@ -116,12 +124,12 @@ export async function commitPrediction(deps: CycleDeps, id: number): Promise<voi
 export async function queuePredictionPost(deps: CycleDeps, id: number): Promise<EnqueueResult> {
   const [pred] = await deps.db.select().from(predictions).where(eq(predictions.id, id))
   if (!pred) throw new PipelineError(`prediksi ${id} tidak ada`)
-  const { text } = decryptJson<Preimage>(deps.encKey, pred.preimageEncrypted)
+  const { text, facts } = decryptJson<Preimage>(deps.encKey, pred.preimageEncrypted)
   return enqueuePost(deps.db, {
     kind: 'prediction',
     mode: deps.mode,
     predictionId: id,
-    input: { type: 'prediction', text, tokens: [], dataComplete: true },
+    input: { type: 'prediction', text, tokens: [], dataComplete: true, ...(facts ? { facts } : {}) },
   })
 }
 

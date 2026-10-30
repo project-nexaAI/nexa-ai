@@ -24,6 +24,7 @@ export const REASON = {
   DATA_INCOMPLETE: 'DATA_INCOMPLETE',
   URL: 'URL',
   MISSING_DISCLAIMER: 'MISSING_DISCLAIMER',
+  NUMBER_UNTRACED: 'NUMBER_UNTRACED',
 } as const
 export type ReasonCode = (typeof REASON)[keyof typeof REASON]
 
@@ -39,6 +40,11 @@ export const riskGuardInputSchema = z.object({
     .default([]),
   /** false jika tool result kosong/gagal. Default false: tanpa bukti data lengkap, jawab "tidak tahu". */
   dataComplete: z.boolean().default(false),
+  /**
+   * Fakta dari tool result (mis. "142.10", "35 bps", "0.35%", "7"). Jika diberikan, setiap angka di teks harus
+   * ada di sini (aturan pipeline 3: setiap angka dapat dilacak ke tool result). Tidak diberikan = aturan dilewati.
+   */
+  facts: z.array(z.string()).optional(),
 })
 export type RiskGuardInput = z.input<typeof riskGuardInputSchema>
 

@@ -232,6 +232,24 @@ function findAddresses(base: string): AddressFinding[] {
   return found
 }
 
+// --------------------------------------------------------------- angka terlacak
+
+/** "1.234,5" / "142,10" / "0.35" -> Number. Pemisah ribuan dibuang; koma desimal dinormalkan. */
+function toNumber(raw: string): number {
+  const t = raw.replace(/[.,]+$/, '')
+  const thousands = /^\d{1,3}([.,]\d{3})+$/.test(t)
+  return Number(thousands ? t.replace(/[.,]/g, '') : t.replace(',', '.'))
+}
+
+function extractNumbers(text: string): number[] {
+  return (text.replace(/0x[a-f0-9]+/g, ' ').match(/\d+(?:[.,]\d+)*/g) ?? []).map(toNumber).filter((n) => Number.isFinite(n))
+}
+
+function hasUntracedNumber(base: string, facts: readonly string[]): boolean {
+  const allowed = new Set(facts.flatMap((f) => extractNumbers(f.toLowerCase())))
+  return extractNumbers(base).some((n) => !allowed.has(n))
+}
+
 // ----------------------------------------------------------------------- umum
 
 export interface RuleContext {
@@ -240,6 +258,7 @@ export interface RuleContext {
   tokens: { address: string; ageSeconds: number | null }[]
   dataComplete: boolean
   minTokenAgeSeconds: number
+  facts?: string[]
 }
 
 /** Mengembalikan kode alasan pemblokiran (kosong = lolos semua aturan). */
@@ -275,6 +294,8 @@ export function runRules(ctx: RuleContext): ReasonCode[] {
   if (!ctx.dataComplete && !unknown) reasons.add(REASON.DATA_INCOMPLETE)
 
   if (DISCLAIMER_TYPES.has(ctx.type) && !unknown && !DISCLAIMER_RE.test(base)) reasons.add(REASON.MISSING_DISCLAIMER)
+
+  if (ctx.facts && hasUntracedNumber(base, ctx.facts)) reasons.add(REASON.NUMBER_UNTRACED)
 
   return [...reasons]
 }
