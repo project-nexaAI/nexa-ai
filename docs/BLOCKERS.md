@@ -18,3 +18,14 @@
 | 14 | `TREASURY_ADDRESS` dan `KEEPER_ADDRESS` dibutuhkan untuk deploy kontrak fee (Final: Tahap 4) | Isi di `.env` | Terbuka |
 | 15 | `LLM_MODEL_SMALL` sebelumnya `mimo-v2.5-asr` (model suara, HTTP 400). Sudah diganti menjadi `mimo-v2.6-flash` oleh pemilik proyek; diverifikasi 2026-10-31 dengan smoke test (kecil dan besar menjawab, prediksi lolos RiskGuard) | — | **Selesai** |
 | 16 | Harga token MiMo tidak diketahui, jadi biaya LLM tercatat 0 USD (jumlah token tercatat benar). Asumsi brief: LLM ~$800/bulan perlu diukur | Berikan harga per 1 juta token (masuk/keluar) agar `LlmPricing` bisa diisi | Terbuka |
+| 17 | **Deploy NexaLedger ke testnet 46630** siap (simulasi sukses 2026-10-31: ~1,34 juta gas, ~0,000027 ETH; deployer 0,01 ETH; `owner` = deployer, `agent` = `AGENT_ADDRESS`). Meminta password keystore, jadi dijalankan pemilik proyek | Jalankan perintah di bagian "Perintah deploy testnet" di bawah tabel, lalu ketik "sudah deploy" | Menunggu pemilik |
+| 18 | Saldo agent testnet 0 (faucet cooldown 24 jam, dari pemilik proyek 2026-10-31). Deploy tidak butuh saldo agent, tetapi `commit`/`reveal` dari worker butuh | Isi ~0,002 ETH ke `AGENT_ADDRESS` setelah cooldown | Menunggu pemilik |
+
+## Perintah deploy testnet (jalankan sendiri)
+
+```bash
+# Jalankan di: ROOT/contracts
+AGENT_ADDRESS=$(grep -E '^AGENT_ADDRESS=' ../.env | cut -d= -f2 | tr -d ' ') forge script script/DeployNexaLedger.s.sol   --rpc-url https://rpc.testnet.chain.robinhood.com   --account deployer --sender 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D   --broadcast
+```
+
+Akan diminta password keystore `deployer`. Output akhir mencetak `NexaLedger 0x...`. Setelah selesai, ketik "sudah deploy": saya membaca alamatnya dari `contracts/broadcast/DeployNexaLedger.s.sol/46630/run-latest.json`, memverifikasi kode, `owner`, dan `agent` on-chain, lalu mengisi `addresses/testnet.json`.
