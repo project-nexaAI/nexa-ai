@@ -17,3 +17,7 @@
 - Worker: preimage prediksi (teks, aset, arah, horizon, salt) dienkripsi AES-256-GCM dengan `PREIMAGE_KEY`; hanya hash plaintext yang ada di DB. `AGENT_PRIVATE_KEY` hanya dari env proses worker.
 - Worker: mode publisher `live` melempar error sampai pemilik proyek mengizinkan X live; mode `dry` hanya log + tandai `posted`.
 - Worker: reveal memilih round awal/akhir lewat pemindaian mundur `latestRoundData` (maks. 10.000 round); kontrak memverifikasi ulang.
+- Web: markup desain dikonversi mekanis ke komponen TSX oleh `scripts/html-to-jsx.mjs` (tampilan tidak diubah tangan); hasilnya di-commit dan kini diedit manual. CSS desain disalin apa adanya ke `styles/landing.css`; `:root` dipisah menjadi `styles/tokens.css` (design tokens).
+- Web: skrip gerak dan scene three.js desain dipakai verbatim di `lib/landing-motion.ts` dan `lib/landing-3d.ts` dengan `// @ts-nocheck` (pengecualian dari TypeScript strict, untuk menjaga perilaku desainer). three.js dari npm (0.165.0) menggantikan import map CDN. `reactStrictMode: false` karena skrip memanipulasi DOM sekali saat mount.
+- Web: tanpa `NEXT_PUBLIC_X_HANDLE`, tautan X menjadi `#` (tidak menebak akun).
+- Fixture `/proof` default = keadaan kosong (sama dengan desain); varian terisi lewat `FIXTURE_PROOF=populated` (env server, dibaca saat runtime).

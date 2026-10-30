@@ -25,3 +25,15 @@
 - [ ] Deploy testnet (butuh keystore deployer + saldo: BLOCKERS #2, #5)
 - [x] Turborepo, docker-compose Postgres, `@nexa-ai/db` (Drizzle, 8 tabel, migrasi 0000 teruji di Postgres Docker)
 - [ ] Indexer Envio (menunggu ABI + alamat Pons, BLOCKERS #6)
+
+## HTML siap — integrasi desain (selesai)
+- [x] `docs/html-design/mapping.md`: pemetaan bagian -> data/endpoint
+- [x] `apps/web` (Next.js 15): 13 komponen dikonversi dari `nexa-1.html`, design tokens di `styles/tokens.css`, skrip gerak + three.js dipakai verbatim
+- [x] `@nexa-ai/api-client`: skema zod + fixture (`docs/api/fixtures`) untuk `/proof`, `/predictions/:id`, `/rug-radar`, `/burn` (9 test)
+- [x] Verifikasi Playwright (Edge, WebGL dimatikan untuk perbandingan): tata letak 12 section identik di desktop 1440 dan mobile 390; selisih piksel 0,015% / 0%
+- [x] Pengikatan data (fixture terisi): hash contoh, "Day N of 7", gauge win rate
+- [ ] TASK: endpoint `/rug-radar` -> kartu "Rug radar" dan "Pons V2 launches" masih ilustrasi statis
+- [ ] TASK: halaman Burn tracker, detail prediksi, NEXA vs KOL (butuh desain, lihat BLOCKERS #10)
+- [ ] TASK: `apps/api` (`/proof`, `/predictions/:id`) menggantikan fixture; lalu `NEXT_PUBLIC_USE_FIXTURES=false`
+
+## Dilanjutkan: Tahap 2 (Telegram dry + apps/api)
