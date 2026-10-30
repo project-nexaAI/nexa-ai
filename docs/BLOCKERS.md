@@ -1,4 +1,4 @@
-# BLOCKERS
+| 3 | `AGENT_ADDRESS` dan `TREASURY_ADDRESS` **terisi dan valid** di `.env`, ketiga alamat berbeda (diverifikasi 2026-10-31) | Ketik "Wallet sudah diisi" agar field `agent`/`treasury` di `addresses/<network>.json` diperbarui | Sebagian: menunggu perintah |
 
 | # | Blocker                                                                                                                                                                 | Tindakan manusia                                                                                  | Status  |
 | - | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------- |
