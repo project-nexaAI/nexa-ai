@@ -75,6 +75,7 @@ contract NexaLedger is Ownable2Step {
     error InvalidStartRound();
     error InvalidEndRound();
     error ZeroAddress();
+    error RenounceDisabled();
 
     modifier onlyAgent() {
         if (msg.sender != agent) revert NotAgent();
@@ -88,6 +89,11 @@ contract NexaLedger is Ownable2Step {
     }
 
     // ---------------------------------------------------------------- admin
+
+    /// @dev Dinonaktifkan: tanpa owner, agent dan feed tidak bisa dirotasi.
+    function renounceOwnership() public pure override {
+        revert RenounceDisabled();
+    }
 
     function setAgent(address newAgent) external onlyOwner {
         if (newAgent == address(0)) revert ZeroAddress();

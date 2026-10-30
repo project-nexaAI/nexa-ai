@@ -263,6 +263,13 @@ contract NexaLedgerTest is Test {
         ledger.commit(_hash(1));
     }
 
+    function test_renounceOwnership_disabled() public {
+        vm.prank(owner);
+        vm.expectRevert(NexaLedger.RenounceDisabled.selector);
+        ledger.renounceOwnership();
+        assertEq(ledger.owner(), owner);
+    }
+
     function test_constructor_zeroAgentReverts() public {
         vm.expectRevert(NexaLedger.ZeroAddress.selector);
         new NexaLedger(owner, address(0));

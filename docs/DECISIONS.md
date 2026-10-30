@@ -23,3 +23,8 @@
 - Fixture `/proof` default = keadaan kosong (sama dengan desain); varian terisi lewat `FIXTURE_PROOF=populated` (env server, dibaca saat runtime).
 - API: id publik prediksi = id NexaLedger (bukan id DB). Hanya status committed/posted/revealed dengan tx commit yang tampil; draft tidak pernah. `returnBps` di API searah klaim (turun yang benar = positif), identik dengan `sumReturnBps` di kontrak; DB menyimpan return harga mentah.
 - API: `/burn` mengembalikan keadaan nol sampai BurnVault ada (Tahap 4), bukan data karangan. Simbol aset reveal dari env `ASSET_SYMBOLS`, jika tidak ada ditampilkan alamat pendek.
+- Tahap 4: `FeeSplitter` abstrak dengan dua turunan (`CreatorFeeSplitter` 3000 bps, `ProtocolFeeSplitter` 2000 bps) sebagai `constant`; semua alamat immutable, tanpa owner. Aset pasangan = parameter konstruktor (NVDA diputuskan; test memakai mock).
+- Tahap 4: `BurnVault` tanpa jalan menarik dana; swapper lewat `ISwapper` dengan timelock 3 hari; keeper memberi `minNexaOut` > 0; `setNexa` sekali (alamat $NEXA baru ada setelah launch); keeper dirotasi seketika agar keeper bocor bisa diganti cepat. [di luar brief] mekanisme keeper/swapper/timelock.
+- Tahap 4: `renounceOwnership` dinonaktifkan di BurnVault dan NexaLedger (tinjauan internal: bisa mengunci dana/rotasi). NexaLedger berubah setelah deploy lokal; deploy testnet belum terjadi, jadi tidak perlu redeploy.
+- Tahap 4: temuan token berpembatasan (Stock Token) dan rotasi keeper instan dicatat sebagai risiko diterima di `docs/audit/README.md`, bukan diubah di kontrak; keputusan akhir di tangan pemilik proyek dan auditor.
+- Tahap 4: `/burn` tetap nol sampai indexer membaca event `Burned` dari BurnVault.

@@ -12,3 +12,7 @@
 | 8 | HTML desain: `__X_HANDLE__` belum diberikan (tautan "Follow on X" saat ini `#`) | Isi `NEXT_PUBLIC_X_HANDLE` (tanpa @) dan `NEXT_PUBLIC_SITE_URL` | Terbuka |
 | 9 | HTML desain merujuk `/og-image.png` dan halaman `/privacy` yang tidak ada di `docs/html-design/` | Kirim `og-image.png` (1200x630) dan teks kebijakan privasi | Terbuka |
 | 10 | Desain belum mencakup halaman: detail prediksi, NEXA vs KOL (leaderboard), Rug radar penuh, Burn tracker | Kirim desain halaman tersebut; sementara hanya ada endpoint + fixture | Terbuka |
+| 11 | Tahap 4: adaptor swapper Uniswap v4 (NVDA -> $NEXA) belum ada. Butuh alamat PoolManager/Universal Router yang terverifikasi dan PoolKey pool $NEXA (baru ada setelah graduation; sebelumnya $NEXA diperdagangkan di bonding curve Pons) | Berikan dokumen resmi Pons V2/Uniswap v4 di Robinhood Chain; tentukan jalur beli sebelum graduation | Terbuka |
+| 12 | Alamat NVDA Stock Token (aset pasangan) dan feed Chainlink NVDA di mainnet belum terverifikasi; perilaku token (allowlist/pajak) belum diuji | Kirim alamat resmi; fork test sebelum launch (docs/launch-checklist.md B) | Terbuka |
+| 13 | Audit eksternal NexaLedger + splitter (wajib sebelum launch) | Pilih auditor; serahkan `docs/audit/README.md` | Terbuka (manusia) |
+| 14 | `TREASURY_ADDRESS` dan `KEEPER_ADDRESS` dibutuhkan untuk deploy kontrak fee (Final: Tahap 4) | Isi di `.env` | Terbuka |

@@ -43,3 +43,14 @@
 - [x] Terbukti end-to-end: web (`NEXT_PUBLIC_USE_FIXTURES=false`) -> API -> Postgres menampilkan hash dan "Day 4"
 - [ ] Menunggu data: `/rug-radar` kosong sampai indexer Pons ada (BLOCKERS #7); tampilan web "Rug radar" masih ilustrasi
 - [ ] Syarat selesai Tahap 2 terpenuhi (siklus prediksi penuh lolos). Berikutnya: Tahap 3 butuh perintah "Deploy testnet" dan keystore/saldo; Tahap 1 (indexer, deploy testnet) menunggu blocker #2, #5, #7
+
+## Tahap 3 — DILEWATI atas permintaan pemilik proyek (31 Okt 2026)
+Posting X selama 30 hari menunggu "Deploy testnet", keystore/saldo, dan izin X live. Dilanjutkan nanti.
+
+## Tahap 4 — kontrak fee (selesai di sisi kode)
+- [x] `CreatorFeeSplitter` (30/70), `ProtocolFeeSplitter` (20/80), `BurnVault`; 66 test Foundry (unit + fuzz + reentrancy + swapper jahat + timelock)
+- [x] Tinjauan `contract-reviewer`: 4 temuan diperbaiki dengan test (renounceOwnership, setNexa, cek pasangan aset splitter, underflow), sisanya didokumentasikan
+- [x] Script `DeployFees.s.sol`; ABI diekspor; dry run mainnet (tanpa broadcast): NexaLedger ~1,37M gas, fee ~2,01M gas
+- [x] Paket audit `docs/audit/README.md`, checklist launch `docs/launch-checklist.md`
+- [ ] Adaptor swapper Uniswap v4 (BLOCKERS #11); fork test dengan NVDA asli (#12); audit eksternal (#13)
+- [ ] `/burn` terhubung ke event BurnVault (butuh indexer, BLOCKERS #7)
