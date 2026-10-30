@@ -12,3 +12,9 @@ broadcast/
 contracts/lib/
 *.log
 .DS_Store
+
+# Vercel
+.vercel/
+
+.vercel
+.env*
