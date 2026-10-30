@@ -36,7 +36,8 @@ export function Hero() {
             <h1 className="split" data-split="">
               {"The superintelligence influencer. "}
               <em className="s">
-                No deleted tweets.
+                {"No deleted "}
+                <span className="tw">tweets.</span>
               </em>
             </h1>
             {" "}

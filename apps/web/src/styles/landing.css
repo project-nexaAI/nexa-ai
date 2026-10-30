@@ -398,17 +398,35 @@ footer{padding:70px 0 36px}
   .copy-a h1{font-size:clamp(44px,min(5.4vw,76px),78px)}
 }
 @media (min-width:621px) and (max-height:699px){
-  .copy-a h1{font-size:clamp(44px,min(5.4vw,68px),78px)}
+  .copy-a h1{font-size:clamp(44px,min(5.4vw,70px),78px)}
 }
-@media (min-width:621px) and (max-height:599px){
+/* Kartu statistik disembunyikan lebih awal supaya judul tetap besar (judul + kartu hanya muat bila judul ~44-61px). */
+@media (min-width:621px) and (max-height:679px){
   .stage-inner{padding-top:96px;padding-bottom:18px}
-  .copy-a h1{margin:16px 0 12px}
+  .copy-a h1{margin:16px 0 12px;font-size:clamp(44px,min(5.4vw,72px),78px)}
   .copy-a .sub{margin-bottom:16px}
   .hstats{display:none}
+  .stage-foot{justify-content:flex-end}
 }
-@media (min-width:621px) and (max-height:549px){
+@media (min-width:621px) and (max-height:619px){
   .copy-a .sub{display:none}
+  .copy-a h1{font-size:clamp(44px,5.4vw,78px)}
+}
+@media (min-width:621px) and (max-height:539px){
+  .copy-a h1{font-size:clamp(30px,min(5.4vw,74px),78px)}
+}
+@media (min-width:621px) and (max-height:509px){
+  .copy-a h1{font-size:clamp(30px,min(5.4vw,78px,12.4vh),78px)}
+}
+@media (min-width:621px) and (max-height:459px){
+  .copy-a h1{font-size:clamp(30px,min(5.4vw,78px,10.6vh),78px)}
 }
 @media (min-width:621px) and (max-height:419px){
   .copy-a h1{font-size:clamp(30px,min(5.4vw,68px,9.4vh),78px)}
+}
+
+/* Susunan judul hero seperti contoh HTML: "tweets." selalu di baris ketiga (layar >= 621px).
+   Di layar kecil tetap mengalir alami seperti desain. */
+@media (min-width:621px){
+  .copy-a h1 em.s .tw{display:block}
 }
