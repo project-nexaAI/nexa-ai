@@ -40,6 +40,19 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@26.6.6)
 
+  packages/riskguard:
+    dependencies:
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@26.6.6)
+
   packages/shared:
     dependencies:
       viem:

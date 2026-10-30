@@ -9,6 +9,10 @@
 - [x] Branch `testnet` & `mainnet` (lokal)
 - [~] `chains.ts`: chain ID terverifikasi; alamat Pons/Chainlink/USDG/Uniswap masih `null` (BLOCKERS #6)
 
+## Tahap 2 — RiskGuard
+- [x] `@nexa-ai/riskguard`: 11 aturan brief, 95 test (ID & EN, evasi homoglyph/leet/spasi/zero-width), log hanya hash konten
+- [ ] Red-team oleh subagent `riskguard-reviewer`
+
 ## Tahap 1 — berjalan
 - [x] `NexaLedger` + 24 test (unit + fuzz) lolos, `forge snapshot`, ABI di `packages/contracts-abi/abi/`
 - [x] Vektor hash bersama `packages/shared/test-vectors/commit-reveal.json` (sisi Solidity)
