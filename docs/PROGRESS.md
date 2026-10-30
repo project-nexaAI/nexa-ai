@@ -9,7 +9,9 @@
 - [x] Branch `testnet` & `mainnet` (lokal)
 - [~] `chains.ts`: chain ID terverifikasi; alamat Pons/Chainlink/USDG/Uniswap masih `null` (BLOCKERS #6)
 
-## Tahap 2 — RiskGuard
+## Tahap 2 — RiskGuard + siklus prediksi
+- [x] Siklus prediksi penuh (LLM mock -> draft terenkripsi -> commit -> RiskGuard -> persetujuan -> post dry +15 menit -> reveal -> skor) lolos di Anvil + Postgres (19 test worker)
+- [ ] Telegram mode dry; endpoint `/proof`, `/predictions/:id`, `/rug-radar` + fixture (apps/api)
 - [x] `@nexa-ai/riskguard`: 11 aturan brief, 95 test (ID & EN, evasi homoglyph/leet/spasi/zero-width), log hanya hash konten
 - [x] `apps/worker`: antrian persetujuan (`enqueuePost`: RiskGuard -> cek commit -> antrian, tunda 15 menit) + CLI `review list|show|approve|reject`, 11 test integrasi Postgres
 - [x] Red-team `riskguard-reviewer`: 96 test gagal -> 94 diperbaiki, 2 kebijakan dicatat; total 191 test RiskGuard lolos

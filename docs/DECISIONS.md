@@ -14,3 +14,6 @@
 - RiskGuard: jawaban "tidak tahu" hanya lolos jika tanpa angka dan tanpa kata sambung kontras (tapi/but/however...). Token angka murni tidak di-leet ("531 holders" aman).
 - RiskGuard: harga/ajakan terkait NEXA diblokir walau tanpa `$` bila kata harga berdampingan dengan "NEXA" (maks. satu kata di antara). Batasan diketahui: leet spasi pada digit ("s e 1 1") belum terdeteksi.
 - Catatan tooling: tool Write mengubah escape `\uXXXX` di source menjadi karakter sungguhan. Gunakan `\p{..}` / `String.fromCharCode`, atau tulis lewat Bash.
+- Worker: preimage prediksi (teks, aset, arah, horizon, salt) dienkripsi AES-256-GCM dengan `PREIMAGE_KEY`; hanya hash plaintext yang ada di DB. `AGENT_PRIVATE_KEY` hanya dari env proses worker.
+- Worker: mode publisher `live` melempar error sampai pemilik proyek mengizinkan X live; mode `dry` hanya log + tandai `posted`.
+- Worker: reveal memilih round awal/akhir lewat pemindaian mundur `latestRoundData` (maks. 10.000 round); kontrak memverifikasi ulang.

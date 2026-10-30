@@ -13,7 +13,9 @@
     "@nexa-ai/riskguard": "workspace:*",
     "@nexa-ai/shared": "workspace:*",
     "drizzle-orm": "^0.36.0",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "@nexa-ai/contracts-abi": "workspace:*",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "tsx": "^4.19.0",

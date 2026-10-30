@@ -20,6 +20,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@nexa-ai/contracts-abi':
+        specifier: workspace:*
+        version: link:../../packages/contracts-abi
       '@nexa-ai/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -32,6 +35,9 @@ importers:
       drizzle-orm:
         specifier: ^0.36.0
         version: 0.36.4(postgres@3.4.9)
+      viem:
+        specifier: ^2.21.0
+        version: 2.57.13(typescript@5.9.3)(zod@3.25.76)
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -45,6 +51,8 @@ importers:
       vitest:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@26.6.6)
+
+  packages/contracts-abi: {}
 
   packages/db:
     dependencies:
