@@ -29,3 +29,4 @@ Data diambil lewat `@nexa-ai/api-client` (`NEXT_PUBLIC_USE_FIXTURES=true` → fi
 - Halaman web lain di brief tanpa desain: detail prediksi (`/predictions/:id`), NEXA vs KOL (`/leaderboard`), Rug radar penuh, Burn tracker.
 - Font dari Google Fonts (Geist, Geist Mono, Instrument Serif) dipakai apa adanya.
 - three.js: desain memuat dari CDN jsdelivr; di web dipasang dari npm (`three@0.165.0`, versi sama).
+- Perbedaan tampilan dengan HTML asli: hanya pada layar pendek (tinggi <= 780px), lihat DECISIONS (koreksi hero). Di luar itu identik.
