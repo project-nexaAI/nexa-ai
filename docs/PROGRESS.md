@@ -12,7 +12,7 @@
 ## Tahap 2 — RiskGuard
 - [x] `@nexa-ai/riskguard`: 11 aturan brief, 95 test (ID & EN, evasi homoglyph/leet/spasi/zero-width), log hanya hash konten
 - [x] `apps/worker`: antrian persetujuan (`enqueuePost`: RiskGuard -> cek commit -> antrian, tunda 15 menit) + CLI `review list|show|approve|reject`, 11 test integrasi Postgres
-- [ ] Red-team oleh subagent `riskguard-reviewer`
+- [x] Red-team `riskguard-reviewer`: 96 test gagal -> 94 diperbaiki, 2 kebijakan dicatat; total 191 test RiskGuard lolos
 
 ## Tahap 1 — berjalan
 - [x] `NexaLedger` + 24 test (unit + fuzz) lolos, `forge snapshot`, ABI di `packages/contracts-abi/abi/`
