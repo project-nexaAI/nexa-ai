@@ -36,6 +36,17 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 | `NEXT_PUBLIC_X_HANDLE` | Handle X tanpa `@` | Belum diberikan |
 | `FIXTURE_PROOF` | `populated` untuk menguji data terisi (server) | Tidak diisi |
 
-## Supabase, Railway
+## Supabase (testnet)
 
-Belum dibuat. Menunggu perintah **"Deploy testnet"** (CLAUDE.md bagian 10b).
+| Item | Nilai |
+| --- | --- |
+| Organisasi | `project-nexaai` (Free) |
+| Project | `nexa-ai-testnet`, ref `kdqjhsttlkihdhmrolvi` (dibuat manual oleh pemilik di dashboard, 2026-10-31) |
+| Region | `us-east-1` (N. Virginia). Berbeda dari rencana awal (Singapura), lihat DECISIONS |
+| Koneksi | **Session pooler**, `aws-0-us-east-1.pooler.supabase.com:5432`, user `postgres.<ref>`. Direct (`db.<ref>.supabase.co`) hanya IPv6 dan tidak terjangkau dari lokal |
+| Kredensial | `~/.config/nexa-ai/supabase-testnet.env` (di luar repo; berisi `DATABASE_URL`). Tidak pernah ditampilkan |
+| Migrasi | Drizzle 0000, 0001 sudah dijalankan (9 tabel). Tabel pg-boss dibuat worker saat pertama jalan |
+
+## Railway
+
+Belum dibuat. Menunggu branch `testnet` di GitHub (push) dan langkah berikutnya dari "Deploy testnet".
