@@ -10,7 +10,6 @@ const PAY_TO = process.env.NEXT_PUBLIC_ASK_PAYMENT_ADDRESS
 export default function AskPage() {
   return (
     <PageShell
-      current="/ask"
       label="Ask NEXA · $1 per report"
       title="A risk summary"
       dim="for any token, on demand."

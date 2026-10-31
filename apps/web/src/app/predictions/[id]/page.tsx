@@ -17,7 +17,6 @@ export default async function PredictionPage({ params }: { params: Promise<{ id:
 
   return (
     <PageShell
-      current="/proof"
       label={`Commit #${p.id}`}
       title={r ? 'Revealed' : 'Sealed until'}
       dim={r ? (r.won ? 'and it won.' : 'and it lost.') : fmtUtc(p.maturesAt)}
