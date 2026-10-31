@@ -21,7 +21,7 @@
 | 17 | **Deploy NexaLedger ke testnet 46630** siap (simulasi sukses 2026-10-31: ~1,34 juta gas, ~0,000027 ETH; deployer 0,01 ETH; `owner` = deployer, `agent` = `AGENT_ADDRESS`). Meminta password keystore, jadi dijalankan pemilik proyek | Jalankan perintah di bagian "Perintah deploy testnet" di bawah tabel, lalu ketik "sudah deploy" | Menunggu pemilik |
 | 18 | Saldo agent testnet 0 (faucet cooldown 24 jam, dari pemilik proyek 2026-10-31). Deploy tidak butuh saldo agent, tetapi `commit`/`reveal` dari worker butuh | Isi ~0,002 ETH ke `AGENT_ADDRESS` setelah cooldown | Menunggu pemilik |
 | 19 | ~~Organisasi Supabase~~ project `nexa-ai-testnet` dibuat pemilik (us-east-1), `DATABASE_URL` tersimpan di `~/.config/nexa-ai/supabase-testnet.env`, migrasi sukses | — | **Selesai** |
-| 20 | Deploy Railway `worker` dan `api` tertahan di status QUEUED sejak 2026-10-31 11:00 (+07). Penyebab belum diketahui (kemungkinan: akun Railway butuh verifikasi/plan, atau GitHub App Railway belum punya akses ke org `project-nexaAI`) | Buka project di dashboard Railway, cek pesan di tab Deployments; install GitHub App Railway di org bila diminta | Terbuka |
+| 20 | ~~Deploy Railway tertahan QUEUED~~ Antrean trial ~1 jam; percobaan pertama gagal karena belum ada start command (source masih `main`). Setelah source dipindah ke `testnet` dan build/start diatur via API, `worker` dan `api` **Online** (2026-10-31) | — | **Selesai** |
 | 21 | Isi sendiri di dashboard Railway (service `worker`): `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (32 byte hex, simpan cadangan). `NEXA_LEDGER_ADDRESS` setelah #17 | Dashboard Railway > worker > Variables | Menunggu pemilik |
 
 ## Perintah deploy testnet (jalankan sendiri)
