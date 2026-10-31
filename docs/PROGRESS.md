@@ -54,3 +54,4 @@ Posting X selama 30 hari menunggu "Deploy testnet", keystore/saldo, dan izin X l
 - [x] Paket audit `docs/audit/README.md`, checklist launch `docs/launch-checklist.md`
 - [ ] Adaptor swapper Uniswap v4 (BLOCKERS #11); fork test dengan NVDA asli (#12); audit eksternal (#13)
 - [ ] `/burn` terhubung ke event BurnVault (butuh indexer, BLOCKERS #7)
+- 2026-10-31: `/burn` kini membaca tabel `burns` (event `Burned` BurnVault, migrasi 0002; total + daftar terbaru + link Blockscout), dengan test. `/rug-radar` sudah ada dan membaca `pons_tokens`. **Keduanya kosong sampai ada penulis datanya**: `burns` menunggu BurnVault ter-deploy + pembaca event; `pons_tokens` menunggu indexer Envio (BLOCKERS #7).

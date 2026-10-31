@@ -72,6 +72,20 @@ export const ponsTrades = pgTable(
   (t) => [index('pons_trades_token_at_idx').on(t.token, t.at)],
 )
 
+/** Event `Burned` dari BurnVault. $NEXA selalu 18 desimal (token Pons). */
+export const burns = pgTable(
+  'burns',
+  {
+    id: text('id').primaryKey(), // `${txHash}-${logIndex}`
+    txHash: text('tx_hash').notNull(),
+    nexaBurned: amount('nexa_burned').notNull(),
+    pairSpent: amount('pair_spent').notNull(),
+    at: ts('at').notNull(),
+    blockNumber: bigint('block_number', { mode: 'bigint' }).notNull(),
+  },
+  (t) => [index('burns_at_idx').on(t.at)],
+)
+
 export const whaleTransfers = pgTable(
   'whale_transfers',
   {

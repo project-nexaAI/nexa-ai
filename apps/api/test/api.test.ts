@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { createDb, ponsTokens, predictions } from '@nexa-ai/db'
+import { burns, createDb, ponsTokens, predictions } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
@@ -62,6 +62,7 @@ describe.skipIf(!dbUp)('API publik', () => {
     seq = 0
     await db.delete(predictions)
     await db.delete(ponsTokens)
+    await db.delete(burns)
   })
   afterAll(async () => {
     await app.close()
@@ -163,10 +164,24 @@ describe.skipIf(!dbUp)('API publik', () => {
     })
   })
 
-  it('GET /burn: keadaan nol sampai BurnVault ada', async () => {
-    const body = burnResponseSchema.parse((await get('/burn')).json())
-    expect(body.totalBurned.raw).toBe('0')
-    expect(body.burns).toEqual([])
+  describe('GET /burn', () => {
+    it('kosong: total nol', async () => {
+      const body = burnResponseSchema.parse((await get('/burn')).json())
+      expect(body.totalBurned).toEqual({ raw: '0', decimals: 18, formatted: '0' })
+      expect(body.burns).toEqual([])
+    })
+
+    it('menjumlahkan semua burn, terbaru dulu, dengan link Blockscout', async () => {
+      await db.insert(burns).values([
+        { id: `${h(1)}-0`, txHash: h(1), nexaBurned: '1500000000000000000', pairSpent: '10', at: day(2), blockNumber: 10n },
+        { id: `${h(2)}-3`, txHash: h(2), nexaBurned: '2500000000000000000000', pairSpent: '20', at: day(1), blockNumber: 20n },
+      ])
+      const body = burnResponseSchema.parse((await get('/burn')).json())
+      expect(body.totalBurned).toEqual({ raw: '2501500000000000000000', decimals: 18, formatted: '2501.5' })
+      expect(body.burns.map((b) => b.txHash)).toEqual([h(2), h(1)])
+      expect(body.burns[0]!.amount.formatted).toBe('2500')
+      expect(body.burns[0]!.txUrl).toBe(`${EXPLORER}/tx/${h(2)}`)
+    })
   })
 
   it('GET /healthz', async () => {

@@ -2,7 +2,7 @@ import cors from '@fastify/cors'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { ponsTokens, predictions, type createDb } from '@nexa-ai/db'
+import { burns, ponsTokens, predictions, type createDb } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
@@ -13,7 +13,7 @@ import {
   type ProofResponse,
   type RugRadarResponse,
 } from '@nexa-ai/api-client'
-import { formatBps, formatWinRate, shortAddress } from './format'
+import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 
 export type Db = ReturnType<typeof createDb>['db']
 
@@ -157,9 +157,21 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     return body
   })
 
-  // Burn tracker: BurnVault belum ada (Tahap 4), jadi keadaan nol yang jujur, bukan data karangan.
+  // Burn tracker: event `Burned` BurnVault. $NEXA 18 desimal. Kosong sampai BurnVault ada dan ter-index.
+  const NEXA_DECIMALS = 18
+  const units = (raw: bigint) => ({ raw: raw.toString(), decimals: NEXA_DECIMALS, formatted: formatUnits(raw, NEXA_DECIMALS) })
   app.get('/burn', async (_req, reply) => {
-    const body: BurnResponse = burnResponseSchema.parse({ totalBurned: { raw: '0', decimals: 18, formatted: '0' }, burns: [] })
+    const rows = await cfg.db.select().from(burns).orderBy(desc(burns.at))
+    const total = rows.reduce((a, r) => a + BigInt(r.nexaBurned), 0n)
+    const body: BurnResponse = burnResponseSchema.parse({
+      totalBurned: units(total),
+      burns: rows.slice(0, RECENT_LIMIT).map((r) => ({
+        at: r.at.toISOString(),
+        amount: units(BigInt(r.nexaBurned)),
+        txHash: r.txHash,
+        txUrl: tx(r.txHash),
+      })),
+    })
     cache(reply)
     return body
   })
