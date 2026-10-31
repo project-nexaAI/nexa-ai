@@ -1,7 +1,12 @@
+import { createPublicClient, createWalletClient, defineChain, http } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 import { z } from 'zod'
+import { CHAINS } from '@nexa-ai/shared'
+import testnetAddresses from '../../../packages/contracts-abi/addresses/testnet.json'
 import { createDb } from '@nexa-ai/db'
 import { publishDue, revealMatured, type CycleDeps } from './cycle'
 import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
+import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
 import { createLedgerClient } from './ledger'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
 import { MAINNET_ORACLE_ASSETS, createFeedReader } from './oracle'
@@ -24,6 +29,13 @@ const env = z
     DAILY_PREDICTION_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(9),
     /** JSON [{"symbol":"NVDA","asset":"0x..."}]; kosong = aset mainnet bila CHAIN_ID=4663. Feed harus terdaftar di NexaLedger. */
     PREDICTION_ASSETS: z.string().optional(),
+    /** Keeper harga TESTNET: wallet sendiri (bukan agent) yang mendorong round ke feed tiruan. Kosong = nonaktif. */
+    KEEPER_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional().or(z.literal('')),
+    /** JSON [{"symbol":"NVDA","source":"0x..mainnet","target":"0x..mock"}]; kosong = feed tiruan di addresses/testnet.json (CHAIN_ID=46630). */
+    KEEPER_FEEDS: z.string().optional(),
+    /** RPC mainnet tempat feed Chainlink asli dibaca. */
+    ORACLE_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
+    KEEPER_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(300),
   })
   .parse(process.env)
 
@@ -71,6 +83,41 @@ const daily: DailyDeps | null =
       }
     : null
 
+// Keeper harga testnet: menyalin harga Chainlink mainnet ke feed tiruan agar reveal prediksi bisa berjalan.
+const mirrorSchema = z.array(z.object({ symbol: z.string(), source: z.string().regex(/^0x[0-9a-fA-F]{40}$/), target: z.string().regex(/^0x[0-9a-fA-F]{40}$/) }))
+const defaultMirrors = (): MirrorFeed[] => {
+  const c = testnetAddresses.contracts as Record<string, string | undefined>
+  const out: MirrorFeed[] = []
+  if (CHAINS.mainnet.chainlink.nvdaUsd && c.MockFeedNVDA) out.push({ symbol: 'NVDA', source: CHAINS.mainnet.chainlink.nvdaUsd, target: c.MockFeedNVDA as `0x${string}` })
+  if (CHAINS.mainnet.chainlink.ethUsd && c.MockFeedETH) out.push({ symbol: 'ETH', source: CHAINS.mainnet.chainlink.ethUsd, target: c.MockFeedETH as `0x${string}` })
+  return out
+}
+const mirrors = (env.KEEPER_FEEDS ? mirrorSchema.parse(JSON.parse(env.KEEPER_FEEDS)) : env.CHAIN_ID === 46630 ? defaultMirrors() : []) as MirrorFeed[]
+const pushAbi = [{ type: 'function', name: 'push', stateMutability: 'nonpayable', inputs: [{ name: 'answer', type: 'int256' }, { name: 'updatedAt', type: 'uint256' }], outputs: [{ type: 'uint80' }] }] as const
+
+let keeper: KeeperDeps | null = null
+if (env.KEEPER_PRIVATE_KEY && mirrors.length > 0) {
+  const chain = defineChain({ id: env.CHAIN_ID, name: `chain-${env.CHAIN_ID}`, nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [env.RPC_URL] } } })
+  const pub = createPublicClient({ chain, transport: http(env.RPC_URL) })
+  const wallet = createWalletClient({ account: privateKeyToAccount(env.KEEPER_PRIVATE_KEY as `0x${string}`), chain, transport: http(env.RPC_URL) })
+  keeper = {
+    readSource: createFeedReader(env.ORACLE_RPC_URL),
+    readTarget: createFeedReader(env.RPC_URL),
+    push: async (target, answer, updatedAt) => {
+      const hash = await wallet.writeContract({ address: target, abi: pushAbi, functionName: 'push', args: [answer, updatedAt] })
+      const receipt = await pub.waitForTransactionReceipt({ hash })
+      if (receipt.status !== 'success') throw new Error(`push gagal (tx ${hash})`)
+      return hash
+    },
+    chainNowSec: async () => (await pub.getBlock()).timestamp,
+    sourceNowSec: () => BigInt(Math.floor(Date.now() / 1000)),
+    cfg: DEFAULT_KEEPER_CONFIG,
+    mirrors,
+  }
+}
+console.log(keeper ? `worker: keeper harga testnet AKTIF (${mirrors.map((m) => m.symbol).join(', ')})` : 'worker: keeper harga testnet NONAKTIF (butuh KEEPER_PRIVATE_KEY dan feed tiruan; hanya testnet)')
+let lastKeeperAt = 0
+
 console.log(
   daily
     ? `worker: prediksi harian AKTIF (mulai ${env.DAILY_PREDICTION_HOUR_UTC}:00 UTC, ${predictionAssets.length} aset)`
@@ -83,6 +130,12 @@ console.log(
 )
 
 async function tick(): Promise<void> {
+  if (keeper && Date.now() - lastKeeperAt >= env.KEEPER_INTERVAL_SECONDS * 1000) {
+    lastKeeperAt = Date.now()
+    const res = await mirrorPrices(keeper)
+    const notable = res.filter((r) => r.action === 'pushed' || r.action.endsWith('failed') || r.action.endsWith('error') || r.action === 'source_stale')
+    if (notable.length) console.log(`worker: keeper: ${notable.map((r) => `${r.symbol}=${r.action}`).join(' ')}`)
+  }
   if (!deps) return
   if (daily) {
     const step = await runDailyPrediction(daily)
