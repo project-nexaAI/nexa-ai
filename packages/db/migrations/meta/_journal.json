@@ -57,6 +57,13 @@
       "when": 1793458275718,
       "tag": "0007_long_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793463726752,
+      "tag": "0008_safe_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { getAddress } from 'viem'
 import { ponsTokens, ponsTrades, type createDb } from '@nexa-ai/db'
 
@@ -16,6 +16,14 @@ export type PonsLog =
   | {
       eventName: 'CurveBuy'
       args: { buyer: string; quoteIn: bigint; tokensOut: bigint }
+      address: string
+      blockNumber: bigint
+      logIndex: number
+      transactionHash: string
+    }
+  | {
+      eventName: 'CurveCompleted'
+      args: { token: string }
       address: string
       blockNumber: bigint
       logIndex: number
@@ -48,17 +56,30 @@ export interface ProcessDeps {
 
 export const HIGH_CREATOR_TAX_FLAG = 'High creator tax'
 
+export const HOLDERS_CONCENTRATED_FLAG = 'Holders concentrated'
+
 export function redFlagsFor(creatorTaxBps: number | null, highCreatorTaxBps: number): string[] {
   return creatorTaxBps !== null && creatorTaxBps > highCreatorTaxBps ? [HIGH_CREATOR_TAX_FLAG] : []
+}
+
+/** Semua red flag token: pajak creator tinggi dan/atau satu holder (di luar curve/pool) memegang >= concentratedBps total suplai. */
+export function computeRedFlags(
+  t: { creatorTaxBps: number | null; topHolderShareBps: number | null },
+  cfg: { highCreatorTaxBps: number; concentratedBps: number },
+): string[] {
+  const flags = redFlagsFor(t.creatorTaxBps, cfg.highCreatorTaxBps)
+  if (t.topHolderShareBps !== null && t.topHolderShareBps >= cfg.concentratedBps) flags.push(HOLDERS_CONCENTRATED_FLAG)
+  return flags
 }
 
 const order = (a: PonsLog, b: PonsLog) => (a.blockNumber === b.blockNumber ? a.logIndex - b.logIndex : a.blockNumber < b.blockNumber ? -1 : 1)
 
 /** Idempotent: log yang sama diproses dua kali tidak menggandakan baris. */
-export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{ launches: number; trades: number }> {
+export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{ launches: number; trades: number; graduations: number }> {
   const { db } = deps
   let launches = 0
   let trades = 0
+  let graduations = 0
   const decimalsByToken = new Map<string, number>()
 
   for (const log of [...logs].sort(order)) {
@@ -93,6 +114,17 @@ export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{
     const [row] = await db.select().from(ponsTokens).where(eq(ponsTokens.curve, log.address.toLowerCase()))
     if (!row) continue // bukan curve Pons yang kita kenal (event bertanda tangan sama dari kontrak lain)
 
+    if (log.eventName === 'CurveCompleted') {
+      // Graduation: curve mencapai threshold. Waktu = blok event; tidak menimpa bila sudah tercatat.
+      const done = await db
+        .update(ponsTokens)
+        .set({ graduatedAt: at })
+        .where(and(eq(ponsTokens.address, row.address), isNull(ponsTokens.graduatedAt)))
+        .returning({ address: ponsTokens.address })
+      graduations += done.length
+      continue
+    }
+
     let quoteDecimals = decimalsByToken.get(row.address)
     if (quoteDecimals === undefined && row.pairToken) {
       quoteDecimals = (await deps.readMeta(row.address, log.address, row.pairToken)).pairDecimals
@@ -117,5 +149,5 @@ export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{
       .returning({ id: ponsTrades.id })
     trades += inserted.length
   }
-  return { launches, trades }
+  return { launches, trades, graduations }
 }

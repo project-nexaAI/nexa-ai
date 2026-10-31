@@ -7,6 +7,7 @@ import {
   numeric,
   pgEnum,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -93,6 +94,20 @@ export const burns = pgTable(
     blockNumber: bigint('block_number', { mode: 'bigint' }).notNull(),
   },
   (t) => [index('burns_at_idx').on(t.at)],
+)
+
+/**
+ * Saldo holder per token Pons (dari event Transfer sejak peluncuran). Dipakai untuk konsentrasi holder.
+ * balance bisa negatif bila riwayat tidak lengkap; token seperti itu tidak diberi angka konsentrasi.
+ */
+export const tokenHolders = pgTable(
+  'token_holders',
+  {
+    token: text('token').notNull(),
+    holder: text('holder').notNull(),
+    balance: amount('balance').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.token, t.holder] })],
 )
 
 export const whaleTransfers = pgTable(

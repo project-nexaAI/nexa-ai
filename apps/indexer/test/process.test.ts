@@ -68,7 +68,7 @@ describe.skipIf(!dbUp)('processLogs', () => {
 
   it('menyimpan launch dan trade (urutan log dibalik pun benar)', async () => {
     const r = await processLogs(deps(100), [sell, buy, launch])
-    expect(r).toEqual({ launches: 1, trades: 2 })
+    expect(r).toEqual({ launches: 1, trades: 2, graduations: 0 })
     const [t] = await db.select().from(ponsTokens)
     expect(t).toMatchObject({ symbol: 'TST', creatorTaxBps: 100, redFlags: [], blockNumber: 10n })
     expect(t!.curve).toBe(CURVE)
@@ -90,8 +90,18 @@ describe.skipIf(!dbUp)('processLogs', () => {
   it('idempoten: diproses dua kali tidak menggandakan', async () => {
     await processLogs(deps(0), [launch, buy])
     const r = await processLogs(deps(0), [launch, buy])
-    expect(r).toEqual({ launches: 0, trades: 0 })
+    expect(r).toEqual({ launches: 0, trades: 0, graduations: 0 })
     expect(await db.select().from(ponsTrades)).toHaveLength(1)
+  })
+
+  it('CurveCompleted menandai graduation sekali, dengan waktu blok event', async () => {
+    const done: PonsLog = { eventName: 'CurveCompleted', args: { token: TOKEN }, address: CURVE, blockNumber: 20n, logIndex: 1, transactionHash: tx(9) }
+    expect((await processLogs(deps(0), [launch, buy, done])).graduations).toBe(1)
+    const [t] = await db.select().from(ponsTokens)
+    expect(t!.graduatedAt!.toISOString()).toBe(new Date(Date.UTC(2026, 9, 31, 0, 0, 20)).toISOString())
+    // diproses lagi dengan blok berbeda: tidak menimpa
+    expect((await processLogs(deps(0), [{ ...done, blockNumber: 99n, transactionHash: tx(10) }])).graduations).toBe(0)
+    expect((await db.select().from(ponsTokens))[0]!.graduatedAt!.getTime()).toBe(t!.graduatedAt!.getTime())
   })
 
   it('trade dari curve tak dikenal diabaikan', async () => {
