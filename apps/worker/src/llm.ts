@@ -33,6 +33,34 @@ export interface LlmPricing {
   outPerMTokUsdMicros: bigint
 }
 
+/**
+ * Harga SEMENTARA MiMo v2.6 (USD per 1 juta token, dalam USD micro). Sumber: agregator pihak ketiga (OpenRouter dan artikel
+ * harga, 2026-10-31), BUKAN halaman harga resmi Xiaomi, dan harga cache-hit diabaikan: biaya tercatat adalah batas atas.
+ * Ganti lewat env LLM_PRICE_* begitu harga resmi (atau tagihan nyata) diketahui.
+ */
+export const MIMO_V26_PRICING: Record<ModelTier, LlmPricing> = {
+  small: { inPerMTokUsdMicros: 140_000n, outPerMTokUsdMicros: 280_000n }, // mimo-v2.6-flash: $0,14 / $0,28
+  large: { inPerMTokUsdMicros: 435_000n, outPerMTokUsdMicros: 870_000n }, // mimo-v2.6-pro: $0,435 / $0,87
+}
+
+const priceEnv = z.coerce.bigint().nonnegative().optional()
+
+/** Harga per tier dari env (USD micro per 1 juta token); yang tidak diisi memakai MIMO_V26_PRICING. */
+export function pricingFromEnv(env: Record<string, string | undefined>): Record<ModelTier, LlmPricing> {
+  const pick = (name: string, fallback: bigint) => priceEnv.parse(env[name] || undefined) ?? fallback
+  const d = MIMO_V26_PRICING
+  return {
+    small: {
+      inPerMTokUsdMicros: pick('LLM_PRICE_SMALL_IN_USD_MICROS', d.small.inPerMTokUsdMicros),
+      outPerMTokUsdMicros: pick('LLM_PRICE_SMALL_OUT_USD_MICROS', d.small.outPerMTokUsdMicros),
+    },
+    large: {
+      inPerMTokUsdMicros: pick('LLM_PRICE_LARGE_IN_USD_MICROS', d.large.inPerMTokUsdMicros),
+      outPerMTokUsdMicros: pick('LLM_PRICE_LARGE_OUT_USD_MICROS', d.large.outPerMTokUsdMicros),
+    },
+  }
+}
+
 export function costMicros(pricing: LlmPricing, tokensIn: number, tokensOut: number): bigint {
   return (BigInt(tokensIn) * pricing.inPerMTokUsdMicros + BigInt(tokensOut) * pricing.outPerMTokUsdMicros) / 1_000_000n
 }
@@ -42,7 +70,8 @@ export interface OpenAiCompatibleConfig {
   apiKey: string
   modelSmall: string
   modelLarge: string
-  pricing?: LlmPricing
+  /** Harga per tier. Tanpa ini biaya tercatat 0 (jumlah token tetap benar). */
+  pricing?: Record<ModelTier, LlmPricing>
   fetchImpl?: typeof fetch
 }
 
@@ -51,7 +80,7 @@ const completionSchema = z.object({
   usage: z.object({ prompt_tokens: z.number(), completion_tokens: z.number() }).optional(),
 })
 
-/** API kompatibel OpenAI (Xiaomi MiMo: https://api.xiaomimimo.com/v1). Kunci API tidak pernah di-log. */
+/** API kompatibel OpenAI (Xiaomi MiMo; base URL lewat env LLM_BASE_URL). Kunci API tidak pernah di-log. */
 export class OpenAiCompatibleLlm implements LlmClient {
   constructor(private readonly cfg: OpenAiCompatibleConfig) {}
 
@@ -74,7 +103,7 @@ export class OpenAiCompatibleLlm implements LlmClient {
     const body = completionSchema.parse(await res.json())
     const tokensIn = body.usage?.prompt_tokens ?? 0
     const tokensOut = body.usage?.completion_tokens ?? 0
-    const pricing = this.cfg.pricing ?? { inPerMTokUsdMicros: 0n, outPerMTokUsdMicros: 0n }
+    const pricing = this.cfg.pricing?.[req.tier] ?? { inPerMTokUsdMicros: 0n, outPerMTokUsdMicros: 0n }
     return {
       text: body.choices[0]!.message.content ?? '',
       usage: { model, tokensIn, tokensOut, usdMicros: costMicros(pricing, tokensIn, tokensOut) },
