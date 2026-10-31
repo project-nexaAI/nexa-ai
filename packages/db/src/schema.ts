@@ -43,6 +43,8 @@ export const ponsTokens = pgTable(
   'pons_tokens',
   {
     address: text('address').primaryKey(),
+    curve: text('curve'), // kontrak bonding curve; event CurveBuy/CurveSell dipancarkan dari sini
+    pairToken: text('pair_token'),
     creator: text('creator').notNull(),
     name: text('name'),
     symbol: text('symbol'),
@@ -71,6 +73,13 @@ export const ponsTrades = pgTable(
   },
   (t) => [index('pons_trades_token_at_idx').on(t.token, t.at)],
 )
+
+/** Posisi terakhir yang sudah diproses indexer (satu baris per nama indexer). */
+export const indexerState = pgTable('indexer_state', {
+  name: text('name').primaryKey(),
+  lastBlock: bigint('last_block', { mode: 'bigint' }).notNull(),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+})
 
 /** Event `Burned` dari BurnVault. $NEXA selalu 18 desimal (token Pons). */
 export const burns = pgTable(
