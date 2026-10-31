@@ -58,3 +58,5 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 | Variabel (nama) worker | `DATABASE_URL`, `RPC_URL`, `CHAIN_ID`, `CHAIN_ENV`, `X_POST_MODE=dry`, `AGENT_ADDRESS`, `TREASURY_ADDRESS`, `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_SMALL`, `LLM_MODEL_LARGE`, `PAID_FEATURES_ENABLED=false` |
 | Variabel (nama) api | `DATABASE_URL`, `EXPLORER_URL`, `PAID_FEATURES_ENABLED=false` |
 | Diisi manusia | `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (worker); `NEXA_LEDGER_ADDRESS` setelah deploy #17; `WEB_ORIGIN` (api) |
+
+- API publik testnet: https://api-production-bf46.up.railway.app (domain Railway dibuat 2026-10-31). `/healthz`, `/proof`, `/burn`, `/rug-radar` = 200 (data kosong); `/signals` = 404 sampai PR main -> testnet digabung. Variabel `WEB_ORIGIN` (CORS) belum diisi di service api.
