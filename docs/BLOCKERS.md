@@ -18,11 +18,12 @@
 | 14 | `TREASURY_ADDRESS` sudah terisi di `.env`. `KEEPER_ADDRESS` masih kosong (dibutuhkan deploy kontrak fee; Final: Tahap 4) | Isi `KEEPER_ADDRESS` di `.env` | Sebagian |
 | 15 | `LLM_MODEL_SMALL` sebelumnya `mimo-v2.5-asr` (model suara, HTTP 400). Sudah diganti menjadi `mimo-v2.6-flash` oleh pemilik proyek; diverifikasi 2026-10-31 dengan smoke test (kecil dan besar menjawab, prediksi lolos RiskGuard) | — | **Selesai** |
 | 16 | **Sebagian selesai (2026-10-31):** `LlmPricing` kini per tier dan terisi harga SEMENTARA dari sumber pihak ketiga (flash $0,14 masuk / $0,28 keluar; pro $0,435 / $0,87 per 1 juta token). **Belum dari halaman harga resmi Xiaomi** (tidak terjangkau dari pencarian), harga cache-hit diabaikan (biaya tercatat = batas atas), dan base URL "token-plan" Anda mungkin memakai tarif paket lain | Cocokkan dengan halaman harga/tagihan akun MiMo Anda; jika beda, isi `LLM_PRICE_*_USD_MICROS` di env (tanpa ubah kode) | Sebagian |
-| 17 | **Deploy NexaLedger ke testnet 46630** siap (simulasi sukses 2026-10-31: ~1,34 juta gas, ~0,000027 ETH; deployer 0,01 ETH; `owner` = deployer, `agent` = `AGENT_ADDRESS`). Meminta password keystore, jadi dijalankan pemilik proyek | Jalankan perintah di bagian "Perintah deploy testnet" di bawah tabel, lalu ketik "sudah deploy" | Menunggu pemilik |
+| 17 | ~~Deploy NexaLedger testnet~~ **Selesai 2026-10-31**: `0xEF1fBbd8ea7dC858Dc88332AcD43Ba58b9bD81C0` (tx `0x317fca74…e54d`, blok 145.675.140). Diverifikasi on-chain: `owner` = deployer, `agent` = `0x35Ca…4561`, `minMoveBps` = 0, kode ada. Tercatat di `addresses/testnet.json`; `NEXA_LEDGER_ADDRESS` sudah diisi di Railway worker | — | **Selesai** |
 | 18 | Saldo agent testnet 0 (faucet cooldown 24 jam, dari pemilik proyek 2026-10-31). Deploy tidak butuh saldo agent, tetapi `commit`/`reveal` dari worker butuh | Isi ~0,002 ETH ke `AGENT_ADDRESS` setelah cooldown | Menunggu pemilik |
 | 19 | ~~Organisasi Supabase~~ project `nexa-ai-testnet` dibuat pemilik (us-east-1), `DATABASE_URL` tersimpan di `~/.config/nexa-ai/supabase-testnet.env`, migrasi sukses | — | **Selesai** |
 | 20 | ~~Deploy Railway tertahan QUEUED~~ Antrean trial ~1 jam; percobaan pertama gagal karena belum ada start command (source masih `main`). Setelah source dipindah ke `testnet` dan build/start diatur via API, `worker` dan `api` **Online** (2026-10-31) | — | **Selesai** |
-| 21 | Isi sendiri di dashboard Railway (service `worker`): `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (32 byte hex, simpan cadangan). `NEXA_LEDGER_ADDRESS` setelah #17 | Dashboard Railway > worker > Variables | Menunggu pemilik |
+| 21 | Isi sendiri di dashboard Railway (service `worker`): `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (32 byte hex, simpan cadangan). `NEXA_LEDGER_ADDRESS` sudah diisi (#17). `LLM_API_KEY` sudah diisi pemilik. Tinggal `AGENT_PRIVATE_KEY` dan `PREIMAGE_KEY`, dan saldo agent (#18), dan #22 | Dashboard Railway > worker > Variables | Menunggu pemilik |
+| 22 | ~~Feed tiruan testnet~~ **Selesai 2026-10-31**: aset NVDA/ETH tiruan terdaftar di NexaLedger (`feedOf` diverifikasi on-chain). Feed NVDA `0xAB06…81Ed` (harga awal $205,28), feed ETH `0x8c32…c843` ($2236,56). `PREDICTION_ASSETS` sudah diisi di Railway. **Sisa:** reveal butuh round baru setelah jatuh tempo: `MockAggregator.push()` harus dipanggil (manual atau keeper) | Keputusan: keeper otomatis (saran) atau push manual | Sebagian |
 
 ## Perintah deploy testnet (jalankan sendiri)
 
@@ -34,3 +35,13 @@ forge script script/DeployNexaLedger.s.sol --rpc-url https://rpc.testnet.chain.r
 ```
 
 Akan diminta password keystore `deployer`. Output akhir mencetak `NexaLedger 0x...`. Setelah selesai, ketik "sudah deploy": saya membaca alamatnya dari `contracts/broadcast/DeployNexaLedger.s.sol/46630/run-latest.json`, memverifikasi kode, `owner`, dan `agent` on-chain, lalu mengisi `addresses/testnet.json`.
+
+## Perintah mock testnet (jalankan sendiri, PowerShell)
+
+```powershell
+# Jalankan di: ROOT\contracts
+$env:NEXA_LEDGER = "0xEF1fBbd8ea7dC858Dc88332AcD43Ba58b9bD81C0"
+& "$env:USERPROFILE\.foundry\bin\forge.exe" script script/DeployTestnetMocks.s.sol --rpc-url https://rpc.testnet.chain.robinhood.com --account deployer --sender 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D --broadcast
+```
+
+Aset tiruan (deterministik): NVDA `0xaDfc1A4b4F6990753EF12aD5d29a55c718c84Dd0`, ETH `0xfcE985e2175b8667dF234961A3c1687b6A6Bcf0E`. Setelah selesai, ketik "mock sudah deploy": saya memverifikasi `feedOf` on-chain dan mencatat alamat feed.

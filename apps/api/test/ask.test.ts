@@ -112,7 +112,7 @@ describe.skipIf(!dbUp)('POST /ask (berbayar)', () => {
 
   it('400 untuk body tidak valid', async () => {
     expect((await call(mk(), { address: 'x', txHash: h(10) })).statusCode).toBe(400)
-    expect((await call(mk(), { address: TOKEN })).statusCode).toBe(400)
+    expect((await call(mk(), { address: TOKEN })).statusCode).toBe(401) // tanpa txHash = jalur kredit holder, butuh login
   })
 
   it('402 bila pembayaran tidak sah: tx tak ada, gagal, kurang bayar, token lain, bukan ke penerima', async () => {

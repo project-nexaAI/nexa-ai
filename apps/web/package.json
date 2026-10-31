@@ -16,7 +16,8 @@
     "next": "15.5.28",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "three": "0.165.0"
+    "three": "0.165.0",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

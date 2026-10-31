@@ -213,6 +213,38 @@ export const kolCalls = pgTable(
   (t) => [index('kol_calls_kol_idx').on(t.kolId)],
 )
 
+/** Nonce SIWE sekali pakai (anti replay). */
+export const authNonces = pgTable('auth_nonces', {
+  nonce: text('nonce').primaryKey(),
+  expiresAt: ts('expires_at').notNull(),
+  usedAt: ts('used_at'),
+})
+
+/** Sesi login wallet. Hanya hash SHA-256 token yang disimpan. */
+export const authSessions = pgTable(
+  'auth_sessions',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    address: text('address').notNull(), // ber-checksum
+    createdAt: ts('created_at').notNull().defaultNow(),
+    expiresAt: ts('expires_at').notNull(),
+  },
+  (t) => [index('auth_sessions_address_idx').on(t.address)],
+)
+
+/** Kredit Ask NEXA gratis yang sudah dipakai holder $NEXA (per alamat per bulan UTC, `YYYY-MM`). */
+export const askCreditUses = pgTable(
+  'ask_credit_uses',
+  {
+    id: serial('id').primaryKey(),
+    address: text('address').notNull(),
+    month: text('month').notNull(),
+    askedAddress: text('asked_address').notNull(),
+    createdAt: ts('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('ask_credit_uses_idx').on(t.address, t.month)],
+)
+
 /** Pembayaran Ask NEXA yang sudah dipakai. tx_hash unik: satu pembayaran = satu laporan (anti replay). */
 export const askPayments = pgTable('ask_payments', {
   txHash: text('tx_hash').primaryKey(),

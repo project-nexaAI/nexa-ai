@@ -1,0 +1,10 @@
+{
+  "address": "0x1111111111111111111111111111111111111111",
+  "holder": {
+    "enabled": true,
+    "isHolder": true,
+    "balance": { "raw": "2500000000000000000000000", "decimals": 18, "formatted": "2500000" },
+    "threshold": { "raw": "1000000000000000000000000", "decimals": 18, "formatted": "1000000" }
+  },
+  "benefits": { "earlyAlerts": true, "freeAsksPerMonth": 3, "freeAsksRemaining": 2, "month": "2026-12" }
+}

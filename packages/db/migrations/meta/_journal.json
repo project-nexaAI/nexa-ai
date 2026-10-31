@@ -50,6 +50,13 @@
       "when": 1793449102053,
       "tag": "0006_brief_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793458275718,
+      "tag": "0007_long_black_panther",
+      "breakpoints": true
     }
   ]
 }

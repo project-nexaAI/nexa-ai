@@ -809,9 +809,364 @@
         }
       }
     },
+    "/auth/nonce": {
+      "get": {
+        "summary": "Login wallet (SIWE): nonce sekali pakai. Mati sampai PAID_FEATURES_ENABLED=true.",
+        "responses": {
+          "200": {
+            "description": "Nonce",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "nonce": {
+                      "type": "string",
+                      "minLength": 8
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "nonce",
+                    "expiresAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "fitur belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/verify": {
+      "post": {
+        "summary": "Verifikasi pesan SIWE + tanda tangan, lalu buat sesi bearer.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4000
+                  },
+                  "signature": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]+$"
+                  }
+                },
+                "required": [
+                  "message",
+                  "signature"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sesi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "address",
+                    "expiresAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "body tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "invalid_message, domain_mismatch, bad_signature, bad_nonce, expired_message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "fitur belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Akhiri sesi (header Authorization: Bearer).",
+        "responses": {
+          "204": {
+            "description": "Selesai"
+          },
+          "503": {
+            "description": "fitur belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me": {
+      "get": {
+        "summary": "Profil sesi: status holder $NEXA dan benefit (alert lebih cepat, kredit Ask gratis).",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "address": {
+                      "type": "string"
+                    },
+                    "holder": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "isHolder": {
+                          "type": "boolean"
+                        },
+                        "balance": {
+                          "type": "object",
+                          "properties": {
+                            "raw": {
+                              "type": "string",
+                              "pattern": "^\\d+$"
+                            },
+                            "decimals": {
+                              "type": "integer"
+                            },
+                            "formatted": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "raw",
+                            "decimals",
+                            "formatted"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        },
+                        "threshold": {
+                          "type": "object",
+                          "properties": {
+                            "raw": {
+                              "type": "string",
+                              "pattern": "^\\d+$"
+                            },
+                            "decimals": {
+                              "type": "integer"
+                            },
+                            "formatted": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "raw",
+                            "decimals",
+                            "formatted"
+                          ],
+                          "additionalProperties": false,
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "enabled",
+                        "isHolder",
+                        "balance",
+                        "threshold"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "benefits": {
+                      "type": "object",
+                      "properties": {
+                        "earlyAlerts": {
+                          "type": "boolean"
+                        },
+                        "freeAsksPerMonth": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "freeAsksRemaining": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "month": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "earlyAlerts",
+                        "freeAsksPerMonth",
+                        "freeAsksRemaining",
+                        "month"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "address",
+                    "holder",
+                    "benefits"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "login_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "fitur belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ask": {
       "post": {
-        "summary": "Ask NEXA (berbayar, $1 USDG): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.",
+        "summary": "Ask NEXA ($1 USDG, atau kredit gratis bulanan holder $NEXA dengan sesi login tanpa txHash): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.",
         "requestBody": {
           "required": true,
           "content": {
@@ -829,8 +1184,7 @@
                   }
                 },
                 "required": [
-                  "address",
-                  "txHash"
+                  "address"
                 ],
                 "additionalProperties": false
               }
@@ -933,7 +1287,8 @@
                     },
                     "paymentTxUrl": {
                       "type": "string",
-                      "format": "uri"
+                      "format": "uri",
+                      "nullable": true
                     }
                   },
                   "required": [
@@ -965,8 +1320,44 @@
               }
             }
           },
+          "401": {
+            "description": "login_required (tanpa txHash dan tanpa sesi)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
           "402": {
-            "description": "pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid",
+            "description": "pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid, no_free_credits",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not_a_holder",
             "content": {
               "application/json": {
                 "schema": {

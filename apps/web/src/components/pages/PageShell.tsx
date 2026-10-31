@@ -10,6 +10,7 @@ export const PAGES = [
   { href: '/leaderboard', label: 'NEXA vs KOL' },
   { href: '/burn', label: 'Burn tracker' },
   { href: '/ask', label: 'Ask NEXA' },
+  { href: '/account', label: 'Account' },
 ] as const
 
 /** Kerangka halaman dalam: nav + footer landing yang sama, tab antar-halaman, dan judul. */
