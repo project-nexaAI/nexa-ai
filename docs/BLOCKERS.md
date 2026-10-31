@@ -20,6 +20,7 @@
 | 16 | Harga token MiMo tidak diketahui, jadi biaya LLM tercatat 0 USD (jumlah token tercatat benar). Asumsi brief: LLM ~$800/bulan perlu diukur | Berikan harga per 1 juta token (masuk/keluar) agar `LlmPricing` bisa diisi | Terbuka |
 | 17 | **Deploy NexaLedger ke testnet 46630** siap (simulasi sukses 2026-10-31: ~1,34 juta gas, ~0,000027 ETH; deployer 0,01 ETH; `owner` = deployer, `agent` = `AGENT_ADDRESS`). Meminta password keystore, jadi dijalankan pemilik proyek | Jalankan perintah di bagian "Perintah deploy testnet" di bawah tabel, lalu ketik "sudah deploy" | Menunggu pemilik |
 | 18 | Saldo agent testnet 0 (faucet cooldown 24 jam, dari pemilik proyek 2026-10-31). Deploy tidak butuh saldo agent, tetapi `commit`/`reveal` dari worker butuh | Isi ~0,002 ETH ke `AGENT_ADDRESS` setelah cooldown | Menunggu pemilik |
+| 19 | "Deploy testnet" diterima 2026-10-31. Supabase CLI sudah login, tetapi `supabase orgs list` kosong: akun tidak punya organisasi (atau token tidak melihatnya), sehingga project `nexa-ai-testnet` belum bisa dibuat | Buat organisasi di https://supabase.com/dashboard/organizations, lalu buat token baru (Resource access = Organization) dan `supabase login --token ...` lagi. Ketik "organisasi siap" | Terbuka |
 
 ## Perintah deploy testnet (jalankan sendiri)
 
