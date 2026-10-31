@@ -71,3 +71,60 @@ a.pg-row:hover{border-color:var(--line-2)}
   .pg{padding-top:110px}
   .ex-grid{grid-template-columns:1fr}
 }
+
+/* Navbar: ikon X bulat tanpa latar putih, tombol connect wallet, dan 8 tautan */
+.nav-x{width:44px;height:44px;flex:none}
+.links a{padding:8px 12px}
+.wallet{position:relative}
+.wallet-btn{min-height:44px;font-size:13.5px}
+.wallet-btn:disabled{opacity:.7;cursor:progress}
+.wallet-pop{position:absolute;right:0;top:calc(100% + 10px);width:min(320px,calc(100vw - 32px));padding:18px;display:flex;flex-direction:column;gap:10px;z-index:60;background:#121212;overflow:visible}
+.wallet-pop .k{color:var(--ink-3)}
+.wallet-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.wallet-row .v{font-size:13.5px;text-align:right}
+.wallet-note{color:var(--ink-3);font-size:13px}
+.wallet-err{color:var(--amber);font-size:13px;line-height:1.5}
+.wallet-link{font-size:13px;width:fit-content}
+.wallet-out{align-self:flex-start;min-height:40px}
+.wl-short{display:none}
+@media (max-width:1180px){
+  .links{display:none}
+  .menu-btn{display:flex}
+}
+@media (max-width:560px){
+  .nav-x{display:none}
+  .wallet-btn{padding-left:16px}
+}
+
+/* Navbar: ikon X bulat tanpa latar putih, tombol connect wallet, dan 8 tautan */
+.nav-x{width:44px;height:44px;flex:none}
+.links a{padding:8px 12px}
+.wallet{position:relative}
+.wallet-btn{min-height:44px;font-size:13.5px}
+.wallet-btn:disabled{opacity:.7;cursor:progress}
+.wallet-pop{position:absolute;right:0;top:calc(100% + 10px);width:min(320px,calc(100vw - 32px));padding:18px;display:flex;flex-direction:column;gap:10px;z-index:60;background:#121212;overflow:visible}
+.wallet-pop .k{color:var(--ink-3)}
+.wallet-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:10px}
+.wallet-row .v{font-size:13.5px;text-align:right}
+.wallet-note{color:var(--ink-3);font-size:13px}
+.wallet-err{color:var(--amber);font-size:13px;line-height:1.5}
+.wallet-link{font-size:13px;width:fit-content}
+.wallet-out{align-self:flex-start;min-height:40px}
+@media (max-width:1180px){
+  .links{display:none}
+  .menu-btn{display:flex}
+}
+@media (max-width:560px){
+  .nav-x{display:none}
+  .wallet-btn{padding-left:16px}
+}
+/* Desain landing menyembunyikan .btn-light di navbar mobile (tombol Follow on X lama); tombol wallet tetap tampil, versi ringkas. */
+@media (max-width:620px){
+  .nav-r .wallet .btn-light{display:inline-flex;padding:0 6px 0 16px;min-height:44px;gap:8px}
+  .wl-full{display:none}
+  .wl-short{display:inline}
+  .wallet-pop{right:-52px}
+}
+@media (max-width:350px){
+  .nav .logo span{display:none}
+}
