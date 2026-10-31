@@ -8,17 +8,20 @@ import {
   askRequestSchema,
   askResponseSchema,
   burnResponseSchema,
+  leaderboardResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
   type AskResponse,
   type BurnResponse,
+  type LeaderboardResponse,
   type Prediction,
   type ProofResponse,
   type RugRadarResponse,
   type SignalsResponse,
 } from '@nexa-ai/api-client'
+import { kolStats, rankEntries } from './leaderboard'
 import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 
@@ -28,7 +31,7 @@ export interface AppConfig {
   db: Db
   /** Basis Blockscout, tanpa slash akhir (mis. https://explorer.testnet.chain.robinhood.com). */
   explorerUrl: string
-  /** Asal web yang diizinkan CORS (env WEB_ORIGIN). Kosong = CORS dimatikan. */
+  /** Asal web yang diizinkan CORS (env WEB_ORIGIN; beberapa asal dipisah koma). Kosong = CORS dimatikan. */
   webOrigin?: string
   /** alamat aset (huruf kecil) -> simbol, untuk prediksi yang sudah di-reveal. */
   symbols?: Record<string, string>
@@ -36,6 +39,8 @@ export interface AppConfig {
   paidFeaturesEnabled?: boolean
   /** Batas permintaan per kunci API per menit. */
   signalsRateLimitPerMinute?: number
+  /** Call ternilai minimum agar masuk peringkat leaderboard (env LEADERBOARD_MIN_SCORED). */
+  leaderboardMinScored?: number
   /** Ask NEXA: pembayaran USDG on-chain. Tanpa ini POST /ask menjawab 503. */
   ask?: AskConfig
   now?: () => Date
@@ -55,7 +60,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const symbols = cfg.symbols ?? {}
   const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
 
-  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin, methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key'] })
+  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key'] })
 
   function toPrediction(row: PredictionRow): Prediction {
     const committedAt = row.committedAt!
@@ -165,6 +170,29 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
         redFlags: r.redFlags,
         explorerUrl: `${cfg.explorerUrl}/address/${r.address}`,
       })),
+    })
+    cache(reply)
+    return body
+  })
+
+  // NEXA vs KOL: leaderboard akurasi. Hanya KOL yang opted_in; baris NEXA dihitung dari /proof yang sama.
+  app.get('/leaderboard', async (_req, reply) => {
+    const rows = await publicRows(cfg.db)
+    const scoredRows = rows.filter((r) => r.status === 'revealed' && alignedBps(r) !== null)
+    const nexa = {
+      handle: 'nexa',
+      displayName: 'NEXA',
+      isNexa: true,
+      scored: scoredRows.length,
+      wins: scoredRows.filter((r) => r.won === true).length,
+      pending: rows.filter((r) => r.status !== 'revealed').length,
+      avgReturnBps: scoredRows.length ? Math.round(scoredRows.reduce((a, r) => a + alignedBps(r)!, 0) / scoredRows.length) : null,
+    }
+    const minScored = cfg.leaderboardMinScored ?? 3
+    const body: LeaderboardResponse = leaderboardResponseSchema.parse({
+      updatedAt: now().toISOString(),
+      minScored,
+      entries: rankEntries([nexa, ...(await kolStats(cfg.db))], minScored),
     })
     cache(reply)
     return body

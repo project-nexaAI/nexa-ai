@@ -180,6 +180,39 @@ export const apiKeys = pgTable('api_keys', {
   createdAt: ts('created_at').notNull().defaultNow(),
 })
 
+/** KOL yang bersedia dinilai (brief: "KOL yang mau ikut dinilai"). Hanya yang opted_in tampil di leaderboard. */
+export const kolAccounts = pgTable('kol_accounts', {
+  id: serial('id').primaryKey(),
+  handle: text('handle').notNull().unique(), // huruf kecil, tanpa @
+  displayName: text('display_name').notNull(),
+  optedIn: boolean('opted_in').notNull().default(true),
+  createdAt: ts('created_at').notNull().defaultNow(),
+})
+
+/** Call publik seorang KOL. source_url wajib (bukti call asli); harga awal diambil dari oracle saat dicatat. */
+export const kolCalls = pgTable(
+  'kol_calls',
+  {
+    id: serial('id').primaryKey(),
+    kolId: integer('kol_id')
+      .notNull()
+      .references(() => kolAccounts.id),
+    text: text('text').notNull(),
+    asset: text('asset').notNull(),
+    direction: integer('direction').notNull(), // 1 = up, 2 = down
+    madeAt: ts('made_at').notNull(),
+    maturesAt: ts('matures_at').notNull(),
+    sourceUrl: text('source_url').notNull(),
+    startPrice: amount('start_price').notNull(),
+    priceDecimals: integer('price_decimals').notNull(),
+    endPrice: amount('end_price'),
+    scoredAt: ts('scored_at'),
+    won: boolean('won'),
+    returnBps: integer('return_bps'), // perubahan harga mentah; searah klaim dihitung di API
+  },
+  (t) => [index('kol_calls_kol_idx').on(t.kolId)],
+)
+
 /** Pembayaran Ask NEXA yang sudah dipakai. tx_hash unik: satu pembayaran = satu laporan (anti replay). */
 export const askPayments = pgTable('ask_payments', {
   txHash: text('tx_hash').primaryKey(),

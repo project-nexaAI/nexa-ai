@@ -8,7 +8,9 @@ const env = z
   .object({
     DATABASE_URL: z.string().min(1),
     PORT: z.coerce.number().int().default(4000),
+    /** Asal web untuk CORS; beberapa dipisah koma. */
     WEB_ORIGIN: z.string().optional(),
+    LEADERBOARD_MIN_SCORED: z.coerce.number().int().min(1).default(3),
     PAID_FEATURES_ENABLED: z.enum(['true', 'false']).default('false'),
     /** Ask NEXA: penerima pembayaran USDG (default TREASURY_ADDRESS) dan harga minimum (unit terkecil, 1000000 = $1). */
     ASK_PAYMENT_RECIPIENT: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
@@ -38,6 +40,7 @@ const app = buildApp({
   db,
   explorerUrl: env.EXPLORER_URL.replace(/\/$/, ''),
   webOrigin: env.WEB_ORIGIN,
+  leaderboardMinScored: env.LEADERBOARD_MIN_SCORED,
   paidFeaturesEnabled: env.PAID_FEATURES_ENABLED === 'true',
   ask,
   symbols: Object.fromEntries(Object.entries(symbols).map(([k, v]) => [k.toLowerCase(), v])),

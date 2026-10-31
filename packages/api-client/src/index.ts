@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import askFixture from '../../../docs/api/fixtures/ask.json'
 import burnFixture from '../../../docs/api/fixtures/burn.json'
+import leaderboardFixture from '../../../docs/api/fixtures/leaderboard.json'
 import predictionFixture from '../../../docs/api/fixtures/prediction.json'
 import proofFixture from '../../../docs/api/fixtures/proof.json'
 import proofPopulatedFixture from '../../../docs/api/fixtures/proof.populated.json'
@@ -9,6 +10,7 @@ import signalsFixture from '../../../docs/api/fixtures/signals.json'
 import {
   askResponseSchema,
   burnResponseSchema,
+  leaderboardResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
@@ -16,6 +18,7 @@ import {
   type AskRequest,
   type AskResponse,
   type BurnResponse,
+  type LeaderboardResponse,
   type PredictionResponse,
   type ProofResponse,
   type RugRadarResponse,
@@ -33,6 +36,7 @@ export const fixtures = {
   burn: burnFixture,
   signals: signalsFixture,
   ask: askFixture,
+  leaderboard: leaderboardFixture,
 } as const
 
 export interface ApiClientOptions {
@@ -76,6 +80,7 @@ export function createApiClient(opts: ApiClientOptions = {}) {
       get('/proof', proofResponseSchema, opts.proofFixture === 'populated' ? proofPopulatedFixture : proofFixture),
     getPrediction: (id: number): Promise<PredictionResponse> => get(`/predictions/${id}`, predictionResponseSchema, predictionFixture),
     getRugRadar: (): Promise<RugRadarResponse> => get('/rug-radar', rugRadarResponseSchema, rugRadarFixture),
+    getLeaderboard: (): Promise<LeaderboardResponse> => get('/leaderboard', leaderboardResponseSchema, leaderboardFixture),
     getBurn: (): Promise<BurnResponse> => get('/burn', burnResponseSchema, burnFixture),
     getSignals: (): Promise<SignalsResponse> => get('/signals', signalsResponseSchema, signalsFixture),
   }

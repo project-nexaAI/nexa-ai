@@ -43,6 +43,13 @@
       "when": 1793444227483,
       "tag": "0005_robust_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793449102053,
+      "tag": "0006_brief_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

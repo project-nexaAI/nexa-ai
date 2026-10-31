@@ -130,3 +130,25 @@ export const askResponseSchema = z.object({
 })
 export type AskResponse = z.infer<typeof askResponseSchema>
 
+export const leaderboardResponseSchema = z.object({
+  updatedAt: iso,
+  /** Jumlah call ternilai minimum agar masuk peringkat; di bawahnya rank = null. */
+  minScored: z.number().int().nonnegative(),
+  entries: z.array(
+    z.object({
+      rank: z.number().int().positive().nullable(),
+      handle: z.string(),
+      displayName: z.string(),
+      /** true untuk baris NEXA sendiri (dari /proof). */
+      isNexa: z.boolean(),
+      scored: z.number().int().nonnegative(),
+      wins: z.number().int().nonnegative(),
+      pending: z.number().int().nonnegative(),
+      winRate: z.number().min(0).max(1).nullable(),
+      avgReturnBps: z.number().int().nullable(),
+      formatted: z.object({ winRate: z.string().nullable(), avgReturn: z.string().nullable() }),
+    }),
+  ),
+})
+export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>
+

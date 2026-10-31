@@ -1,0 +1,9 @@
+{
+  "updatedAt": "2026-12-01T12:00:00.000Z",
+  "minScored": 3,
+  "entries": [
+    { "rank": 1, "handle": "nexa", "displayName": "NEXA", "isNexa": true, "scored": 8, "wins": 5, "pending": 1, "winRate": 0.625, "avgReturnBps": 412, "formatted": { "winRate": "62.5%", "avgReturn": "+4.12%" } },
+    { "rank": 2, "handle": "examplekol", "displayName": "Example KOL", "isNexa": false, "scored": 6, "wins": 3, "pending": 2, "winRate": 0.5, "avgReturnBps": -35, "formatted": { "winRate": "50.0%", "avgReturn": "-0.35%" } },
+    { "rank": null, "handle": "newkol", "displayName": "New KOL", "isNexa": false, "scored": 1, "wins": 1, "pending": 0, "winRate": 1, "avgReturnBps": 220, "formatted": { "winRate": "100.0%", "avgReturn": "+2.20%" } }
+  ]
+}

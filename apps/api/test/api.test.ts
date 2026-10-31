@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { apiKeys, burns, createDb, ponsTokens, postQueue, predictions } from '@nexa-ai/db'
+import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, predictions } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
+  leaderboardResponseSchema,
 } from '@nexa-ai/api-client'
 import { buildApp } from '../src/app'
 import { buildOpenApi } from '../src/openapi'
@@ -63,6 +64,8 @@ describe.skipIf(!dbUp)('API publik', () => {
   beforeEach(async () => {
     seq = 0
     await db.delete(postQueue)
+    await db.delete(kolCalls)
+    await db.delete(kolAccounts)
     await db.delete(apiKeys)
     await db.delete(predictions)
     await db.delete(ponsTokens)
@@ -241,6 +244,51 @@ describe.skipIf(!dbUp)('API publik', () => {
       const res = await call(KEY)
       expect(res.statusCode).toBe(429)
       expect(Number(res.headers['retry-after'])).toBeGreaterThan(0)
+    })
+  })
+
+  describe('GET /leaderboard', () => {
+    const kol = async (handle: string, optedIn: boolean, calls: { dir: 1 | 2; ret: number | null; won?: boolean }[]) => {
+      const [k] = await db.insert(kolAccounts).values({ handle, displayName: handle.toUpperCase(), optedIn }).returning()
+      for (const c of calls)
+        await db.insert(kolCalls).values({
+          kolId: k!.id, text: 't', asset: NVDA, direction: c.dir, madeAt: day(10), maturesAt: day(3), sourceUrl: 'https://x.com/a/status/1',
+          startPrice: '10000000000', priceDecimals: 8,
+          ...(c.ret === null ? {} : { endPrice: '1', scoredAt: day(2), returnBps: c.ret, won: c.won ?? false }),
+        })
+    }
+
+    it('kosong: hanya baris NEXA, tanpa peringkat', async () => {
+      const res = await app.inject({ method: 'GET', url: '/leaderboard' })
+      const body = leaderboardResponseSchema.parse(res.json())
+      expect(body.entries).toHaveLength(1)
+      expect(body.entries[0]).toMatchObject({ handle: 'nexa', isNexa: true, scored: 0, rank: null, winRate: null })
+    })
+
+    it('peringkat: win rate turun; di bawah minScored tanpa rank; yang tidak opted-in tidak tampil; return searah klaim', async () => {
+      await kol('alpha', true, [{ dir: 1, ret: 500, won: true }, { dir: 1, ret: 100, won: true }, { dir: 2, ret: -200, won: true }])
+      await kol('beta', true, [{ dir: 1, ret: 300, won: true }, { dir: 1, ret: -100 }, { dir: 1, ret: -100 }, { dir: 1, ret: null }])
+      await kol('baru', true, [{ dir: 1, ret: 900, won: true }])
+      await kol('tersembunyi', false, [{ dir: 1, ret: 900, won: true }, { dir: 1, ret: 900, won: true }, { dir: 1, ret: 900, won: true }])
+      const res = await app.inject({ method: 'GET', url: '/leaderboard' })
+      const body = leaderboardResponseSchema.parse(res.json())
+      const by = Object.fromEntries(body.entries.map((e) => [e.handle, e]))
+      expect(by.tersembunyi).toBeUndefined()
+      expect(by.alpha).toMatchObject({ rank: 1, scored: 3, wins: 3, winRate: 1, avgReturnBps: 267 })
+      expect(by.alpha!.formatted).toEqual({ winRate: '100.0%', avgReturn: '+2.67%' })
+      expect(by.beta).toMatchObject({ rank: 2, scored: 3, wins: 1, pending: 1 })
+      expect(by.baru).toMatchObject({ rank: null, scored: 1 })
+      expect(body.entries.map((e) => e.handle).slice(0, 2)).toEqual(['alpha', 'beta'])
+    })
+  })
+
+  describe('CORS', () => {
+    it('beberapa asal dipisah koma: keduanya diizinkan, asal lain tidak', async () => {
+      const multi = buildApp({ db, explorerUrl: EXPLORER, now: () => NOW, webOrigin: 'https://a.test, https://b.test/' })
+      const acao = async (origin: string) => (await multi.inject({ method: 'GET', url: '/healthz', headers: { origin } })).headers['access-control-allow-origin']
+      expect(await acao('https://a.test')).toBe('https://a.test')
+      expect(await acao('https://b.test')).toBe('https://b.test')
+      expect(await acao('https://evil.test')).toBeUndefined()
     })
   })
 

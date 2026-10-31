@@ -4,6 +4,7 @@ import {
   askRequestSchema,
   askResponseSchema,
   burnResponseSchema,
+  leaderboardResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
@@ -48,6 +49,12 @@ export function buildOpenApi() {
       },
       '/rug-radar': {
         get: { summary: 'Launch Pons V2 terbaru dengan red flag', responses: { '200': ok('Daftar launch', rugRadarResponseSchema) } },
+      },
+      '/leaderboard': {
+        get: {
+          summary: 'NEXA vs KOL: leaderboard akurasi. Hanya KOL yang bersedia dinilai; peringkat butuh minimal minScored call ternilai.',
+          responses: { '200': ok('Peringkat akurasi', leaderboardResponseSchema) },
+        },
       },
       '/burn': {
         get: { summary: 'Burn tracker $NEXA (BurnVault)', responses: { '200': ok('Total dan riwayat burn', burnResponseSchema) } },

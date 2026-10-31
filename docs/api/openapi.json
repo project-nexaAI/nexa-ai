@@ -591,6 +591,123 @@
         }
       }
     },
+    "/leaderboard": {
+      "get": {
+        "summary": "NEXA vs KOL: leaderboard akurasi. Hanya KOL yang bersedia dinilai; peringkat butuh minimal minScored call ternilai.",
+        "responses": {
+          "200": {
+            "description": "Peringkat akurasi",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "minScored": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "rank": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "handle": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "isNexa": {
+                            "type": "boolean"
+                          },
+                          "scored": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "wins": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "pending": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "winRate": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1,
+                            "nullable": true
+                          },
+                          "avgReturnBps": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "formatted": {
+                            "type": "object",
+                            "properties": {
+                              "winRate": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "avgReturn": {
+                                "type": "string",
+                                "nullable": true
+                              }
+                            },
+                            "required": [
+                              "winRate",
+                              "avgReturn"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "rank",
+                          "handle",
+                          "displayName",
+                          "isNexa",
+                          "scored",
+                          "wins",
+                          "pending",
+                          "winRate",
+                          "avgReturnBps",
+                          "formatted"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "updatedAt",
+                    "minScored",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/burn": {
       "get": {
         "summary": "Burn tracker $NEXA (BurnVault)",
