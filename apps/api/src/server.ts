@@ -17,6 +17,12 @@ const env = z
     TREASURY_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
     ASK_PRICE_USDG_MICROS: z.coerce.bigint().default(1_000_000n),
     ASK_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
+    /** Benefit holder $NEXA: token (ada setelah launch di Pons V2) dan ambang saldo (unit terkecil, 18 desimal). Kosong = nonaktif. */
+    NEXA_TOKEN_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional().or(z.literal('')),
+    HOLDER_THRESHOLD: z.coerce.bigint().positive().optional().or(z.literal('')),
+    HOLDER_FREE_ASKS_PER_MONTH: z.coerce.number().int().min(0).default(3),
+    HOLDER_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
+    SESSION_TTL_HOURS: z.coerce.number().int().min(1).default(24),
     EXPLORER_URL: z.string().url().default('https://explorer.testnet.chain.robinhood.com'),
     /** JSON: {"0xalamat": "NVDA"} */
     ASSET_SYMBOLS: z.string().default('{}'),
@@ -36,6 +42,22 @@ const ask =
         minAmount: env.ASK_PRICE_USDG_MICROS,
       }
     : undefined
+// Domain SIWE = host dari asal web yang diizinkan CORS (WEB_ORIGIN, beberapa dipisah koma).
+const siweDomains = (env.WEB_ORIGIN ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
+  .map((o) => new URL(o).host)
+const holder =
+  env.NEXA_TOKEN_ADDRESS && env.HOLDER_THRESHOLD
+    ? {
+        client: createPublicClient({ transport: http(env.HOLDER_RPC_URL) }),
+        token: env.NEXA_TOKEN_ADDRESS as `0x${string}`,
+        threshold: BigInt(env.HOLDER_THRESHOLD),
+        decimals: 18,
+        freeAsksPerMonth: env.HOLDER_FREE_ASKS_PER_MONTH,
+      }
+    : undefined
 const app = buildApp({
   db,
   explorerUrl: env.EXPLORER_URL.replace(/\/$/, ''),
@@ -43,6 +65,7 @@ const app = buildApp({
   leaderboardMinScored: env.LEADERBOARD_MIN_SCORED,
   paidFeaturesEnabled: env.PAID_FEATURES_ENABLED === 'true',
   ask,
+  auth: siweDomains.length ? { domains: siweDomains, sessionTtlSeconds: env.SESSION_TTL_HOURS * 3600, nonceTtlSeconds: 300, holder } : undefined,
   symbols: Object.fromEntries(Object.entries(symbols).map(([k, v]) => [k.toLowerCase(), v])),
 })
 

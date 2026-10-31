@@ -3,6 +3,10 @@ import type { ZodTypeAny } from 'zod'
 import {
   askRequestSchema,
   askResponseSchema,
+  meResponseSchema,
+  nonceResponseSchema,
+  sessionResponseSchema,
+  verifyRequestSchema,
   burnResponseSchema,
   leaderboardResponseSchema,
   predictionResponseSchema,
@@ -59,14 +63,41 @@ export function buildOpenApi() {
       '/burn': {
         get: { summary: 'Burn tracker $NEXA (BurnVault)', responses: { '200': ok('Total dan riwayat burn', burnResponseSchema) } },
       },
+      '/auth/nonce': {
+        get: { summary: 'Login wallet (SIWE): nonce sekali pakai. Mati sampai PAID_FEATURES_ENABLED=true.', responses: { '200': { description: 'Nonce', content: { 'application/json': { schema: schema(nonceResponseSchema) } } }, '503': err('fitur belum aktif') } },
+      },
+      '/auth/verify': {
+        post: {
+          summary: 'Verifikasi pesan SIWE + tanda tangan, lalu buat sesi bearer.',
+          requestBody: { required: true, content: { 'application/json': { schema: schema(verifyRequestSchema) } } },
+          responses: {
+            '200': { description: 'Sesi', content: { 'application/json': { schema: schema(sessionResponseSchema) } } },
+            '400': err('body tidak valid'),
+            '401': err('invalid_message, domain_mismatch, bad_signature, bad_nonce, expired_message'),
+            '503': err('fitur belum aktif'),
+          },
+        },
+      },
+      '/auth/logout': {
+        post: { summary: 'Akhiri sesi (header Authorization: Bearer).', responses: { '204': { description: 'Selesai' }, '503': err('fitur belum aktif') } },
+      },
+      '/me': {
+        get: {
+          summary: 'Profil sesi: status holder $NEXA dan benefit (alert lebih cepat, kredit Ask gratis).',
+          parameters: [{ name: 'authorization', in: 'header', required: true, schema: { type: 'string' } }],
+          responses: { '200': { description: 'Profil', content: { 'application/json': { schema: schema(meResponseSchema) } } }, '401': err('login_required'), '503': err('fitur belum aktif') },
+        },
+      },
       '/ask': {
         post: {
-          summary: 'Ask NEXA (berbayar, $1 USDG): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.',
+          summary: 'Ask NEXA ($1 USDG, atau kredit gratis bulanan holder $NEXA dengan sesi login tanpa txHash): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.',
           requestBody: { required: true, content: { 'application/json': { schema: schema(askRequestSchema) } } },
           responses: {
             '200': { description: 'Laporan risiko', content: { 'application/json': { schema: schema(askResponseSchema) } } },
             '400': err('body tidak valid'),
-            '402': err('pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid'),
+            '401': err('login_required (tanpa txHash dan tanpa sesi)'),
+            '402': err('pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid, no_free_credits'),
+            '403': err('not_a_holder'),
             '409': err('pembayaran sudah dipakai'),
             '422': err('token_too_new (< 1 jam) atau no_data; pembayaran tidak dihabiskan'),
             '503': err('fitur berbayar belum aktif'),

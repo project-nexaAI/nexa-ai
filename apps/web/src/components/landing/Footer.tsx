@@ -56,6 +56,10 @@ export function Footer({ base = '' }: { base?: string }) {
               Ask NEXA
             </a>
             {" "}
+            <a href="/account">
+              Account
+            </a>
+            {" "}
             <a href="/privacy">
               Privacy
             </a>

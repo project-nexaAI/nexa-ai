@@ -8,6 +8,9 @@ import {
   rugRadarResponseSchema,
   signalsResponseSchema,
   askResponseSchema,
+  meResponseSchema,
+  nonceResponseSchema,
+  sessionResponseSchema,
   leaderboardResponseSchema,
 } from '../src'
 
@@ -20,6 +23,11 @@ describe('fixture cocok dengan skema response', () => {
   it('rug-radar', () => expect(() => rugRadarResponseSchema.parse(fixtures.rugRadar)).not.toThrow())
   it('burn', () => expect(() => burnResponseSchema.parse(fixtures.burn)).not.toThrow())
   it('leaderboard', () => expect(() => leaderboardResponseSchema.parse(fixtures.leaderboard)).not.toThrow())
+  it('login wallet dan me', () => {
+    expect(() => nonceResponseSchema.parse(fixtures.nonce)).not.toThrow()
+    expect(() => sessionResponseSchema.parse(fixtures.session)).not.toThrow()
+    expect(() => meResponseSchema.parse(fixtures.me)).not.toThrow()
+  })
   it('ask', () => expect(() => askResponseSchema.parse(fixtures.ask)).not.toThrow())
   it('signals', () => expect(() => signalsResponseSchema.parse(fixtures.signals)).not.toThrow())
 })

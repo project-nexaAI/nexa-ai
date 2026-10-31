@@ -1,8 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createApiClient, type AskResponse } from '@nexa-ai/api-client'
 import { bpsText, fmtAge } from '@/lib/format'
+import { getToken } from '@/lib/session'
+
+const CREDIT_MESSAGES: Record<string, string> = {
+  '401': 'Sign in on the Account page first to use a free holder credit.',
+  '403': 'This wallet does not hold enough $NEXA for free reports.',
+  '402': 'No free reports left this month. You can still pay $1 in USDG.',
+}
 
 const MESSAGES: Record<string, string> = {
   '400': 'Check the token address and the transaction hash: both must be valid 0x values.',
@@ -20,17 +27,19 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AskResponse | null>(null)
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault()
+  const [signedIn, setSignedIn] = useState(false)
+  useEffect(() => setSignedIn(Boolean(getToken())), [])
+
+  async function run(useCredit: boolean) {
     setBusy(true)
     setError(null)
     setResult(null)
     try {
       const client = createApiClient({ baseUrl: apiUrl })
-      setResult(await client.ask({ address: address.trim(), txHash: txHash.trim() }))
+      setResult(await client.ask(useCredit ? { address: address.trim() } : { address: address.trim(), txHash: txHash.trim() }, useCredit ? (getToken() ?? undefined) : undefined))
     } catch (err) {
       const code = /HTTP (\d+)/.exec(err instanceof Error ? err.message : '')?.[1] ?? ''
-      setError(MESSAGES[code] ?? 'Something went wrong. Try again in a moment.')
+      setError((useCredit ? CREDIT_MESSAGES[code] : undefined) ?? MESSAGES[code] ?? 'Something went wrong. Try again in a moment.')
     } finally {
       setBusy(false)
     }
@@ -38,7 +47,13 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
 
   return (
     <>
-      <form className="pg-form" onSubmit={submit}>
+      <form
+        className="pg-form"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void run(false)
+        }}
+      >
         <label>
           <span className="k">Token address</span>
           <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x…" required pattern="0x[0-9a-fA-F]{40}" spellCheck={false} autoComplete="off" />
@@ -51,6 +66,11 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
           {busy ? 'Checking payment…' : 'Get the report '}
           <span className="ar">→</span>
         </button>
+        {signedIn ? (
+          <button className="btn btn-ghost" type="button" disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address.trim())} onClick={() => void run(true)}>
+            Use a free holder credit
+          </button>
+        ) : null}
       </form>
       {error ? (
         <div className="pg-msg err" role="alert" style={{ marginTop: 16, maxWidth: 640 }}>
@@ -102,9 +122,13 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
           </div>
           {result.report.unknowns.length > 0 ? <p className="pg-note">Not known yet: {result.report.unknowns.join('; ')}.</p> : null}
           <p className="pg-note">{result.report.disclaimer}</p>
-          <a className="pg-link" href={result.paymentTxUrl} target="_blank" rel="noopener">
-            Payment on Blockscout ↗
-          </a>
+          {result.paymentTxUrl ? (
+            <a className="pg-link" href={result.paymentTxUrl} target="_blank" rel="noopener">
+              Payment on Blockscout ↗
+            </a>
+          ) : (
+            <p className="pg-note">Free holder credit used.</p>
+          )}
         </div>
       ) : null}
     </>

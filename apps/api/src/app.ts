@@ -3,10 +3,14 @@ import { createHash } from 'node:crypto'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, askPayments, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
+import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
 import {
   askRequestSchema,
   askResponseSchema,
+  meResponseSchema,
+  nonceResponseSchema,
+  sessionResponseSchema,
+  verifyRequestSchema,
   burnResponseSchema,
   leaderboardResponseSchema,
   predictionResponseSchema,
@@ -21,6 +25,7 @@ import {
   type RugRadarResponse,
   type SignalsResponse,
 } from '@nexa-ai/api-client'
+import { buildMe, createNonce, endSession, monthKey, sessionFrom, verifyLogin, type AuthConfig } from './auth'
 import { kolStats, rankEntries } from './leaderboard'
 import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
@@ -43,6 +48,8 @@ export interface AppConfig {
   leaderboardMinScored?: number
   /** Ask NEXA: pembayaran USDG on-chain. Tanpa ini POST /ask menjawab 503. */
   ask?: AskConfig
+  /** Login wallet (SIWE) dan benefit holder. Tanpa ini /auth/* dan /me menjawab 503. */
+  auth?: AuthConfig
   now?: () => Date
 }
 
@@ -60,7 +67,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const symbols = cfg.symbols ?? {}
   const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
 
-  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key'] })
+  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key', 'authorization'] })
 
   function toPrediction(row: PredictionRow): Prediction {
     const committedAt = row.committedAt!
@@ -258,34 +265,88 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     return body
   })
 
-  // Ask NEXA: berbayar ($1 USDG per laporan). Pembayaran diverifikasi on-chain SEBELUM analisis dijalankan.
+  // Login wallet (SIWE): nonce -> tanda tangan di wallet -> sesi bearer. Di belakang flag fitur berbayar.
+  const auth = cfg.auth
+  const authOn = () => Boolean(cfg.paidFeaturesEnabled && auth)
+
+  app.get('/auth/nonce', async (_req, reply) => {
+    if (!authOn()) return reply.code(503).send({ error: 'paid_features_disabled' })
+    void reply.header('cache-control', 'no-store')
+    return nonceResponseSchema.parse(await createNonce(cfg.db, auth!, now()))
+  })
+
+  app.post('/auth/verify', async (req, reply) => {
+    if (!authOn()) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const parsed = verifyRequestSchema.safeParse(req.body)
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body' })
+    const r = await verifyLogin(cfg.db, auth!, parsed.data, now())
+    if (!r.ok) return reply.code(401).send({ error: r.reason })
+    void reply.header('cache-control', 'no-store')
+    return sessionResponseSchema.parse({ token: r.token, address: r.address, expiresAt: r.expiresAt })
+  })
+
+  app.post('/auth/logout', async (req, reply) => {
+    if (!authOn()) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (s) await endSession(cfg.db, s.tokenHash)
+    return reply.code(204).send()
+  })
+
+  app.get('/me', async (req, reply) => {
+    if (!authOn()) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (!s) return reply.code(401).send({ error: 'login_required' })
+    void reply.header('cache-control', 'private, no-store')
+    return meResponseSchema.parse(await buildMe(cfg.db, auth!, s.address, now()))
+  })
+
+  // Ask NEXA: $1 USDG per laporan, atau kredit gratis bulanan holder $NEXA (butuh sesi login).
+  // Pembayaran diverifikasi on-chain SEBELUM analisis dijalankan.
   app.post('/ask', async (req, reply) => {
     if (!cfg.paidFeaturesEnabled || !cfg.ask) return reply.code(503).send({ error: 'paid_features_disabled' })
     const parsed = askRequestSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_body' })
     const { address, txHash } = parsed.data
 
-    const [used] = await cfg.db.select().from(askPayments).where(eq(askPayments.txHash, txHash.toLowerCase()))
-    if (used) return reply.code(409).send({ error: 'payment_already_used' })
-    const pay = await verifyUsdgPayment(cfg.ask, txHash as `0x${string}`)
-    if (!pay.ok) return reply.code(402).send({ error: pay.reason })
+    let payer: string
+    let amount = 0n
+    if (txHash) {
+      const [used] = await cfg.db.select().from(askPayments).where(eq(askPayments.txHash, txHash.toLowerCase()))
+      if (used) return reply.code(409).send({ error: 'payment_already_used' })
+      const pay = await verifyUsdgPayment(cfg.ask, txHash as `0x${string}`)
+      if (!pay.ok) return reply.code(402).send({ error: pay.reason })
+      payer = pay.payer
+      amount = pay.amount
+    } else {
+      // Kredit gratis: hanya holder yang login dan masih punya kredit bulan ini.
+      const s = auth ? await sessionFrom(cfg.db, req.headers.authorization, now()) : null
+      if (!s) return reply.code(401).send({ error: 'login_required' })
+      const me = await buildMe(cfg.db, auth!, s.address, now())
+      if (!me.holder.isHolder) return reply.code(403).send({ error: 'not_a_holder' })
+      if (me.benefits.freeAsksRemaining <= 0) return reply.code(402).send({ error: 'no_free_credits' })
+      payer = s.address
+    }
 
-    // Token terlalu baru atau tanpa data: tidak dibahas dan pembayaran TIDAK dihabiskan (boleh dipakai lagi).
+    // Token terlalu baru atau tanpa data: tidak dibahas dan pembayaran/kredit TIDAK dihabiskan.
     const result = await buildRiskReport(cfg.db, address, now())
     if (result.kind !== 'report') return reply.code(422).send({ error: result.kind === 'too_new' ? 'token_too_new' : 'no_data' })
 
-    const claimed = await cfg.db
-      .insert(askPayments)
-      .values({ txHash: txHash.toLowerCase(), payer: pay.payer, amount: pay.amount.toString(), askedAddress: address.toLowerCase() })
-      .onConflictDoNothing()
-      .returning({ txHash: askPayments.txHash })
-    if (claimed.length === 0) return reply.code(409).send({ error: 'payment_already_used' })
+    if (txHash) {
+      const claimed = await cfg.db
+        .insert(askPayments)
+        .values({ txHash: txHash.toLowerCase(), payer, amount: amount.toString(), askedAddress: address.toLowerCase() })
+        .onConflictDoNothing()
+        .returning({ txHash: askPayments.txHash })
+      if (claimed.length === 0) return reply.code(409).send({ error: 'payment_already_used' })
+    } else {
+      await cfg.db.insert(askCreditUses).values({ address: payer, month: monthKey(now()), askedAddress: address.toLowerCase() })
+    }
 
     const body: AskResponse = askResponseSchema.parse({
       address,
       generatedAt: now().toISOString(),
       report: result.report,
-      paymentTxUrl: tx(txHash),
+      paymentTxUrl: txHash ? tx(txHash) : null,
     })
     void reply.header('cache-control', 'private, no-store')
     return body

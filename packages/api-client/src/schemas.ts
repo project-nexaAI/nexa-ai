@@ -105,8 +105,8 @@ export type SignalsResponse = z.infer<typeof signalsResponseSchema>
 export const askRequestSchema = z.object({
   /** Alamat token yang dianalisis. */
   address: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
-  /** Tx pembayaran USDG ke penerima Ask NEXA. */
-  txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+  /** Tx pembayaran USDG ke penerima Ask NEXA. Dihilangkan bila memakai kredit gratis holder (butuh sesi login). */
+  txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
 })
 export type AskRequest = z.infer<typeof askRequestSchema>
 
@@ -126,7 +126,8 @@ export const askResponseSchema = z.object({
     unknowns: z.array(z.string()),
     disclaimer: z.string(),
   }),
-  paymentTxUrl: z.string().url(),
+  /** Null bila laporan memakai kredit gratis holder. */
+  paymentTxUrl: z.string().url().nullable(),
 })
 export type AskResponse = z.infer<typeof askResponseSchema>
 
@@ -152,3 +153,38 @@ export const leaderboardResponseSchema = z.object({
 })
 export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>
 
+// ------------------------------------------------------------- login wallet (SIWE)
+
+export const nonceResponseSchema = z.object({ nonce: z.string().min(8), expiresAt: iso })
+export type NonceResponse = z.infer<typeof nonceResponseSchema>
+
+export const verifyRequestSchema = z.object({ message: z.string().min(1).max(4000), signature: z.string().regex(/^0x[0-9a-fA-F]+$/) })
+export type VerifyRequest = z.infer<typeof verifyRequestSchema>
+
+export const sessionResponseSchema = z.object({
+  /** Token bearer; simpan di sessionStorage, kirim lewat header Authorization. */
+  token: z.string(),
+  address: z.string(),
+  expiresAt: iso,
+})
+export type SessionResponse = z.infer<typeof sessionResponseSchema>
+
+export const meResponseSchema = z.object({
+  address: z.string(),
+  holder: z.object({
+    /** false bila benefit holder belum dikonfigurasi (token $NEXA belum ada atau HOLDER_THRESHOLD kosong). */
+    enabled: z.boolean(),
+    isHolder: z.boolean(),
+    balance: z.object({ raw: z.string().regex(/^\d+$/), decimals: z.number().int(), formatted: z.string() }).nullable(),
+    threshold: z.object({ raw: z.string().regex(/^\d+$/), decimals: z.number().int(), formatted: z.string() }).nullable(),
+  }),
+  benefits: z.object({
+    /** Alert Pro lebih cepat (dipakai alert stream saat tersedia). */
+    earlyAlerts: z.boolean(),
+    freeAsksPerMonth: z.number().int().nonnegative(),
+    freeAsksRemaining: z.number().int().nonnegative(),
+    /** Bulan UTC kredit berlaku, `YYYY-MM`. */
+    month: z.string(),
+  }),
+})
+export type MeResponse = z.infer<typeof meResponseSchema>
