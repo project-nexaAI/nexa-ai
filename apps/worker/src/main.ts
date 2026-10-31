@@ -7,6 +7,7 @@ import { createDb } from '@nexa-ai/db'
 import { publishDue, revealMatured, type CycleDeps } from './cycle'
 import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
 import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
+import { optionalEncKey, optionalPrivateKey } from './keys'
 import { createLedgerClient } from './ledger'
 import { TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
@@ -17,9 +18,9 @@ const env = z
     DATABASE_URL: z.string().min(1),
     RPC_URL: z.string().url(),
     CHAIN_ID: z.coerce.number().int().default(46630),
-    PREIMAGE_KEY: z.string().regex(/^[0-9a-fA-F]{64}$/).optional(),
+    PREIMAGE_KEY: optionalEncKey,
     NEXA_LEDGER_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
-    AGENT_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional(),
+    AGENT_PRIVATE_KEY: optionalPrivateKey,
     X_POST_MODE: z.enum(['dry', 'live']).default('dry'),
     LOOP_SECONDS: z.coerce.number().int().min(10).default(60),
     /** Prediction of the Day: hanya berjalan bila LLM_API_KEY ada (mock LLM tidak boleh meng-commit apa pun on-chain). */
@@ -34,7 +35,7 @@ const env = z
     /** JSON [{"symbol":"NVDA","asset":"0x..."}]; kosong = aset mainnet bila CHAIN_ID=4663. Feed harus terdaftar di NexaLedger. */
     PREDICTION_ASSETS: z.string().optional(),
     /** Keeper harga TESTNET: wallet sendiri (bukan agent) yang mendorong round ke feed tiruan. Kosong = nonaktif. */
-    KEEPER_PRIVATE_KEY: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional().or(z.literal('')),
+    KEEPER_PRIVATE_KEY: optionalPrivateKey,
     /** JSON [{"symbol":"NVDA","source":"0x..mainnet","target":"0x..mock"}]; kosong = feed tiruan di addresses/testnet.json (CHAIN_ID=46630). */
     KEEPER_FEEDS: z.string().optional(),
     /** RPC mainnet tempat feed Chainlink asli dibaca. */
