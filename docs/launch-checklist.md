@@ -44,3 +44,14 @@ Centang berurutan; jangan lompat. Rincian risiko: `docs/audit/README.md`.
 ## F. Aturan emas
 
 NEXA tidak pernah membahas harga $NEXA dan tidak pernah menyuruh membelinya. RiskGuard memblokirnya di kode; pengumuman hanya bertipe `technical_announcement` / `burn_report`.
+
+## Laporan dry run mainnet (chain 4663, 2026-10-31)
+
+Tanpa `--broadcast`; memakai `--sender` deployer (keystore tidak dibuka). Gas price saat simulasi ~0,02 gwei (base fee).
+
+| Script | Gas (estimasi) | Biaya (estimasi) | Hasil |
+| --- | --- | --- | --- |
+| `DeployNexaLedger` | 1.342.632 | ~0,0000538 ETH | Sukses |
+| `DeployFees` (BurnVault + CreatorFeeSplitter + ProtocolFeeSplitter) | 2.017.333 | ~0,0000808 ETH | Sukses |
+
+Catatan: `DeployFees` disimulasikan dengan **placeholder**: `PAIR_ASSET` = `0x…dEaD` (NVDA belum terverifikasi, BLOCKERS #12) dan `KEEPER_ADDRESS` = alamat agent (belum ditentukan, #14). Angka gas valid; alamat hasil simulasi bukan alamat final. Saldo deployer di mainnet 0 ETH: perlu diisi sebelum deploy sungguhan (dilakukan manusia).
