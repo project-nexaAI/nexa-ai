@@ -1,0 +1,29 @@
+{
+  "updatedAt": "2026-11-30T12:00:00.000Z",
+  "items": [
+    {
+      "token": "0x3333333333333333333333333333333333333333",
+      "name": "Example Token A",
+      "symbol": "EXA",
+      "launchedAt": "2026-11-30T10:30:00.000Z",
+      "ageSeconds": 5400,
+      "graduated": false,
+      "creatorTaxBps": 900,
+      "topHolderShareBps": 4200,
+      "redFlags": ["High creator tax", "Holders concentrated"],
+      "explorerUrl": "https://explorer.testnet.chain.robinhood.com/address/0x3333333333333333333333333333333333333333"
+    },
+    {
+      "token": "0x4444444444444444444444444444444444444444",
+      "name": "Example Token B",
+      "symbol": "EXB",
+      "launchedAt": "2026-11-29T18:00:00.000Z",
+      "ageSeconds": 66000,
+      "graduated": true,
+      "creatorTaxBps": 0,
+      "topHolderShareBps": 800,
+      "redFlags": [],
+      "explorerUrl": "https://explorer.testnet.chain.robinhood.com/address/0x4444444444444444444444444444444444444444"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@nexa-ai/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --no-file-parallelism",
+    "openapi": "tsx src/gen-openapi.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "10.0.1",
+    "@nexa-ai/api-client": "workspace:*",
+    "@nexa-ai/db": "workspace:*",
+    "drizzle-orm": "^0.36.0",
+    "fastify": "5.2.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

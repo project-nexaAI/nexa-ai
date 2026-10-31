@@ -1,0 +1,19 @@
+# Daftar putih: hanya yang dibutuhkan untuk build apps/web. Rahasia (.env*) TIDAK PERNAH diunggah.
+/*
+!apps
+!packages
+!docs
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!turbo.json
+!tsconfig*.json
+docs/html-design
+docs/audit
+**/.env
+**/.env.*
+**/node_modules
+**/.next
+**/.visual
+**/.turbo
+**/*.log

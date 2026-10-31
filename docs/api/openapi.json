@@ -1,0 +1,696 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "NEXA API",
+    "version": "0.1.0",
+    "description": "API publik NEXA. Nilai mentah dan terformat tersedia berdampingan; setiap commit menyertakan link Blockscout. Waktu dalam UTC (ISO 8601)."
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Cek hidup",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/proof": {
+      "get": {
+        "summary": "Proof of Intelligence: win rate, rata-rata return, Prediction of the Day berjalan, riwayat terbaru",
+        "responses": {
+          "200": {
+            "description": "Ringkasan rekam jejak",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "scored": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "wins": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "pending": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "winRate": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "nullable": true
+                        },
+                        "avgReturnBps": {
+                          "type": "integer",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "scored",
+                        "wins",
+                        "pending",
+                        "winRate",
+                        "avgReturnBps"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "formatted": {
+                      "type": "object",
+                      "properties": {
+                        "winRate": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "avgReturn": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      },
+                      "required": [
+                        "winRate",
+                        "avgReturn"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "current": {
+                      "type": "object",
+                      "properties": {
+                        "day": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "prediction": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "committed",
+                                "posted",
+                                "revealed"
+                              ]
+                            },
+                            "hash": {
+                              "type": "string",
+                              "pattern": "^0x[0-9a-fA-F]+$"
+                            },
+                            "commitTxHash": {
+                              "type": "string",
+                              "pattern": "^0x[0-9a-fA-F]+$"
+                            },
+                            "commitTxUrl": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "committedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "maturesAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "horizonDays": {
+                              "type": "integer",
+                              "exclusiveMinimum": true,
+                              "minimum": 0
+                            },
+                            "revealed": {
+                              "type": "object",
+                              "properties": {
+                                "text": {
+                                  "type": "string"
+                                },
+                                "assetSymbol": {
+                                  "type": "string"
+                                },
+                                "direction": {
+                                  "type": "string",
+                                  "enum": [
+                                    "up",
+                                    "down"
+                                  ]
+                                },
+                                "won": {
+                                  "type": "boolean"
+                                },
+                                "returnBps": {
+                                  "type": "integer"
+                                },
+                                "returnFormatted": {
+                                  "type": "string"
+                                },
+                                "revealTxHash": {
+                                  "type": "string",
+                                  "pattern": "^0x[0-9a-fA-F]+$"
+                                },
+                                "revealTxUrl": {
+                                  "type": "string",
+                                  "format": "uri"
+                                }
+                              },
+                              "required": [
+                                "text",
+                                "assetSymbol",
+                                "direction",
+                                "won",
+                                "returnBps",
+                                "returnFormatted",
+                                "revealTxHash",
+                                "revealTxUrl"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "status",
+                            "hash",
+                            "commitTxHash",
+                            "commitTxUrl",
+                            "committedAt",
+                            "maturesAt",
+                            "horizonDays",
+                            "revealed"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "day",
+                        "prediction"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    },
+                    "recent": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "committed",
+                              "posted",
+                              "revealed"
+                            ]
+                          },
+                          "hash": {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-fA-F]+$"
+                          },
+                          "commitTxHash": {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-fA-F]+$"
+                          },
+                          "commitTxUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "committedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "maturesAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "horizonDays": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0
+                          },
+                          "revealed": {
+                            "type": "object",
+                            "properties": {
+                              "text": {
+                                "type": "string"
+                              },
+                              "assetSymbol": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": [
+                                  "up",
+                                  "down"
+                                ]
+                              },
+                              "won": {
+                                "type": "boolean"
+                              },
+                              "returnBps": {
+                                "type": "integer"
+                              },
+                              "returnFormatted": {
+                                "type": "string"
+                              },
+                              "revealTxHash": {
+                                "type": "string",
+                                "pattern": "^0x[0-9a-fA-F]+$"
+                              },
+                              "revealTxUrl": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            },
+                            "required": [
+                              "text",
+                              "assetSymbol",
+                              "direction",
+                              "won",
+                              "returnBps",
+                              "returnFormatted",
+                              "revealTxHash",
+                              "revealTxUrl"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "hash",
+                          "commitTxHash",
+                          "commitTxUrl",
+                          "committedAt",
+                          "maturesAt",
+                          "horizonDays",
+                          "revealed"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "stats",
+                    "formatted",
+                    "current",
+                    "recent"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predictions/{id}": {
+      "get": {
+        "summary": "Satu prediksi menurut id NexaLedger. Teks dan salt baru terlihat setelah reveal.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prediksi",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "committed",
+                        "posted",
+                        "revealed"
+                      ]
+                    },
+                    "hash": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]+$"
+                    },
+                    "commitTxHash": {
+                      "type": "string",
+                      "pattern": "^0x[0-9a-fA-F]+$"
+                    },
+                    "commitTxUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "committedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "maturesAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "horizonDays": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "revealed": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string"
+                        },
+                        "assetSymbol": {
+                          "type": "string"
+                        },
+                        "direction": {
+                          "type": "string",
+                          "enum": [
+                            "up",
+                            "down"
+                          ]
+                        },
+                        "won": {
+                          "type": "boolean"
+                        },
+                        "returnBps": {
+                          "type": "integer"
+                        },
+                        "returnFormatted": {
+                          "type": "string"
+                        },
+                        "revealTxHash": {
+                          "type": "string",
+                          "pattern": "^0x[0-9a-fA-F]+$"
+                        },
+                        "revealTxUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "assetSymbol",
+                        "direction",
+                        "won",
+                        "returnBps",
+                        "returnFormatted",
+                        "revealTxHash",
+                        "revealTxUrl"
+                      ],
+                      "additionalProperties": false,
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "status",
+                    "hash",
+                    "commitTxHash",
+                    "commitTxUrl",
+                    "committedAt",
+                    "maturesAt",
+                    "horizonDays",
+                    "revealed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "id tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rug-radar": {
+      "get": {
+        "summary": "Launch Pons V2 terbaru dengan red flag",
+        "responses": {
+          "200": {
+            "description": "Daftar launch",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-fA-F]+$"
+                          },
+                          "name": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "symbol": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "launchedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "ageSeconds": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "graduated": {
+                            "type": "boolean"
+                          },
+                          "creatorTaxBps": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "topHolderShareBps": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "redFlags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "explorerUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "name",
+                          "symbol",
+                          "launchedAt",
+                          "ageSeconds",
+                          "graduated",
+                          "creatorTaxBps",
+                          "topHolderShareBps",
+                          "redFlags",
+                          "explorerUrl"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "updatedAt",
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/burn": {
+      "get": {
+        "summary": "Burn tracker $NEXA (BurnVault)",
+        "responses": {
+          "200": {
+            "description": "Total dan riwayat burn",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalBurned": {
+                      "type": "object",
+                      "properties": {
+                        "raw": {
+                          "type": "string",
+                          "pattern": "^\\d+$"
+                        },
+                        "decimals": {
+                          "type": "integer"
+                        },
+                        "formatted": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "raw",
+                        "decimals",
+                        "formatted"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "burns": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "amount": {
+                            "type": "object",
+                            "properties": {
+                              "raw": {
+                                "type": "string",
+                                "pattern": "^\\d+$"
+                              },
+                              "decimals": {
+                                "type": "integer"
+                              },
+                              "formatted": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "raw",
+                              "decimals",
+                              "formatted"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "txHash": {
+                            "type": "string",
+                            "pattern": "^0x[0-9a-fA-F]+$"
+                          },
+                          "txUrl": {
+                            "type": "string",
+                            "format": "uri"
+                          }
+                        },
+                        "required": [
+                          "at",
+                          "amount",
+                          "txHash",
+                          "txUrl"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "totalBurned",
+                    "burns"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

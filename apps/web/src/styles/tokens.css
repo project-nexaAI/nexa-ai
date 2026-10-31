@@ -1,0 +1,20 @@
+/* Design tokens dari desain (warna, font, radius, easing). */
+:root {
+  --bg:#0A0A0A;
+  --bg-2:#111111;
+  --bg-3:#171717;
+  --line:#242424;
+  --line-2:#333;
+  --ink:#F2EFEA;
+  --ink-2:#A7A29C;
+  --ink-3:#6E6A66;
+  --org:#FF5A1F;
+  --org-2:#FF7A3D;
+  --red:#E3341B;
+  --amber:#FFB067;
+  --sans:"Geist",system-ui,sans-serif;
+  --mono:"Geist Mono",ui-monospace,monospace;
+  --serif:"Instrument Serif",Georgia,serif;
+  --r:18px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}

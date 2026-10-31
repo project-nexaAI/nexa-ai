@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXA: the superintelligence influencer on Robinhood Chain</title>
+<meta name="description" content="NEXA is an AI agent on X that reads Robinhood Chain around the clock. Every prediction is committed to the NexaLedger contract before it is posted, then scored against the oracle price.">
+<!-- Deploy config: replace __SITE_URL__ (no trailing slash) and __X_HANDLE__ (without @). -->
+<link rel="canonical" href="__SITE_URL__/">
+<meta name="theme-color" content="#0A0A0A">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NEXA">
+<meta property="og:title" content="NEXA: every call on-chain">
+<meta property="og:description" content="An AI agent on X that commits each prediction to NexaLedger before posting it, then scores it against the oracle price.">
+<meta property="og:url" content="__SITE_URL__/">
+<meta property="og:image" content="__SITE_URL__/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NEXA: a dark sphere with an orange visor, ringed by committed prediction blocks.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@__X_HANDLE__">
+<meta name="twitter:title" content="NEXA: every call on-chain">
+<meta name="twitter:description" content="An AI agent on X that commits each prediction to NexaLedger before posting it, then scores it against the oracle price.">
+<meta name="twitter:image" content="__SITE_URL__/og-image.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23141414'/%3E%3Ccircle cx='32' cy='33' r='19' fill='%232A2A2C'/%3E%3Crect x='11' y='27' width='42' height='8' rx='4' fill='%23FF5A1F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0A0A;
+  --bg-2:#111111;
+  --bg-3:#171717;
+  --line:#242424;
+  --line-2:#333;
+  --ink:#F2EFEA;
+  --ink-2:#A7A29C;
+  --ink-3:#6E6A66;
+  --org:#FF5A1F;
+  --org-2:#FF7A3D;
+  --red:#E3341B;
+  --amber:#FFB067;
+  --sans:"Geist",system-ui,sans-serif;
+  --mono:"Geist Mono",ui-monospace,monospace;
+  --serif:"Instrument Serif",Georgia,serif;
+  --r:18px;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scrollbar-color:#FF5A1F #141414;scrollbar-width:thin;background:var(--bg)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#141414}
+::-webkit-scrollbar-thumb{background:#FF5A1F;border-radius:10px;border:2px solid #141414}
+::selection{background:#FF5A1F;color:#0A0A0A}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-weight:400;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.mono{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);display:inline-flex;align-items:center;gap:10px;margin-bottom:18px}
+.label::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--org)}
+h1,h2,h3{font-weight:400;letter-spacing:-.035em;line-height:1.02}
+h2{font-size:clamp(36px,4.8vw,62px);font-weight:300}
+h2 .dim,h1 .dim{color:var(--ink-3)}
+em.s{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em;color:var(--org-2)}
+.lede{font-size:16px;color:var(--ink-2);max-width:400px;line-height:1.6}
+.lede b{color:var(--ink);font-weight:500}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:12px;min-height:46px;padding:0 8px 0 22px;border-radius:999px;font-size:14px;font-weight:500;border:1px solid transparent;cursor:pointer;background:none;white-space:nowrap;transition:background .25s,border-color .25s,color .25s;will-change:transform}
+.btn .ar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:14px;transition:transform .35s var(--ease)}
+.btn:hover .ar{transform:rotate(-45deg)}
+.btn-org{background:var(--org);color:#120700}
+.btn-org .ar{background:#120700;color:var(--org)}
+.btn-org:hover{background:var(--org-2)}
+.btn-light{background:var(--ink);color:#0A0A0A}
+.btn-light .ar{background:#0A0A0A;color:var(--ink)}
+.btn-ghost{border-color:var(--line-2);padding:0 22px}
+.btn-ghost:hover{border-color:var(--ink-3)}
+.btn-x svg{width:14px;height:14px}
+
+/* reveal */
+[data-reveal]{opacity:0;filter:blur(12px);transform:translateY(24px);transition:opacity 1s var(--ease),filter 1s var(--ease),transform 1s var(--ease)}
+[data-reveal].in{opacity:1;filter:none;transform:none}
+[data-stagger] > *{opacity:0;transform:translateY(22px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+[data-stagger].in > *{opacity:1;transform:none}
+.split .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.1em;margin-bottom:-.1em}
+.split .w > span{display:inline-block;transform:translateY(110%);transition:transform 1s var(--ease)}
+.split.in .w > span{transform:none}
+
+/* nav */
+.nav{position:fixed;top:14px;left:0;right:0;z-index:50;padding:0 24px;transition:transform .5s var(--ease)}
+.nav.hide{transform:translateY(-130%)}
+.nav-in{max-width:1240px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#121212;border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 18px}
+.logo{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:600;font-size:17px;letter-spacing:.06em}
+.logo svg{width:28px;height:28px;flex:none}
+.links{display:flex;gap:2px;background:#0D0D0D;border:1px solid var(--line);border-radius:999px;padding:4px}
+.links a{font-size:13px;padding:8px 14px;border-radius:999px;color:var(--ink-2);transition:color .2s,background .2s}
+.links a:hover{color:var(--ink);background:#1B1B1B}
+.nav-r{display:flex;gap:8px;align-items:center}
+.menu-btn{display:none;width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);background:transparent;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.menu-btn span{width:16px;height:1.5px;background:currentColor;transition:transform .3s var(--ease)}
+.menu-btn[aria-expanded="true"] span:first-child{transform:translateY(3.25px) rotate(45deg)}
+.menu-btn[aria-expanded="true"] span:last-child{transform:translateY(-3.25px) rotate(-45deg)}
+.mnav{position:fixed;inset:0;z-index:45;background:var(--bg);padding:100px 24px 32px;display:flex;flex-direction:column;justify-content:space-between;overflow-y:auto}
+.mnav[hidden]{display:none}
+.mnav nav{display:flex;flex-direction:column}
+.mnav nav a{font-size:32px;font-weight:300;letter-spacing:-.03em;padding:12px 0;border-bottom:1px solid var(--line);min-height:58px}
+.mnav .btn{justify-content:space-between;margin-top:28px}
+
+/* ===== hero ===== */
+.hero{position:relative;height:250vh}
+.stage{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden}
+#hero3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage-inner{position:relative;z-index:2;height:100%;max-width:1240px;margin:0 auto;padding:118px 24px 26px;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
+.stage-inner a,.stage-inner button{pointer-events:auto}
+.copy-a{max-width:720px}
+.tagrow{display:flex;align-items:center;gap:12px;font-size:12.5px;color:var(--ink-2)}
+.tagrow .av{width:34px;height:34px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;background:#111}
+.tagrow .av svg{width:20px;height:20px}
+.copy-a h1{font-size:clamp(44px,5.4vw,78px);font-weight:300;margin:26px 0 22px;letter-spacing:-.045em}
+.copy-a h1 em.s{font-size:1.04em}
+.copy-a .sub{font-size:15.5px;color:var(--ink-2);max-width:470px;line-height:1.6;margin-bottom:28px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.copy-b{position:absolute;left:24px;right:24px;top:50%;max-width:1240px;margin:0 auto;transform:translateY(-50%);opacity:0;pointer-events:none}
+.copy-b h2{max-width:560px}
+.copy-b code{display:inline-block;margin-top:22px;font-family:var(--mono);font-size:12.5px;color:var(--amber);background:#141414;border:1px solid var(--line);border-radius:10px;padding:10px 14px;max-width:100%;overflow-x:auto;white-space:nowrap}
+.stage-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.hstats{display:flex;gap:12px}
+.hstat{width:172px;background:rgba(18,18,18,.92);border:1px solid var(--line);border-radius:16px;padding:16px}
+.hstat .n{font-size:34px;font-weight:300;letter-spacing:-.04em;line-height:1}
+.hstat .n small{font-size:14px;color:var(--ink-3);letter-spacing:0;margin-left:4px}
+.hstat p{font-size:12px;color:var(--ink-2);margin-top:12px;line-height:1.4}
+.hstat.org{background:linear-gradient(160deg,#3A1205,#1A0A04);border-color:#4A1A08}
+.reads{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.reads ul{display:flex;gap:22px;list-style:none;font-size:13.5px;color:var(--ink-2);font-weight:500}
+.reads li{display:flex;align-items:center;gap:8px}
+.reads li::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
+.prog{position:absolute;right:24px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:3}
+.prog i{width:3px;height:26px;border-radius:3px;background:var(--line-2);position:relative;overflow:hidden}
+.prog i b{position:absolute;inset:0;background:var(--org);transform-origin:top;transform:scaleY(0)}
+
+/* marquee */
+.marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;padding:22px 0;background:#0D0D0D}
+.mq{display:flex;width:max-content;will-change:transform}
+.mq span{font-size:clamp(22px,2.6vw,34px);font-weight:300;letter-spacing:-.03em;padding-right:46px;display:flex;align-items:center;gap:46px;white-space:nowrap}
+.mq span::after{content:"";width:22px;height:5px;border-radius:5px;background:var(--org)}
+.mq span:nth-child(even){font-family:var(--serif);font-style:italic;color:var(--ink-2)}
+
+/* sections */
+.sec{padding:150px 0 0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;margin-bottom:54px}
+.head.center{flex-direction:column;align-items:center;text-align:center;gap:22px}
+.head.center .lede{max-width:520px}
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);position:relative;overflow:hidden}
+.spot::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),rgba(255,90,31,.10),transparent 45%)}
+.spot:hover::before{opacity:1}
+.tilt{transform-style:preserve-3d;will-change:transform}
+
+/* why / proof */
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+@keyframes spinA{to{--a:360deg}}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,90,31,.55)}100%{box-shadow:0 0 0 9px rgba(255,90,31,0)}}
+.why{display:grid;grid-template-columns:1fr 1.1fr;gap:20px;align-items:stretch}
+.ledger{background:radial-gradient(90% 70% at 12% 0%,rgba(255,90,31,.34),transparent 62%),radial-gradient(70% 60% at 100% 100%,rgba(227,52,27,.16),transparent 60%),#0F0806;border:1px solid #3A1608;padding:26px;display:flex;flex-direction:column;gap:22px}
+.ledger::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,160,110,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(255,160,110,.055) 1px,transparent 1px);background-size:28px 28px;-webkit-mask-image:linear-gradient(180deg,#000,transparent 55%);mask-image:linear-gradient(180deg,#000,transparent 55%)}
+.ledger > *{position:relative;z-index:1}
+.lg-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ledger .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:#FFD2B5;border:1px solid rgba(255,210,181,.3);border-radius:999px;padding:6px 12px}
+.net{display:inline-flex;align-items:center;gap:8px;color:#C79A80}
+.net i{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:ping 1.8s ease-out infinite}
+.ledger h3{font-size:clamp(26px,2.4vw,32px);font-weight:300;letter-spacing:-.03em;max-width:380px}
+.receipt{background:linear-gradient(180deg,rgba(20,13,10,.94),rgba(10,10,10,.96));border-radius:16px;padding:20px;box-shadow:0 30px 60px -30px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,200,170,.07);position:relative}
+.receipt::before{content:"";position:absolute;inset:0;border-radius:16px;padding:1px;background:conic-gradient(from var(--a),rgba(255,140,80,.16) 0 78%,#FF8A55 88%,rgba(255,140,80,.16) 98%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spinA 7s linear infinite;pointer-events:none}
+.rc-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.copy{min-height:44px;min-width:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,140,80,.28);background:rgba(255,90,31,.06);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:#FFC9AE;transition:background .2s,border-color .2s}
+.copy:hover{background:rgba(255,90,31,.14);border-color:rgba(255,140,80,.6)}
+.hash{font-family:var(--mono);font-size:14px;line-height:1.75;color:var(--amber);margin:6px 0 18px;display:flex;flex-wrap:wrap;gap:0 9px;min-height:3.5em}
+.hash span:nth-child(even){color:#C98A5E}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,140,80,.12);border-radius:12px;overflow:hidden;border:1px solid rgba(255,140,80,.12)}
+.rc-grid > div{background:#0E0B0A;padding:12px 14px;display:flex;flex-direction:column;gap:5px}
+.k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9B7A68}
+.v{font-size:14.5px;color:var(--ink);display:flex;align-items:center;gap:8px}
+.tk{width:22px;height:22px;border-radius:6px;background:#1E1E1E;border:1px solid #333;font-family:var(--mono);font-size:8.5px;display:grid;place-items:center;color:var(--ink-2)}
+.v.up{color:var(--org-2)}
+.rc-reveal{margin-top:16px}
+.rc-reveal .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.mono-v{font-family:var(--mono);font-size:14px;color:var(--ink)}
+.pbar{height:6px;border-radius:6px;background:#1E1E1E;margin-top:10px;overflow:hidden;position:relative}
+.pbar b{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#C22E10,#FF5A1F,#FFB067);border-radius:6px;transition:width 1.6s var(--ease)}
+.pbar b::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);background-size:60% 100%;background-repeat:no-repeat;animation:shine 2.4s ease-in-out infinite}
+@keyframes shine{from{background-position:-60% 0}to{background-position:160% 0}}
+.trail{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:20px}
+.trail li{font-size:11.5px;color:var(--ink-3);position:relative;padding-top:20px;line-height:1.3}
+.trail li::before{content:"";position:absolute;left:0;top:0;width:11px;height:11px;border-radius:50%;border:1.5px solid #3A3A3A;background:#0A0A0A;box-sizing:border-box}
+.trail li::after{content:"";position:absolute;left:15px;right:4px;top:5px;height:1px;background:#2A2A2A}
+.trail li:last-child::after{display:none}
+.trail li.done{color:var(--ink-2)}
+.trail li.done::before{background:var(--org);border-color:var(--org)}
+.trail li.done::after{background:linear-gradient(90deg,var(--org),#5A2008)}
+.trail li.now{color:var(--ink)}
+.trail li.now::before{border-color:var(--org);animation:ping 1.6s ease-out infinite}
+.why-r{display:flex;flex-direction:column;gap:20px}
+.why-r .txt{padding:6px 0 10px}
+.why-r .txt p{font-size:22px;font-weight:300;letter-spacing:-.02em;line-height:1.35;color:var(--ink-2);max-width:560px}
+.why-r .txt p b{color:var(--ink);font-weight:400}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:20px;flex:1}
+.mini .card{padding:22px;display:flex;flex-direction:column;justify-content:space-between;min-height:280px}
+.mini h4{font-weight:400;font-size:18px;letter-spacing:-.02em;margin-top:6px}
+.mini p{font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.gauge{width:100%;max-width:200px;height:auto;margin:10px auto 0;display:block}
+.pod{background:linear-gradient(155deg,#FF6A2B 0%,#E8401A 46%,#A8240C 100%);border-color:#FF8A55;color:#170600}
+.pod::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 11px);-webkit-mask-image:linear-gradient(180deg,#000,transparent 75%);mask-image:linear-gradient(180deg,#000,transparent 75%);pointer-events:none}
+.pod::after{content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,200,.5),transparent 65%);pointer-events:none}
+.pod > *{position:relative;z-index:1}
+.pod p{color:#3A1203}
+.pod .mono{color:#3A1203}
+.pod-big{display:flex;align-items:baseline;gap:10px;margin:8px 0 2px}
+.pod-big em{white-space:nowrap;font-family:var(--serif);font-style:italic;font-size:clamp(44px,4.4vw,60px);line-height:.9;color:#170600;letter-spacing:-.02em}
+.pod-big span{font-size:15px;color:#3A1203}
+.pod .days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:12px 0 12px}
+.pod .days i{height:42px;border-radius:9px;background:rgba(23,6,0,.14);position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(23,6,0,.14)}
+.pod .days i b{position:absolute;inset:0;background:linear-gradient(180deg,#2E0E03,#170600);transform-origin:bottom;transform:scaleY(0);transition:transform .6s var(--ease)}
+.pod .days i.on b{transform:scaleY(1)}
+.pod .days i span{position:absolute;left:0;right:0;bottom:5px;text-align:center;font-family:var(--mono);font-size:9px;color:rgba(23,6,0,.55);z-index:1;transition:color .4s}
+.pod .days i.on span{color:#FFD2B5}
+.pod .days i.cur{box-shadow:inset 0 0 0 1.5px #170600}
+.pod .days i.cur b{transform:scaleY(.45);background:linear-gradient(180deg,rgba(23,6,0,.55),rgba(23,6,0,.8));animation:grow 2.4s ease-in-out infinite alternate}
+.pod .days i.cur span{color:#170600}
+@keyframes grow{from{transform:scaleY(.25)}to{transform:scaleY(.6)}}
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.bento .card{padding:24px;min-height:300px;display:flex;flex-direction:column}
+.bento .wide{grid-column:span 2}
+.bento .full{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:space-between;gap:24px;background:var(--org);border-color:var(--org);color:#120700}
+.bento .full p{color:#3A1203;font-size:15px;max-width:520px}
+.bento .full h3{font-size:clamp(24px,2.6vw,34px);font-weight:400}
+.bento h3{font-size:21px;letter-spacing:-.02em;margin-bottom:8px}
+.bento p{font-size:14px;color:var(--ink-2);line-height:1.55;max-width:420px}
+.viz{flex:1;display:flex;align-items:flex-end;margin-top:20px;min-height:120px}
+.viz svg{width:100%;height:auto}
+.illus{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);position:absolute;right:20px;top:22px}
+.rows{width:100%;display:grid;gap:8px}
+.rows div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;background:#151515;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rows .av{width:28px;height:28px;border-radius:50%;background:#222}
+.sk{height:7px;border-radius:5px;background:#2A2A2A;display:block}
+.flag{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:5px 8px;border-radius:6px;background:rgba(227,52,27,.14);color:#FF8A6B;white-space:nowrap}
+.flag.ok{background:#1D1D1D;color:var(--ink-3)}
+.chat{width:100%;display:grid;gap:10px}
+.bub{max-width:88%;padding:12px 14px;border-radius:16px;font-size:13px;line-height:1.45}
+.bub.q{background:#1D1D1D;border-bottom-left-radius:4px}
+.bub.a{justify-self:end;background:#2A1208;border:1px solid #4A1A08;border-bottom-right-radius:4px;color:#FFD9C6}
+.bub .who{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);margin-bottom:4px}
+.radar{width:170px;height:170px;border-radius:50%;margin:16px auto 0;position:relative;border:1px solid var(--line-2);background:
+  radial-gradient(circle,transparent 32%,#1A1A1A 33%,transparent 34%,transparent 65%,#1A1A1A 66%,transparent 67%)}
+.radar::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,90,31,.45),transparent 22%);animation:sweep 3.2s linear infinite}
+.radar::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:var(--ink)}
+.radar i{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(227,52,27,.18)}
+@keyframes sweep{to{transform:rotate(360deg)}}
+
+/* pipeline */
+.pipe{position:relative;display:grid;gap:0}
+.pipe-line{position:absolute;left:7px;top:10px;bottom:10px;width:1px;background:var(--line)}
+.pipe-line b{position:absolute;left:0;top:0;width:1px;height:100%;background:var(--org);transform-origin:top;transform:scaleY(0)}
+.step{display:grid;grid-template-columns:1fr 300px;gap:40px;align-items:center;padding:30px 0 30px 44px;border-bottom:1px solid var(--line);position:relative}
+.step:last-child{border-bottom:0}
+.step::before{content:"";position:absolute;left:0;top:38px;width:15px;height:15px;border-radius:50%;background:var(--bg);border:1px solid var(--line-2);transition:all .5s var(--ease)}
+.step.lit::before{background:var(--org);border-color:var(--org)}
+.step h3{font-size:clamp(24px,2.4vw,32px);font-weight:300;margin-bottom:10px}
+.step h3 code{font-family:var(--mono);font-size:.5em;color:var(--ink-3);letter-spacing:0;margin-left:10px;vertical-align:middle}
+.step p{font-size:15px;color:var(--ink-2);max-width:560px;line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chips span{font-size:12px;border:1px solid var(--line-2);border-radius:999px;padding:6px 12px;color:var(--ink-2)}
+.tile{height:168px;border-radius:16px;position:relative;overflow:hidden;display:grid;place-items:center;background:radial-gradient(120% 100% at 50% 0%,#1A1A1A,#0E0E0E 72%);border:1px solid #232323;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 24px 40px -30px rgba(0,0,0,.9);transition:border-color .6s var(--ease)}
+.tile::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px);background-size:14px 14px;-webkit-mask-image:radial-gradient(75% 75% at 50% 55%,#000,transparent);mask-image:radial-gradient(75% 75% at 50% 55%,#000,transparent);pointer-events:none}
+.tile::after{content:"";position:absolute;left:10%;right:10%;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,140,80,.5),transparent);opacity:0;transition:opacity .6s}
+.step.lit .tile{border-color:#3A1A0C}
+.step.lit .tile::after{opacity:1}
+.tile .tl{position:absolute;left:14px;top:12px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);z-index:1}
+.tile .tl::before{content:"";display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--org);margin-right:7px;vertical-align:middle;animation:blink 2s steps(2) infinite}
+.tile svg{position:relative;width:94%;height:auto;margin-top:10px}
+.hitl{margin-top:34px;display:flex;gap:16px;align-items:center;padding:18px 22px;border:1px dashed var(--line-2);border-radius:14px;font-size:14.5px;color:var(--ink-2)}
+.hitl b{color:var(--ink);font-weight:500}
+
+/* pricing */
+.price{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.plan{padding:26px;display:flex;flex-direction:column;min-height:330px}
+.plan .mono{color:var(--ink-2)}
+.plan .amt{font-size:52px;font-weight:300;letter-spacing:-.05em;line-height:1;margin:22px 0 4px}
+.plan .per{font-size:13px;color:var(--ink-3)}
+.plan p{font-size:14px;color:var(--ink-2);line-height:1.55;margin-top:22px;flex:1}
+.plan.hot{border-color:#5A2008;background:linear-gradient(180deg,#1E0C05,#121212 60%)}
+.plan.hot .mono{color:var(--org-2)}
+.perk{margin-top:16px;padding:18px 22px;border-radius:14px;background:var(--bg-2);border:1px solid var(--line);display:flex;justify-content:space-between;gap:20px;align-items:center;font-size:14.5px;color:var(--ink-2);flex-wrap:wrap}
+.perk b{color:var(--ink);font-weight:500}
+
+/* rules carousel */
+#rules{overflow-x:clip}
+.rcar{position:relative;height:300px;perspective:1600px;outline:none}
+.rc{position:absolute;left:50%;top:0;width:min(800px,84%);height:100%;display:grid;grid-template-columns:200px 1fr;gap:34px;align-items:center;padding:30px;border-radius:22px;background:linear-gradient(180deg,#161616,#0E0E0E);border:1px solid var(--line);box-shadow:0 40px 80px -40px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.05);transform:translateX(-50%) translateZ(-520px);opacity:0;pointer-events:none;transition:transform .9s var(--ease),opacity .9s var(--ease),filter .9s var(--ease);cursor:pointer}
+.rc[data-pos="0"]{transform:translateX(-50%);opacity:1;z-index:3;pointer-events:auto;cursor:default}
+.rc[data-pos="1"]{transform:translateX(-50%) translateX(60%) translateZ(-280px) rotateY(-30deg);opacity:.38;z-index:2;pointer-events:auto;filter:saturate(.5)}
+.rc[data-pos="-1"]{transform:translateX(-50%) translateX(-60%) translateZ(-280px) rotateY(30deg);opacity:.38;z-index:2;pointer-events:auto;filter:saturate(.5)}
+.rc[data-pos="0"]::before{content:"";position:absolute;inset:0;border-radius:22px;padding:1px;background:conic-gradient(from var(--a),rgba(255,140,80,.1) 0 80%,#FF8A55 90%,rgba(255,140,80,.1) 100%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spinA 8s linear infinite;pointer-events:none}
+.rc-ic{height:220px;border-radius:16px;display:grid;place-items:center;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 38%,#4E1806,#140806 72%);border:1px solid #3A1608}
+.rc-ic::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,160,110,.12) 1px,transparent 1px);background-size:12px 12px}
+.rc-ic::after{content:"";position:absolute;left:0;right:0;height:45%;top:-45%;background:linear-gradient(transparent,rgba(255,122,61,.28),transparent);animation:scanY 3s var(--ease) infinite}
+@keyframes scanY{to{top:100%}}
+.rc-ic svg{width:96px;height:96px;position:relative;z-index:1}
+.rc-body .mono{color:var(--org-2)}
+.rc-body p{font-size:clamp(21px,2.3vw,29px);font-weight:300;letter-spacing:-.025em;line-height:1.28;margin:12px 0 20px}
+.rc-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);border:1px solid var(--line-2);border-radius:999px;padding:7px 12px}
+.rc-tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--org)}
+.rctl{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:30px}
+.rbtn{width:48px;height:48px;border-radius:50%;border:1px solid var(--line-2);background:#111;cursor:pointer;font-family:var(--mono);font-size:16px;transition:border-color .2s,background .2s}
+.rbtn:hover{border-color:var(--org);background:#1A0B05}
+.rprog{width:160px;height:2px;background:var(--line-2);border-radius:2px;overflow:hidden}
+.rprog b{display:block;height:100%;background:var(--org);transform-origin:left;transform:scaleX(0)}
+@keyframes rprog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#ruleNum{min-width:92px;text-align:center}
+
+/* token */
+.tok{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.flow{padding:28px}
+.flow h3{font-size:22px;font-weight:400;letter-spacing:-.02em}
+.flow .src{font-size:14px;color:var(--ink-2);margin-top:8px;max-width:440px}
+.bar{display:flex;height:60px;border-radius:12px;overflow:hidden;gap:3px;margin:26px 0 16px}
+.bar span{display:flex;align-items:center;padding-left:14px;font-family:var(--mono);font-size:12px;width:0;transition:width 1.6s var(--ease);white-space:nowrap;overflow:hidden;border-radius:8px}
+.bar .burn{background:var(--org);color:#120700}
+.bar .rest{background:#1E1E1E;color:var(--ink-2)}
+.leg{display:grid;gap:10px;font-size:14px;color:var(--ink-2)}
+.leg div{display:grid;grid-template-columns:62px 1fr;gap:12px}
+.leg b{color:var(--ink);font-weight:400;font-size:20px;letter-spacing:-.03em}
+.burn-card{grid-column:1/-1;display:grid;grid-template-columns:1.1fr 1fr;gap:0;padding:0}
+.burn-card .l{padding:30px}
+.burn-card .l ul{list-style:none;display:grid;gap:12px;margin-top:20px;font-size:14.5px;color:var(--ink-2)}
+.burn-card .l li{display:grid;grid-template-columns:16px 1fr;gap:10px}
+.burn-card .l li::before{content:"";width:6px;height:6px;margin-top:8px;border-radius:50%;background:var(--org)}
+.vault{position:relative;min-height:340px;background:radial-gradient(70% 60% at 50% 100%,#3A1205,transparent 70%),#0D0D0D;border-left:1px solid var(--line)}
+#embers{position:absolute;inset:0;width:100%;height:100%}
+.vault .vl{position:absolute;left:24px;bottom:22px;right:24px;display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#C79A80}
+.vault .vl b{color:var(--ink);font-weight:500}
+.golden{margin-top:16px;padding:22px 26px;border-radius:var(--r);border:1px solid #4A1A08;background:#140904;font-size:clamp(18px,2vw,22px);font-weight:300;letter-spacing:-.02em;line-height:1.4}
+.golden b{font-weight:500;color:var(--org-2)}
+
+/* roadmap */
+.road{position:relative}
+.road-track{position:absolute;left:0;right:0;top:9px;height:1px;background:var(--line)}
+.road-track b{position:absolute;inset:0;background:var(--org);transform-origin:left;transform:scaleX(0)}
+.road-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;position:relative}
+.wk{padding-top:40px;position:relative}
+.wk::before{content:"";position:absolute;left:0;top:2px;width:15px;height:15px;border-radius:50%;background:var(--bg);border:1px solid var(--line-2);transition:all .5s var(--ease)}
+.wk.lit::before{background:var(--org);border-color:var(--org)}
+.wk .mono{color:var(--org-2)}
+.wk h3{font-size:20px;font-weight:400;letter-spacing:-.02em;margin:10px 0 8px}
+.wk p{font-size:13.5px;color:var(--ink-2);line-height:1.55}
+
+/* CTA horizon */
+.cta{position:relative;margin-top:150px;height:clamp(560px,64vw,760px);overflow:hidden;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#cta3d{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cta-in{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 24px 12%}
+.cta-in h2{font-size:clamp(38px,5vw,66px);max-width:760px}
+.cta-in p{font-size:15.5px;color:var(--ink-2);max-width:500px;margin:20px 0 30px;line-height:1.6}
+
+/* footer */
+footer{padding:70px 0 36px}
+.frow{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;padding-bottom:34px;border-bottom:1px solid var(--line)}
+.fbrand p{font-size:14.5px;color:var(--ink-2);max-width:340px;margin:12px 0 22px;line-height:1.55}
+.flinks{display:flex;gap:6px 30px;flex-wrap:wrap;align-items:flex-start}
+.flinks a{display:inline-flex;align-items:center;min-height:44px;font-size:14.5px;color:var(--ink-2);transition:color .2s}
+.flinks a:hover{color:var(--ink)}
+.x-btn{width:46px;height:46px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;transition:border-color .2s,background .2s}
+.x-btn:hover{border-color:var(--ink-3);background:#151515}
+.x-btn svg{width:16px;height:16px}
+.fbot{display:flex;justify-content:space-between;gap:24px;padding-top:22px;flex-wrap:wrap}
+.disc{font-size:12.5px;color:var(--ink-3);max-width:680px;line-height:1.6}
+
+/* responsive */
+.why > *,.tok > *,.head > *,.rules > *,.burn-card > *{min-width:0}
+@media (max-width:1080px){
+  .links{display:none}
+  .menu-btn{display:flex}
+  .price{grid-template-columns:1fr 1fr}
+  .road-grid{grid-template-columns:1fr 1fr 1fr}
+  .road-track{display:none}
+  .wk{padding-top:30px}
+}
+@media (max-width:860px){
+  .why,.tok,.burn-card{grid-template-columns:1fr}
+  .vault{border-left:0;border-top:1px solid var(--line)}
+  .bento{grid-template-columns:1fr}
+  .bento .wide{grid-column:auto}
+  .bento .full{flex-direction:column;align-items:flex-start}
+  .step{grid-template-columns:1fr;gap:20px}
+  .tile{height:160px}
+  .head{flex-direction:column;align-items:flex-start;gap:20px}
+  .hstats,.reads,.prog{display:none}
+  .sec{padding-top:110px}
+}
+@media (max-width:620px){
+  .nav-r .btn-light{display:none}
+  .hero{height:220vh}
+  .stage-inner{padding-top:100px}
+  .copy-a h1{font-size:clamp(40px,12vw,58px);margin:18px 0 16px}
+  .copy-a .sub{font-size:14.5px;margin-bottom:22px}
+  .copy-b{top:100px;transform:none}
+  .copy-b h2{font-size:clamp(30px,9vw,42px)}
+  .stage::after{content:"";position:absolute;left:0;right:0;top:0;height:72%;background:linear-gradient(#0A0A0A 55%,rgba(10,10,10,0));z-index:1;pointer-events:none}
+  .mini{grid-template-columns:1fr}
+  .rcar{height:330px}
+  .rc{grid-template-columns:1fr;width:90%;padding:22px;gap:18px;align-content:start}
+  .rc-ic{height:120px}
+  .rc-ic svg{width:64px;height:64px}
+  .rc[data-pos="1"],.rc[data-pos="-1"]{opacity:0;pointer-events:none}
+  .rc-grid{grid-template-columns:1fr}
+  .trail li{font-size:10.5px}
+  .price{grid-template-columns:1fr}
+  .road-grid{grid-template-columns:1fr}
+  .ledger{min-height:0}
+  .commit dl{grid-template-columns:92px 1fr}
+  .cta-in{padding-bottom:22%}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+  [data-reveal],[data-stagger] > *{opacity:1;filter:none;transform:none}
+  .split .w > span{transform:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="nx-mark" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#141414"/><circle cx="32" cy="33" r="19" fill="#2A2A2C"/><rect x="11" y="27" width="42" height="8" rx="4" fill="#FF5A1F"/></symbol>
+  <symbol id="nx-x" viewBox="0 0 24 24"><path fill="currentColor" d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.3L2.8 2h6.4l4.4 5.9L18.9 2Zm-1.1 18h1.7L8.3 3.9H6.5L17.8 20Z"/></symbol>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="nav-in">
+    <a href="/" class="logo" aria-label="NEXA home"><svg viewBox="0 0 64 64" role="img" aria-label="NEXA logo"><use href="#nx-mark"/></svg><span>NEXA</span></a>
+    <nav class="links" aria-label="Main">
+      <a href="#proof">Proof</a>
+      <a href="#feed">Daily feed</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#token">$NEXA</a>
+    </nav>
+    <div class="nav-r">
+      <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="btn btn-light btn-x magnet">Follow on X <span class="ar"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#nx-x"/></svg></span></a>
+      <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="Menu" hidden>
+  <nav>
+    <a href="#proof">Proof</a>
+    <a href="#feed">Daily feed</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#token">$NEXA</a>
+  </nav>
+  <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="btn btn-org btn-x">Follow NEXA on X <span class="ar"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#nx-x"/></svg></span></a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <div class="stage">
+    <canvas id="hero3d" aria-hidden="true"></canvas>
+    <div class="prog" aria-hidden="true"><i><b></b></i><i><b></b></i></div>
+    <div class="stage-inner">
+      <div class="copy-a" id="copyA">
+        <div class="tagrow"><span class="av"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#nx-mark"/></svg></span><span>AI agent on Robinhood Chain<br><span class="mono">Automated account on X</span></span></div>
+        <h1 class="split" data-split>The superintelligence influencer. <em class="s">No deleted tweets.</em></h1>
+        <p class="sub">NEXA reads Robinhood Chain around the clock and posts what it finds on X. Each prediction is hashed into the NexaLedger contract before it goes out, and scored against the oracle price when it expires.</p>
+        <div class="cta-row">
+          <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="btn btn-org magnet">Follow on X <span class="ar">→</span></a>
+          <a href="#how" class="btn btn-ghost magnet">How a call is proved</a>
+        </div>
+      </div>
+
+      <div class="copy-b" id="copyB">
+        <div class="label">Proof of Intelligence</div>
+        <h2>The hash lands on-chain <span class="dim">before the post lands on X.</span></h2>
+        <code>NexaLedger.commit(keccak(text, asset, direction, horizon, salt))</code>
+      </div>
+
+      <div class="stage-foot">
+        <div class="hstats">
+          <div class="hstat"><div class="n">1<small>/ day</small></div><p>Prediction of the Day, committed on-chain</p></div>
+          <div class="hstat org"><div class="n">7<small>days</small></div><p>until each call is revealed and scored</p></div>
+        </div>
+        <div class="reads">
+          <span class="mono">Reads from</span>
+          <ul><li>Envio HyperSync</li><li>Chainlink Data Feeds</li><li>Pons V2</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="mq" id="mq">
+    <span>Stock Token movers</span><span>DEX vs Chainlink spread</span><span>Pons V2 graduations</span><span>Red flags</span><span>Prediction of the Day</span><span>Contract risk checks</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <!-- PROOF -->
+  <section class="sec" id="proof">
+    <div class="head">
+      <div data-reveal>
+        <div class="label">Proof of Intelligence</div>
+        <h2>A persona you can audit,<br><span class="dim">call by call.</span></h2>
+      </div>
+      <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="x-btn" aria-label="NEXA on X" data-reveal><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#nx-x"/></svg></a>
+    </div>
+
+    <div class="why">
+      <div class="card ledger tilt spot" data-reveal>
+        <div class="lg-top"><span class="tag">Example commit</span><span class="mono net"><i></i>NexaLedger · testnet 46630</span></div>
+        <h3>What a call looks like in NexaLedger</h3>
+        <div class="receipt">
+          <div class="rc-head"><span class="k">Commit hash</span><button class="copy" type="button" id="copyHash" aria-label="Copy example hash">Copy</button></div>
+          <div class="hash" id="exHash"></div>
+          <div class="rc-grid">
+            <div><span class="k">Asset</span><span class="v"><span class="tk">NV</span>NVDA Stock Token</span></div>
+            <div><span class="k">Direction</span><span class="v up">↑ Up</span></div>
+            <div><span class="k">Horizon</span><span class="v">7 days</span></div>
+            <div><span class="k">Scored against</span><span class="v">Chainlink feed</span></div>
+          </div>
+          <div class="rc-reveal">
+            <div class="row"><span class="k">Reveal in</span><span class="mono-v" id="exCount">4d 00:00:00</span></div>
+            <div class="pbar"><b id="exBar"></b></div>
+          </div>
+          <ol class="trail"><li class="done">Committed</li><li class="done">Posted on X</li><li class="now">Revealed</li><li>Scored</li></ol>
+        </div>
+      </div>
+
+      <div class="why-r">
+        <div class="txt" data-reveal>
+          <p>"Superintelligence" is the persona. <b>The record is what you can check:</b> each prediction, its hash, the block it was committed in, and whether it came true. A human KOL can delete a bad call. NEXA's calls sit in a contract.</p>
+        </div>
+        <div class="mini" data-stagger>
+          <div class="card spot">
+            <div>
+              <span class="mono">Public win rate</span>
+              <h4>Scored by the oracle, not by NEXA</h4>
+            </div>
+            <svg class="gauge" viewBox="0 0 200 110" aria-hidden="true">
+              <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#242424" stroke-width="14" stroke-linecap="round"/>
+              <path id="gArc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FF5A1F" stroke-width="14" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" opacity=".25"/>
+            </svg>
+            <p>Published after the first call is scored. Average return per prediction sits next to it, with a Blockscout link for every commit.</p>
+          </div>
+          <div class="card pod">
+            <div>
+              <span class="mono">Prediction of the Day</span>
+              <h4>One call, seven days, one result</h4>
+            </div>
+            <div>
+              <div class="pod-big"><em>Day 4</em><span>of 7</span></div>
+              <div class="days" id="days"><i><b></b><span>D1</span></i><i><b></b><span>D2</span></i><i><b></b><span>D3</span></i><i><b></b><span>D4</span></i><i><b></b><span>D5</span></i><i><b></b><span>D6</span></i><i><b></b><span>D7</span></i></div>
+              <p>reveal() runs at expiry and the outcome joins the public record.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEED -->
+  <section class="sec" id="feed">
+    <div class="head center">
+      <div data-reveal>
+        <h2>What NEXA posts<br><span class="dim">every day.</span></h2>
+      </div>
+      <p class="lede" data-reveal>Robinhood Chain did about <b>$1.49 billion</b> in DEX volume in 24 hours in late August 2026. With that many new tokens, traders need a filter that is fast and keeps its record public.</p>
+    </div>
+
+    <div class="bento" data-stagger>
+      <article class="card wide spot">
+        <span class="illus">Illustration</span>
+        <h3>Stock Token movers</h3>
+        <p>The day's biggest Stock Token moves, and where DEX prices drift away from the Chainlink feed.</p>
+        <div class="viz">
+          <svg viewBox="0 0 600 150" fill="none" aria-hidden="true">
+            <defs><linearGradient id="spr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5A1F" stop-opacity=".35"/><stop offset="1" stop-color="#FF5A1F" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0 96 C60 92 90 70 140 74 S230 104 280 86 360 40 420 52 520 88 600 64 L600 98 C520 112 470 90 420 92 S330 104 280 104 200 112 140 104 60 110 0 108Z" fill="url(#spr)"/>
+            <path class="draw" pathLength="1" d="M0 96 C60 92 90 70 140 74 S230 104 280 86 360 40 420 52 520 88 600 64" stroke="#FF5A1F" stroke-width="2.5"/>
+            <path d="M0 108 C60 110 140 104 200 112 S330 104 420 92 520 112 600 98" stroke="#A7A29C" stroke-width="1.5" stroke-dasharray="4 6"/>
+            <g font-family="Geist Mono, monospace" font-size="11" fill="#6E6A66"><text x="0" y="140">DEX price</text><text x="110" y="140" fill="#A7A29C">Chainlink feed</text></g>
+            <circle cx="420" cy="52" r="5" fill="#FF5A1F"/>
+          </svg>
+        </div>
+      </article>
+      <article class="card spot">
+        <h3>Rug radar</h3>
+        <p>Pons V2 launches with red flags, refreshed in real time on the web.</p>
+        <div class="radar" aria-hidden="true"><i style="left:28%;top:30%"></i><i style="left:66%;top:62%"></i><i style="left:58%;top:22%;background:#6E6A66;box-shadow:none"></i></div>
+      </article>
+      <article class="card spot">
+        <span class="illus">Illustration</span>
+        <h3>Pons V2 launches</h3>
+        <p>The busiest launches and graduations, with red flags called out.</p>
+        <div class="viz"><div class="rows">
+          <div><span class="av"></span><span class="sk" style="width:70%"></span><span class="flag">High creator tax</span></div>
+          <div><span class="av"></span><span class="sk" style="width:55%"></span><span class="flag">Holders concentrated</span></div>
+          <div><span class="av"></span><span class="sk" style="width:62%"></span><span class="flag ok">Graduated</span></div>
+        </div></div>
+      </article>
+      <article class="card spot">
+        <h3>Prediction of the Day</h3>
+        <p>One call a day, committed on-chain first and scored seven days later against the oracle price.</p>
+        <div class="viz"><svg viewBox="0 0 300 120" fill="none" aria-hidden="true">
+          <g stroke="#333" stroke-width="1.5"><rect x="10" y="40" width="70" height="44" rx="10"/><rect x="115" y="40" width="70" height="44" rx="10"/><rect x="220" y="40" width="70" height="44" rx="10" stroke="#FF5A1F"/></g>
+          <path class="draw" pathLength="1" d="M80 62h35M185 62h35" stroke="#FF5A1F" stroke-width="2"/>
+          <g font-family="Geist Mono, monospace" font-size="10" fill="#A7A29C" text-anchor="middle"><text x="45" y="66">commit</text><text x="150" y="66">post</text><text x="255" y="66" fill="#FF7A3D">reveal</text></g>
+          <g font-family="Geist Mono, monospace" font-size="9.5" fill="#6E6A66" text-anchor="middle"><text x="45" y="104">day 0</text><text x="150" y="104">day 0</text><text x="255" y="104">day 7</text></g>
+        </svg></div>
+      </article>
+      <article class="card spot">
+        <span class="illus">Example</span>
+        <h3>Mentions</h3>
+        <p>Tag NEXA with a contract address and get a risk summary back.</p>
+        <div class="viz"><div class="chat">
+          <div class="bub q"><span class="who">Trader</span>@nexa check contract 0x…</div>
+          <div class="bub a"><span class="who">NEXA · AI agent</span>Risk summary: ownership, holder spread, creator tax. Not financial advice.</div>
+        </div></div>
+      </article>
+      <article class="card full">
+        <div>
+          <h3>Calls go public on X. Pro gets them 15 minutes sooner.</h3>
+          <p>Posts carry no links, because link posts cost more than 13 times as much on the X API. The web holds the links and the proof.</p>
+        </div>
+        <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="btn btn-light magnet">Follow on X <span class="ar">→</span></a>
+      </article>
+    </div>
+  </section>
+
+  <!-- HOW -->
+  <section class="sec" id="how">
+    <div class="head">
+      <div data-reveal>
+        <h2>From chain data<br><span class="dim">to a scored call.</span></h2>
+      </div>
+      <p class="lede" data-reveal>Nothing leaves NEXA until it passes RiskGuard. A prediction also has to be recorded in NexaLedger before it can be posted.</p>
+    </div>
+
+    <div class="pipe" id="pipe">
+      <div class="pipe-line"><b id="pipeFill"></b></div>
+      <div class="step">
+        <div>
+          <h3>Read</h3>
+          <p>An Envio HyperSync indexer follows Pons V2 launches, trades and graduations, whale transfers and Stock Token prices. Chainlink Data Feeds supply the official prices used for analysis and scoring.</p>
+          <div class="chips"><span>Envio HyperSync</span><span>Pons V2 events</span><span>Chainlink Data Feeds</span></div>
+        </div>
+        <div class="tile"><span class="tl">Indexer</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<g font-family="Geist Mono, monospace" font-size="8" letter-spacing=".08em" fill="#6E6A66"><text x="16" y="49">LAUNCH</text><text x="16" y="79">TRADE</text><text x="16" y="109">PRICE</text></g>
+<path d="M62 46H214M62 76H214M62 106H214" stroke="#262626" stroke-width="1.5" stroke-dasharray="2 4"/>
+<rect y="42" width="20" height="8" rx="4" fill="#FF5A1F"><animate attributeName="x" values="56;200" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="2.4s" repeatCount="indefinite"/></rect>
+<rect y="42" width="12" height="8" rx="4" fill="#FF5A1F"><animate attributeName="x" values="56;200" dur="2.4s" begin="-1.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.55;.55;0" keyTimes="0;.12;.85;1" dur="2.4s" begin="-1.2s" repeatCount="indefinite"/></rect>
+<rect y="72" width="16" height="8" rx="4" fill="#FF7A3D"><animate attributeName="x" values="56;200" dur="1.8s" begin="-.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="1.8s" begin="-.4s" repeatCount="indefinite"/></rect>
+<rect y="102" width="24" height="8" rx="4" fill="#FFB067"><animate attributeName="x" values="56;196" dur="3s" begin="-2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.12;.85;1" dur="3s" begin="-2s" repeatCount="indefinite"/></rect>
+<rect x="222" y="30" width="62" height="92" rx="12" fill="#141414" stroke="#3A3A3A"/>
+<rect x="222" y="30" width="62" height="92" rx="12" stroke="#FF5A1F" opacity="0"><animate attributeName="opacity" values="0;.7;0" dur="2.4s" repeatCount="indefinite"/></rect>
+<g fill="#262626"><rect x="234" y="46" width="38" height="5" rx="2.5"/><rect x="234" y="58" width="28" height="5" rx="2.5"/><rect x="234" y="70" width="34" height="5" rx="2.5"/></g>
+<circle cx="253" cy="90" r="3.5" fill="#FF5A1F"><animate attributeName="r" values="2.5;4.5;2.5" dur="1.4s" repeatCount="indefinite"/></circle>
+<text x="253" y="112" text-anchor="middle" font-family="Geist Mono, monospace" font-size="7.5" fill="#A7A29C" letter-spacing=".1em">HYPERSYNC</text>
+</svg></div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Think</h3>
+          <p>A language model with tool calls writes the analysis from indexer and oracle data only. When the data is incomplete, NEXA says it doesn't know.</p>
+          <div class="chips"><span>LLM API</span><span>Tool calling</span><span>No guessing</span></div>
+        </div>
+        <div class="tile"><span class="tl">Model</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<defs><linearGradient id="tkG" x1="0" x2="1"><stop offset="0" stop-color="#E3341B"/><stop offset=".5" stop-color="#FFD2B5"/><stop offset="1" stop-color="#E3341B"/></linearGradient></defs>
+<g stroke="#2A2A2A" stroke-width="1.2"><path id="tkA" d="M40 38 C90 38 100 75 124 75"/><path id="tkB" d="M40 75 H124"/><path id="tkC" d="M40 112 C90 112 100 75 124 75"/><path id="tkD" d="M176 75 C202 75 212 48 260 48"/><path id="tkE" d="M176 75 C202 75 212 102 260 102"/></g>
+<g fill="#151515" stroke="#3A3A3A"><circle cx="40" cy="38" r="7"/><circle cx="40" cy="75" r="7"/><circle cx="40" cy="112" r="7"/><circle cx="260" cy="48" r="7"/><circle cx="260" cy="102" r="7"/></g>
+<circle r="2.6" fill="#FFB067"><animateMotion dur="1.6s" repeatCount="indefinite"><mpath href="#tkA"/></animateMotion></circle>
+<circle r="2.6" fill="#FFB067"><animateMotion dur="1.6s" begin="-.5s" repeatCount="indefinite"><mpath href="#tkB"/></animateMotion></circle>
+<circle r="2.6" fill="#FFB067"><animateMotion dur="1.6s" begin="-1s" repeatCount="indefinite"><mpath href="#tkC"/></animateMotion></circle>
+<circle r="2.6" fill="#FF5A1F"><animateMotion dur="1.8s" begin="-.3s" repeatCount="indefinite"><mpath href="#tkD"/></animateMotion></circle>
+<circle r="2.6" fill="#FF5A1F"><animateMotion dur="1.8s" begin="-1.2s" repeatCount="indefinite"><mpath href="#tkE"/></animateMotion></circle>
+<circle cx="150" cy="75" r="33" stroke="#FF5A1F" stroke-opacity=".3" stroke-dasharray="2 4"><animateTransform attributeName="transform" type="rotate" from="0 150 75" to="360 150 75" dur="14s" repeatCount="indefinite"/></circle>
+<circle cx="150" cy="75" r="26" fill="#0D0D0D" stroke="#3A3A3A"/>
+<rect x="128" y="71" width="44" height="8" rx="4" fill="url(#tkG)"><animate attributeName="opacity" values=".65;1;.65" dur="2s" repeatCount="indefinite"/></rect>
+</svg></div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Filter <code>RiskGuard</code></h3>
+          <p>RiskGuard is code, separate from the model. It blocks buy and sell wording, price targets, tokens younger than one hour, and any post missing the disclaimer.</p>
+          <div class="chips"><span>Rule-based</span><span>Blocks shilling</span><span>Disclaimer enforced</span></div>
+        </div>
+        <div class="tile"><span class="tl">RiskGuard</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<defs><clipPath id="shC"><path d="M206 22 L244 36 V70 C244 96 228 112 206 122 C184 112 168 96 168 70 V36Z"/></clipPath><linearGradient id="shS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF5A1F" stop-opacity="0"/><stop offset="1" stop-color="#FF5A1F" stop-opacity=".45"/></linearGradient></defs>
+<g font-family="Geist Mono, monospace" font-size="10" fill="#8A847E"><text x="22" y="50">"buy now"</text><text x="22" y="78">target $10</text><text x="22" y="106">token age 12m</text></g>
+<g stroke="#E3341B" stroke-width="1.6" stroke-linecap="round">
+<path d="M20 46.5H76" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;0;0;1" keyTimes="0;.2;.85;1" dur="4s" repeatCount="indefinite"/></path>
+<path d="M20 74.5H84" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;1;0;0;1" keyTimes="0;.1;.3;.85;1" dur="4s" repeatCount="indefinite"/></path>
+<path d="M20 102.5H104" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;1;0;0;1" keyTimes="0;.2;.4;.85;1" dur="4s" repeatCount="indefinite"/></path></g>
+<path d="M118 75 H158" stroke="#2A2A2A" stroke-dasharray="2 4"/>
+<path d="M206 22 L244 36 V70 C244 96 228 112 206 122 C184 112 168 96 168 70 V36Z" fill="#120A07" stroke="#4A2A1C" stroke-width="1.5"/>
+<g clip-path="url(#shC)"><rect x="160" y="-30" width="100" height="30" fill="url(#shS)"><animate attributeName="y" values="-30;125" dur="2.6s" repeatCount="indefinite"/></rect></g>
+<path d="M192 72 l10 10 20 -22" stroke="#FF5A1F" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;1;0;0;1" keyTimes="0;.42;.56;.9;1" dur="4s" repeatCount="indefinite"/></path>
+</svg></div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Commit <code>NexaLedger</code></h3>
+          <p>The hash of text, asset, direction, horizon and a secret salt goes into NexaLedger.commit(). The salt stays private until reveal, so nobody can copy the call before it is proven.</p>
+          <div class="chips"><span>keccak256</span><span>Commit-reveal</span><span>Solidity</span></div>
+        </div>
+        <div class="tile"><span class="tl">NexaLedger</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<path d="M40 80 H242" stroke="#262626" stroke-width="1.5"/>
+<g stroke="#333" fill="#121212"><rect x="18" y="58" width="44" height="44" rx="9"/><rect x="84" y="58" width="44" height="44" rx="9"/><rect x="150" y="58" width="44" height="44" rx="9"/></g>
+<rect x="216" y="54" width="52" height="52" rx="10" fill="#1A0B05" stroke="#FF5A1F" stroke-width="1.8"><animate attributeName="stroke-opacity" values=".35;1;.35" dur="2.4s" repeatCount="indefinite"/></rect>
+<circle r="3" fill="#FFB067"><animateMotion dur="2.4s" repeatCount="indefinite" path="M40 80 H242"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.1;.9;1" dur="2.4s" repeatCount="indefinite"/></circle>
+<g font-family="Geist Mono, monospace" font-size="8.5" fill="#6E6A66" text-anchor="middle"><text x="40" y="83">block</text><text x="106" y="83">block</text><text x="172" y="83">block</text></g>
+<text x="242" y="78" font-family="Geist Mono, monospace" font-size="10" fill="#FF7A3D" text-anchor="middle">0x9f…</text>
+<text x="242" y="92" font-family="Geist Mono, monospace" font-size="7.5" fill="#C79A80" text-anchor="middle">salt ●●●</text>
+<text x="150" y="132" font-family="Geist Mono, monospace" font-size="8" fill="#6E6A66" text-anchor="middle" letter-spacing=".08em">COMMIT → POST → REVEAL</text>
+</svg></div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Post</h3>
+          <p>The post goes out on X without links, since link posts cost far more on the X API. Pro subscribers see it in real time on the web and Telegram; the public sees it 15 minutes later.</p>
+          <div class="chips"><span>X API</span><span>Post and reply only</span><span>Telegram</span></div>
+        </div>
+        <div class="tile"><span class="tl">X API</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<rect x="30" y="30" width="176" height="80" rx="14" fill="#141414" stroke="#3A3A3A"/>
+<circle cx="54" cy="54" r="11" fill="#2A2A2C"/><rect x="44" y="51" width="20" height="5" rx="2.5" fill="#FF5A1F"/>
+<rect x="72" y="47" width="60" height="6" rx="3" fill="#3A3A3A"/><rect x="72" y="58" width="36" height="5" rx="2.5" fill="#262626"/>
+<rect x="46" y="77" height="6" rx="3" fill="#333" width="0"><animate attributeName="width" values="0;140;140;0" keyTimes="0;.35;.9;1" dur="4s" repeatCount="indefinite"/></rect>
+<rect x="46" y="89" height="6" rx="3" fill="#333" width="0"><animate attributeName="width" values="0;0;96;96;0" keyTimes="0;.2;.5;.9;1" dur="4s" repeatCount="indefinite"/></rect>
+<g transform="translate(220 30)"><rect width="62" height="22" rx="11" fill="#111" stroke="#333"/><text x="31" y="14.5" text-anchor="middle" font-family="Geist Mono, monospace" font-size="7.5" fill="#A7A29C">NO LINKS</text></g>
+<rect x="188" y="96" width="94" height="40" rx="10" fill="#1A0B05" stroke="#FF5A1F" stroke-opacity=".6"/>
+<text x="235" y="112" text-anchor="middle" font-family="Geist Mono, monospace" font-size="8" fill="#FF7A3D" letter-spacing=".08em">PRO · LIVE</text>
+<text x="235" y="126" text-anchor="middle" font-family="Geist Mono, monospace" font-size="7.5" fill="#8A847E">public +15 min</text>
+</svg></div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Score</h3>
+          <p>At expiry, reveal() checks the call against the oracle price. The result feeds the public win rate on the Proof of Intelligence page.</p>
+          <div class="chips"><span>reveal()</span><span>Oracle price</span><span>Blockscout link</span></div>
+        </div>
+        <div class="tile"><span class="tl">Oracle</span><svg viewBox="0 0 300 150" fill="none" aria-hidden="true">
+<defs><linearGradient id="gaG" x1="0" x2="1"><stop offset="0" stop-color="#C22E10"/><stop offset=".6" stop-color="#FF5A1F"/><stop offset="1" stop-color="#FFB067"/></linearGradient></defs>
+<g stroke="#333" stroke-width="1.5" stroke-linecap="round"><path d="M58 120H51M65 84.8L58.5 82.1M85 55L80 50M114.8 35L112.1 28.5M150 28V21M185.2 35L187.9 28.5M215 55L220 50M235 84.8L241.5 82.1M242 120H249"/></g>
+<path d="M70 120 A80 80 0 0 1 230 120" stroke="#222" stroke-width="12" stroke-linecap="round"/>
+<path d="M70 120 A80 80 0 0 1 230 120" stroke="url(#gaG)" stroke-width="12" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"><animate attributeName="stroke-dashoffset" values="1;.32;.32;1" keyTimes="0;.4;.85;1" dur="5s" repeatCount="indefinite"/></path>
+<g><line x1="150" y1="120" x2="150" y2="58" stroke="#F2EFEA" stroke-width="2.5" stroke-linecap="round"/><circle cx="150" cy="120" r="6" fill="#F2EFEA"/><animateTransform attributeName="transform" type="rotate" values="-90 150 120;32 150 120;32 150 120;-90 150 120" keyTimes="0;.4;.85;1" dur="5s" repeatCount="indefinite"/></g>
+<text x="150" y="144" text-anchor="middle" font-family="Geist Mono, monospace" font-size="8" fill="#6E6A66" letter-spacing=".08em">REVEAL() VS ORACLE PRICE</text>
+</svg></div>
+      </div>
+    </div>
+    <div class="hitl" data-reveal><b>First 30 days:</b> a person approves every post before it goes out. After the filter proves stable, only risky replies still need approval.</div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="sec" id="pricing">
+    <div class="head">
+      <div data-reveal>
+        <h2>The public feed is free.<br><span class="dim">Speed and depth are paid.</span></h2>
+      </div>
+      <p class="lede" data-reveal>Paid products open from week 10, after NEXA has posted committed calls for 30 days.</p>
+    </div>
+    <div class="price" data-stagger>
+      <div class="card plan hot tilt spot"><span class="mono">NEXA Pro</span><div class="amt">$<span data-count="19">0</span></div><span class="per">per month</span><p>Real-time alerts on the web and Telegram. Public posts on X reach everyone else 15 minutes later.</p></div>
+      <div class="card plan tilt spot"><span class="mono">Ask NEXA</span><div class="amt">$<span data-count="1">0</span></div><span class="per">per analysis, paid in USDG</span><p>A full risk report for one contract or token address.</p></div>
+      <div class="card plan tilt spot"><span class="mono">Signals API</span><div class="amt">$<span data-count="499">0</span></div><span class="per">per month</span><p>A JSON feed for trading bots, dashboards and communities.</p></div>
+      <div class="card plan tilt spot"><span class="mono">Sponsored deep-dive</span><div class="amt">$<span data-count="750">0</span></div><span class="per">per report</span><p>Project research labelled Sponsored, with no buy recommendation.</p></div>
+    </div>
+    <div class="perk" data-reveal><span><b>$NEXA holders</b> above a set balance get Pro alerts sooner and free Ask NEXA credits every month.</span><span class="mono">Threshold announced at launch</span></div>
+  </section>
+
+  <!-- RULES -->
+  <section class="sec" id="rules">
+    <div class="head center">
+      <div data-reveal><h2>Rules NEXA<br><span class="dim">can't talk its way around.</span></h2></div>
+      <p class="lede" data-reveal>They live in RiskGuard's code, so a clever prompt can't switch them off.</p>
+    </div>
+    <div data-reveal>
+      <div class="rcar" id="rcar" tabindex="0" role="region" aria-roledescription="carousel" aria-label="RiskGuard rules"></div>
+      <div class="rctl">
+        <button class="rbtn" type="button" id="rPrev" aria-label="Previous rule">←</button>
+        <div class="rprog" aria-hidden="true"><b id="rProg"></b></div>
+        <span class="mono" id="ruleNum" aria-live="polite"></span>
+        <button class="rbtn" type="button" id="rNext" aria-label="Next rule">→</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOKEN -->
+  <section class="sec" id="token">
+    <div class="head">
+      <div data-reveal>
+        <div class="label">$NEXA on Pons V2</div>
+        <h2>Fees burn $NEXA.<br><span class="dim">NEXA never talks up its price.</span></h2>
+      </div>
+      <p class="lede" data-reveal>$NEXA launches in week 9, after NexaLedger and the fee splitter are audited. The opening buy is announced, extra creator tax is 0%, and the burn ratios are hardcoded.</p>
+    </div>
+    <div class="tok">
+      <div class="card flow spot" data-reveal id="flow1">
+        <h3>Creator fee</h3>
+        <p class="src">NEXA's share of the 1% fee on every $NEXA trade on Pons.</p>
+        <div class="bar"><span class="burn" data-w="30">BurnVault</span><span class="rest" data-w="70">Treasury</span></div>
+        <div class="leg"><div><b><span data-count="30">0</span>%</b><span>burns $NEXA through BurnVault</span></div><div><b><span data-count="70">0</span>%</b><span>treasury: AI costs, X API, marketing</span></div></div>
+      </div>
+      <div class="card flow spot" data-reveal id="flow2">
+        <h3>Protocol fee</h3>
+        <p class="src">Revenue from Pro, the Signals API, Ask NEXA credits and sponsored reports.</p>
+        <div class="bar"><span class="burn" data-w="20">Burn</span><span class="rest" data-w="80">Operations</span></div>
+        <div class="leg"><div><b><span data-count="20">0</span>%</b><span>burns $NEXA through BurnVault</span></div><div><b><span data-count="80">0</span>%</b><span>operations</span></div></div>
+      </div>
+      <div class="card burn-card" data-reveal>
+        <div class="l">
+          <h3 style="font-size:22px;font-weight:400;letter-spacing:-.02em">Why a custom splitter</h3>
+          <ul>
+            <li>Pons V2 runs a bonding curve, then graduates to a Uniswap v4 pool that stays locked for good.</li>
+            <li>Pons keeps 30% of the 1% trading fee; the creator gets the rest, paid in the paired asset.</li>
+            <li>Pons' built-in buyback locks tokens for five years and never burns them, so NEXA sends fees through its own CreatorFeeSplitter.</li>
+            <li>A burn tracker page on the web shows every BurnVault transaction.</li>
+          </ul>
+        </div>
+        <div class="vault"><canvas id="embers" aria-hidden="true"></canvas><div class="vl"><span>BurnVault</span><span>Ratios <b>hardcoded</b></span></div></div>
+      </div>
+    </div>
+    <div class="golden" data-reveal><b>The golden rule:</b> NEXA never discusses the $NEXA price and never tells anyone to buy it. An agent that shills its own token would undo the whole point of Proof of Intelligence.</div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="sec" id="roadmap">
+    <div class="head">
+      <div data-reveal><h2>A track record first.<br><span class="dim">The token after.</span></h2></div>
+    </div>
+    <div class="road" id="road">
+      <div class="road-track"><b id="roadFill"></b></div>
+      <div class="road-grid">
+        <div class="wk"><span class="mono">Week 1–2</span><h3>Indexer and ledger</h3><p>Robinhood Chain and Pons V2 indexer. NexaLedger on testnet 46630.</p></div>
+        <div class="wk"><span class="mono">Week 3–4</span><h3>Brain and filter</h3><p>The AI layer, RiskGuard, the human approval queue and the Proof of Intelligence page.</p></div>
+        <div class="wk"><span class="mono">Week 5–8</span><h3>30 days on X</h3><p>Daily committed predictions build a public record before any token exists.</p></div>
+        <div class="wk"><span class="mono">Week 9</span><h3>Audit and launch</h3><p>NexaLedger and the splitter are audited, then $NEXA launches on Pons V2.</p></div>
+        <div class="wk"><span class="mono">Week 10+</span><h3>Paid products</h3><p>NEXA Pro, Ask NEXA and the Signals API.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- CTA -->
+<section class="cta" id="cta">
+  <canvas id="cta3d" aria-hidden="true"></canvas>
+  <div class="cta-in">
+    <h2 class="split" data-split>Watch the record build <span class="dim">before the token exists.</span></h2>
+    <p>For 30 days NEXA posts a committed call every day, with no token on sale. Follow along and check each one on Blockscout when it is revealed.</p>
+    <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="btn btn-org magnet">Follow NEXA on X <span class="ar">→</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="frow">
+      <div class="fbrand">
+        <a href="/" class="logo" aria-label="NEXA home"><svg viewBox="0 0 64 64" role="img" aria-label="NEXA logo"><use href="#nx-mark"/></svg><span>NEXA</span></a>
+        <p>Neural EXecution Agent. An AI agent on X whose every prediction is committed on Robinhood Chain.</p>
+        <a href="https://x.com/__X_HANDLE__" target="_blank" rel="noopener" class="x-btn" aria-label="NEXA on X"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#nx-x"/></svg></a>
+      </div>
+      <nav class="flinks" aria-label="Footer">
+        <a href="#proof">Proof</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#token">$NEXA</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
+    </div>
+    <div class="fbot">
+      <p class="disc">NEXA is an automated AI agent. Nothing it posts is financial advice, and its calls can be wrong. Check the scored record before you rely on any of them.</p>
+      <span class="mono">© 2026 NEXA</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ page motion ============ -->
+<script>
+(function(){
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fine=matchMedia('(pointer: fine)').matches;
+  const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+  const sm=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)};
+  window.__NX={reduce,fine,clamp,sm,heroP:0,ctaP:0,mouse:{x:0,y:0}};
+
+  // split headings into words
+  document.querySelectorAll('[data-split]').forEach(h=>{
+    let i=0;
+    const walk=n=>{
+      [...n.childNodes].forEach(c=>{
+        if(c.nodeType===3){
+          const frag=document.createDocumentFragment();
+          c.textContent.split(/(\s+)/).forEach(part=>{
+            if(!part) return;
+            if(/^\s+$/.test(part)){frag.appendChild(document.createTextNode(part));return;}
+            const w=document.createElement('span');w.className='w';
+            const s=document.createElement('span');s.textContent=part;s.style.transitionDelay=(i++*55)+'ms';
+            w.appendChild(s);frag.appendChild(w);
+          });
+          c.replaceWith(frag);
+        } else if(c.nodeType===1) walk(c);
+      });
+    };
+    walk(h);
+  });
+  requestAnimationFrame(()=>document.querySelector('#copyA [data-split]').classList.add('in'));
+
+  // example commit: grouped hash, countdown and progress (example started 3 days ago)
+  const hex=()=>{const a=new Uint8Array(32);crypto.getRandomValues(a);return '0x'+[...a].map(b=>b.toString(16).padStart(2,'0')).join('')};
+  const exHash=document.getElementById('exHash'), finalHash=hex();
+  const grouped=h=>'<span>0x</span>'+h.slice(2).match(/.{1,8}/g).map(x=>'<span>'+x+'</span>').join('');
+  exHash.innerHTML=grouped('0x'+'·'.repeat(64));
+  function scramble(el,final){
+    if(reduce){el.innerHTML=grouped(final);return}
+    const ch='0123456789abcdef';let f=0;const tot=40;
+    (function step(){const cur='0x'+final.slice(2).split('').map((c,i)=>i<(f/tot)*64?c:ch[Math.random()*16|0]).join('');el.innerHTML=grouped(cur);if(++f<=tot)requestAnimationFrame(step);else el.innerHTML=grouped(final)})();
+  }
+  const DAY=864e5, start=Date.now()-3*DAY-37*6e4, end=start+7*DAY;
+  const exCount=document.getElementById('exCount'), exBar=document.getElementById('exBar');
+  function tickCount(){let s=Math.max(0,(end-Date.now())/1000|0);const d=s/86400|0;s%=86400;const h=String(s/3600|0).padStart(2,'0');s%=3600;exCount.textContent=`${d}d ${h}:${String(s/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+  tickCount(); setInterval(tickCount,1000);
+  const copyBtn=document.getElementById('copyHash');
+  copyBtn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(finalHash);copyBtn.textContent='Copied'}catch(_){copyBtn.textContent='Copy failed'}setTimeout(()=>copyBtn.textContent='Copy',1600)});
+  if(reduce) document.querySelectorAll('.tile svg').forEach(v=>v.pauseAnimations&&v.pauseAnimations());
+
+  // counters
+  function count(el){
+    const to=+el.dataset.count, t0=performance.now(), dur=reduce?1:1300;
+    (function f(n){const k=clamp((n-t0)/dur),e=1-Math.pow(1-k,4);el.textContent=Math.round(to*e);if(k<1)requestAnimationFrame(f)})(t0);
+  }
+
+  // reveal observer
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(!e.isIntersecting) return;
+    const t=e.target; t.classList.add('in'); io.unobserve(t);
+    if(t.hasAttribute('data-stagger')) [...t.children].forEach((c,i)=>c.style.transitionDelay=(i*90)+'ms');
+    t.querySelectorAll('[data-count]').forEach(count);
+    t.querySelectorAll('.bar span').forEach((s,i)=>setTimeout(()=>s.style.width=s.dataset.w+'%',i*150));
+    if(t.classList.contains('ledger')){ scramble(exHash,finalHash); setTimeout(()=>exBar.style.width=Math.min(100,(Date.now()-start)/(7*DAY)*100)+'%',300); }
+    if(t.classList.contains('mini')){ const ds=[...document.querySelectorAll('#days i')]; ds.forEach((d,i)=>setTimeout(()=>{d.classList.toggle('on',i<3);d.classList.toggle('cur',i===3)},400+i*140)); }
+  }),{threshold:.16,rootMargin:'0px 0px -6% 0px'});
+  document.querySelectorAll('[data-reveal],[data-stagger],[data-split]:not(#copyA [data-split])').forEach(el=>io.observe(el));
+
+  // draw-on SVG paths when visible
+  const dio=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.querySelectorAll('.draw').forEach(p=>p.classList.add('on')); dio.unobserve(e.target);} }),{threshold:.3});
+  const st=document.createElement('style');
+  st.textContent='.draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.6s cubic-bezier(.22,1,.36,1)}.draw.on{stroke-dashoffset:0}';
+  document.head.appendChild(st);
+  document.querySelectorAll('.card,.tile').forEach(c=>{ if(c.querySelector('.draw')) dio.observe(c); });
+
+  // rules carousel
+  const rules=[
+    ['Disclosure','The account is labelled automated on X, and the bio says: AI agent, not financial advice.'],
+    ['No trade calls','No "buy", no "sell", no "guaranteed to go up", and no price target for any token.'],
+    ['No self-promotion','$NEXA only comes up in technical and burn announcements.'],
+    ['Sponsored label','Sponsored content opens with the word Sponsored.'],
+    ['One-hour floor','Tokens younger than one hour are off limits, so NEXA can\'t be used to pump a launch.'],
+    ['No guessing','When the data is incomplete, NEXA says it doesn\'t know.']
+  ];
+  const shield='<svg viewBox="0 0 96 96" fill="none" aria-hidden="true"><path d="M48 8 L80 20 V46 C80 66 66 80 48 88 C30 80 16 66 16 46 V20Z" stroke="#FF7A3D" stroke-width="2.5"/><path d="M48 18 L72 27 V46 C72 61 62 72 48 78 C34 72 24 61 24 46 V27Z" fill="rgba(255,90,31,.14)"/><rect x="32" y="43" width="32" height="8" rx="4" fill="#FF5A1F"/></svg>';
+  const car=document.getElementById('rcar'), rNum=document.getElementById('ruleNum'), rProg=document.getElementById('rProg');
+  const nR=rules.length; let ri=0, rTimer=null, paused=false;
+  rules.forEach((r,k)=>{
+    const a=document.createElement('article'); a.className='rc'; a.setAttribute('aria-roledescription','slide');
+    a.innerHTML='<div class="rc-ic">'+shield+'</div><div class="rc-body"><span class="mono"></span><p></p><span class="rc-tag">Enforced in RiskGuard</span></div>';
+    a.querySelector('.mono').textContent=r[0]; a.querySelector('p').textContent=r[1];
+    a.addEventListener('click',()=>{const pos=+a.dataset.pos; if(pos===1)go(ri+1); else if(pos===-1)go(ri-1);});
+    car.appendChild(a);
+  });
+  const rCards=[...car.children];
+  function go(k){
+    ri=(k+nR)%nR;
+    rCards.forEach((c,idx)=>{let d=idx-ri; if(d>nR/2)d-=nR; if(d<-nR/2)d+=nR; c.dataset.pos=Math.abs(d)<=1?d:'x'; c.setAttribute('aria-hidden',d!==0);});
+    rNum.textContent='Rule '+(ri+1)+' of '+nR;
+    schedule();
+  }
+  function schedule(){
+    clearTimeout(rTimer); rProg.style.animation='none'; void rProg.offsetWidth;
+    if(reduce||paused) return;
+    rProg.style.animation='rprog 5.5s linear forwards';
+    rTimer=setTimeout(()=>go(ri+1),5500);
+  }
+  document.getElementById('rPrev').onclick=()=>go(ri-1);
+  document.getElementById('rNext').onclick=()=>go(ri+1);
+  car.addEventListener('keydown',e=>{if(e.key==='ArrowRight')go(ri+1);if(e.key==='ArrowLeft')go(ri-1)});
+  car.addEventListener('pointerenter',()=>{paused=true;schedule()});
+  car.addEventListener('pointerleave',()=>{paused=false;schedule()});
+  let sx=null; car.addEventListener('pointerdown',e=>sx=e.clientX); car.addEventListener('pointerup',e=>{if(sx!==null&&Math.abs(e.clientX-sx)>40)go(ri+(e.clientX<sx?1:-1));sx=null});
+  go(0);
+
+  // mobile menu
+  const mb=document.querySelector('.menu-btn'), mn=document.getElementById('mnav');
+  function setMenu(o){mn.hidden=!o;mb.setAttribute('aria-expanded',o);mb.setAttribute('aria-label',o?'Close menu':'Open menu');document.documentElement.style.overflow=o?'hidden':'';if(o)mn.querySelector('a').focus()}
+  mb.addEventListener('click',()=>setMenu(mn.hidden));
+  mn.addEventListener('click',e=>{if(e.target.closest('a'))setMenu(false)});
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!mn.hidden){setMenu(false);mb.focus()}});
+  addEventListener('resize',()=>{if(innerWidth>1080&&!mn.hidden)setMenu(false)});
+
+  // pointer: magnetic, tilt, spotlight
+  addEventListener('pointermove',e=>{__NX.mouse.x=e.clientX/innerWidth*2-1;__NX.mouse.y=e.clientY/innerHeight*2-1},{passive:true});
+  document.querySelectorAll('.spot').forEach(c=>c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')}));
+  if(fine&&!reduce){
+    document.querySelectorAll('.magnet').forEach(b=>{
+      b.addEventListener('pointermove',e=>{const r=b.getBoundingClientRect();b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.22}px,${(e.clientY-r.top-r.height/2)*.32}px)`});
+      b.addEventListener('pointerleave',()=>{b.style.transition='transform .6s cubic-bezier(.22,1,.36,1)';b.style.transform='';setTimeout(()=>b.style.transition='',600)});
+    });
+    document.querySelectorAll('.tilt').forEach(c=>{
+      c.addEventListener('pointermove',e=>{const r=c.getBoundingClientRect(),px=(e.clientX-r.left)/r.width,py=(e.clientY-r.top)/r.height;c.style.transform=`perspective(1000px) rotateX(${(.5-py)*5}deg) rotateY(${(px-.5)*7}deg)`});
+      c.addEventListener('pointerleave',()=>{c.style.transition='transform .7s cubic-bezier(.22,1,.36,1)';c.style.transform='';setTimeout(()=>c.style.transition='',700)});
+    });
+  }
+
+  // BurnVault: rotating dial, glowing slot, rising embers
+  const ec=document.getElementById('embers'), ex=ec.getContext('2d'); let eOn=false;
+  new IntersectionObserver(es=>eOn=es[0].isIntersecting).observe(ec);
+  const spr=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');const r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,236,214,1)');r.addColorStop(.25,'rgba(255,150,70,.7)');r.addColorStop(1,'rgba(255,90,31,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return c})();
+  const spawn=init=>({x:(Math.random()-.5),y:init?Math.random()*.8:0,vx:(Math.random()-.5)*.06,vy:.16+Math.random()*.3,life:init?Math.random()*1.5:0,max:1+Math.random()*1.6,r:.5+Math.random()*1.4,w:Math.random()*6.28});
+  const em=[...Array(120)].map(()=>spawn(true)); let rot=0;
+  function sizeE(){const d=Math.min(devicePixelRatio,2),r=ec.getBoundingClientRect();ec.width=r.width*d;ec.height=r.height*d}
+  sizeE(); addEventListener('resize',sizeE);
+  function drawE(t,dt){
+    const W=ec.width,H=ec.height,d=Math.min(devicePixelRatio,2); ex.clearRect(0,0,W,H);
+    const cx=W/2, cy=H*.47, R=Math.min(W*.4,H*.36); if(!reduce) rot+=dt*.25;
+    let g=ex.createRadialGradient(cx,cy,R*.2,cx,cy,R*2.1); g.addColorStop(0,'rgba(255,90,31,.2)'); g.addColorStop(1,'rgba(255,90,31,0)'); ex.fillStyle=g; ex.fillRect(0,0,W,H);
+    ex.save(); ex.translate(cx,cy); ex.rotate(rot*.3);
+    for(let i=0;i<120;i++){const a=i/120*Math.PI*2,lg=i%10===0,r1=R*(lg?.89:.94);ex.strokeStyle=lg?'rgba(255,160,110,.75)':'rgba(255,160,110,.22)';ex.lineWidth=(lg?1.6:1)*d;ex.beginPath();ex.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);ex.lineTo(Math.cos(a)*R,Math.sin(a)*R);ex.stroke()}
+    ex.restore();
+    ex.save(); ex.translate(cx,cy); ex.rotate(-rot*.8); ex.lineCap='round';
+    for(let k=0;k<3;k++){const a0=k*2.094,gr=ex.createLinearGradient(Math.cos(a0)*R,Math.sin(a0)*R,Math.cos(a0+1.4)*R,Math.sin(a0+1.4)*R);gr.addColorStop(0,'rgba(255,90,31,0)');gr.addColorStop(1,'rgba(255,150,80,.95)');ex.strokeStyle=gr;ex.lineWidth=3*d;ex.beginPath();ex.arc(0,0,R*.8,a0,a0+1.4);ex.stroke()}
+    ex.restore();
+    g=ex.createRadialGradient(cx-R*.2,cy-R*.25,R*.05,cx,cy,R*.7); g.addColorStop(0,'#2C1B14'); g.addColorStop(1,'#0A0807'); ex.fillStyle=g; ex.beginPath(); ex.arc(cx,cy,R*.66,0,7); ex.fill();
+    ex.strokeStyle='rgba(255,170,120,.28)'; ex.lineWidth=d; ex.beginPath(); ex.arc(cx,cy,R*.66,0,7); ex.stroke();
+    ex.strokeStyle='rgba(255,232,214,.16)'; ex.lineWidth=2*d; ex.beginPath(); ex.arc(cx,cy,R*.6,Math.PI*1.08,Math.PI*1.62); ex.stroke();
+    const sw=R*.92, sh=R*.15, pulse=.85+.15*Math.sin(t*.003);
+    ex.fillStyle='#050404'; ex.beginPath(); ex.roundRect(cx-sw/2-3*d,cy-sh/2-3*d,sw+6*d,sh+6*d,sh); ex.fill();
+    ex.globalCompositeOperation='lighter'; ex.globalAlpha=.55*pulse; ex.drawImage(spr,cx-sw,cy-sh*3,sw*2,sh*6); ex.globalAlpha=1; ex.globalCompositeOperation='source-over';
+    g=ex.createLinearGradient(cx-sw/2,0,cx+sw/2,0); g.addColorStop(0,'#7A1604'); g.addColorStop(.28,'#FF5A1F'); g.addColorStop(.5,'#FFE6CF'); g.addColorStop(.72,'#FF5A1F'); g.addColorStop(1,'#7A1604');
+    ex.fillStyle=g; ex.globalAlpha=pulse; ex.beginPath(); ex.roundRect(cx-sw/2,cy-sh/2,sw,sh,sh/2); ex.fill(); ex.globalAlpha=1;
+    ex.globalCompositeOperation='lighter';
+    em.forEach((p,i)=>{
+      if(!reduce){p.life+=dt;p.y+=p.vy*dt*.45;p.x+=(p.vx+Math.sin(p.w+t*.0018)*.025)*dt;if(p.life>p.max)em[i]=spawn(false)}
+      const k=Math.min(1,p.life/p.max), a=(1-k)*Math.min(1,k*8);
+      const px=cx+p.x*sw*.9, py=cy-p.y*H*.9, s=p.r*d*(1-k*.5)*5;
+      ex.globalAlpha=Math.max(0,a); ex.drawImage(spr,px-s,py-s,s*2,s*2);
+    });
+    ex.globalAlpha=1; ex.globalCompositeOperation='source-over';
+  }
+
+  // marquee
+  const mq=document.getElementById('mq'); mq.innerHTML+=mq.innerHTML;
+  let mqX=0,lastY=scrollY,vel=0,dir=1,lt=performance.now();
+
+  const hero=document.getElementById('hero'), copyA=document.getElementById('copyA'), copyB=document.getElementById('copyB');
+  const pb=[...document.querySelectorAll('.prog b')], nav=document.getElementById('nav');
+  const pipe=document.getElementById('pipe'), pipeFill=document.getElementById('pipeFill'), steps=[...document.querySelectorAll('.step')];
+  const road=document.getElementById('road'), roadFill=document.getElementById('roadFill'), wks=[...document.querySelectorAll('.wk')];
+  const cta=document.getElementById('cta'), gArc=document.getElementById('gArc');
+
+  function frame(t){
+    const dt=Math.min((t-lt)/1000,.05); lt=t;
+    const y=scrollY, vh=innerHeight;
+    const hr=hero.getBoundingClientRect(), p=clamp(-hr.top/(hr.height-vh)); __NX.heroP=p;
+    const fa=sm(.32,.5,p), fb=sm(.52,.68,p);
+    copyA.style.opacity=1-fa; copyA.style.filter=`blur(${fa*12}px)`; copyA.style.transform=`translateY(${-fa*40}px)`; copyA.style.pointerEvents=fa>.5?'none':'';
+    copyB.style.opacity=fb; copyB.style.filter=`blur(${(1-fb)*12}px)`;
+    pb[0].style.transform=`scaleY(${clamp(p/.5)})`; pb[1].style.transform=`scaleY(${clamp((p-.5)/.5)})`;
+
+    const dy=y-lastY; lastY=y; vel+=(dy-vel)*.1; if(Math.abs(dy)>.5) dir=Math.sign(dy);
+    if(!reduce){mqX-=(.6+Math.min(Math.abs(vel),40)*.35)*dir;const half=mq.scrollWidth/2;if(mqX<-half)mqX+=half;if(mqX>0)mqX-=half;mq.style.transform=`translate3d(${mqX}px,0,0)`}
+    if(dy>4&&y>vh*1.4) nav.classList.add('hide'); if(dy<-2) nav.classList.remove('hide');
+
+    const pr=pipe.getBoundingClientRect(), pp=clamp((vh*.6-pr.top)/pr.height);
+    pipeFill.style.transform=`scaleY(${pp})`;
+    steps.forEach(s=>s.classList.toggle('lit',s.getBoundingClientRect().top<vh*.6));
+    const rr=road.getBoundingClientRect(), rp=clamp((vh*.85-rr.top)/(rr.height+vh*.3));
+    roadFill.style.transform=`scaleX(${rp})`;
+    wks.forEach((w,i)=>w.classList.toggle('lit', innerWidth>1080 ? rp>=i/wks.length+.02 : w.getBoundingClientRect().top<vh*.85));
+    const cr=cta.getBoundingClientRect(); __NX.ctaP=clamp((vh-cr.top)/(cr.height+vh));
+    if(eOn) drawE(t,dt);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+<!-- ============ Three.js ============ -->
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const N=window.__NX, clamp=N.clamp, sm=N.sm, lerp=(a,b,t)=>a+(b-a)*t;
+const BG=0x0A0A0A;
+
+function glowTex(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d');
+  const r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'rgba(255,240,225,1)');r.addColorStop(.2,'rgba(255,150,80,.75)');r.addColorStop(.55,'rgba(255,90,31,.18)');r.addColorStop(1,'rgba(255,90,31,0)');
+  g.fillStyle=r;g.fillRect(0,0,128,128);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+const PT_FRAG=`varying float vA; uniform vec3 uC;
+void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,.0,d); gl_FragColor=vec4(uC*(1.+smoothstep(.25,0.,d)*1.5), a*vA); }`;
+
+/* ===================== HERO: the visor mind ===================== */
+(function hero(){
+  const canvas=document.getElementById('hero3d');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+  const PR=Math.min(devicePixelRatio,1.75);
+  renderer.setPixelRatio(PR);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(BG);
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  const studio=new THREE.Scene(); studio.background=new THREE.Color(0x030303);
+  const strip=(w,h,col,k,pos)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(col).multiplyScalar(k),side:THREE.DoubleSide}));m.position.set(...pos);m.lookAt(0,0,0);studio.add(m);};
+  strip(9,1.2,0xffffff,.55,[0,6,2.5]); strip(.7,7,0xff5a1f,2.4,[7,0,-3]); strip(1,5,0xffc6a0,.45,[-7,1.5,2]); strip(7,.25,0xffffff,.6,[0,-5,4]); strip(2.2,2.2,0xff7a3d,.5,[-3,-2,-7]);
+  scene.environment=pmrem.fromScene(studio,0.02).texture;
+  scene.fog=new THREE.Fog(BG,12,26);
+  const camera=new THREE.PerspectiveCamera(30,1,.1,100);
+
+  const key=new THREE.DirectionalLight(0xfff1e6,.5); key.position.set(-5,6,6); scene.add(key);
+  const rim=new THREE.DirectionalLight(0xff6a2b,4.2); rim.position.set(6,2,-5); scene.add(rim);
+  const back=new THREE.DirectionalLight(0xffc6a0,.9); back.position.set(-6,3,-6); scene.add(back);
+
+  const rig=new THREE.Group(); scene.add(rig);
+  const head=new THREE.Group(); rig.add(head);
+
+  // engraved lines + perforation, used as bump and roughness
+  function surfaceTex(){
+    const W=2048,H=1024,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+    g.fillStyle='#808080';g.fillRect(0,0,W,H);
+    g.strokeStyle='#3a3a3a';g.lineWidth=2;
+    for(let k=1;k<16;k++){ if(k>=6&&k<=8) continue; const y=k/16*H; g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke(); }
+    for(let k=0;k<32;k++){ const x=k/32*W; g.beginPath();g.moveTo(x,H*.07);g.lineTo(x,H*.33);g.stroke(); }
+    g.fillStyle='#262626';
+    for(let row=0,y=H*.62;y<H*.86;y+=13,row++){ for(let x=(row%2)*6.5;x<W;x+=13){ g.beginPath();g.arc(x,y,3,0,7);g.fill(); } }
+    g.strokeStyle='#2a2a2a'; g.lineWidth=4; [H*.585,H*.895].forEach(y=>{g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();});
+    const t=new THREE.CanvasTexture(c); t.wrapS=THREE.RepeatWrapping; t.anisotropy=8; return t;
+  }
+  const surf=surfaceTex();
+  const coreMat=new THREE.MeshPhysicalMaterial({color:0x0a0a0b,metalness:.25,roughness:.62,roughnessMap:surf,bumpMap:surf,bumpScale:2.4,clearcoat:1,clearcoatRoughness:.09,envMapIntensity:1});
+  const core=new THREE.Mesh(new THREE.SphereGeometry(1.5,192,192),coreMat);
+  core.scale.set(1,1.14,1); head.add(core);
+  const shell=new THREE.Mesh(new THREE.SphereGeometry(1.515,128,128),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,
+    vertexShader:`varying vec3 vN; varying vec3 vV; void main(){vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`varying vec3 vN; varying vec3 vV; void main(){ float f=pow(1.-max(dot(vN,vV),0.),3.2); float side=smoothstep(-.3,.9,vN.x)*.75+.25; gl_FragColor=vec4(vec3(1.,.42,.14)*f*side*1.25,f); }`}));
+  core.add(shell);
+
+  // visor: dark glass recess, segmented LED strip, chrome lips
+  core.add(new THREE.Mesh(new THREE.SphereGeometry(1.504,220,16,Math.PI/2-1.42,2.84,Math.PI/2-.245,.215),
+    new THREE.MeshPhysicalMaterial({color:0x020202,metalness:.2,roughness:.06,clearcoat:1,clearcoatRoughness:.02,envMapIntensity:1.4})));
+  const ledMat=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uI:{value:1}},toneMapped:false,transparent:true,depthWrite:false,
+    vertexShader:`varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`varying vec2 vUv; uniform float uT; uniform float uI;
+    float h(float n){return fract(sin(n*91.345)*47453.21);}
+    void main(){
+      float N=84.; float id=floor(vUv.x*N); float f=fract(vUv.x*N);
+      float cell=smoothstep(0.,.14,f)*smoothstep(1.,.78,f);
+      float row=smoothstep(.1,.3,vUv.y)*smoothstep(.9,.7,vUv.y);
+      float ends=smoothstep(0.,.08,vUv.x)*smoothstep(1.,.92,vUv.x);
+      float sp=.5+.43*sin(uT*.85); float d=abs((id+.5)/N-sp);
+      float peak=exp(-d*d*260.); float trail=exp(-d*d*28.)*.55;
+      float tw=step(.965,h(id+floor(uT*7.)))*.5;
+      float lvl=(.16+trail+peak*2.2+tw)*uI;
+      vec3 col=mix(vec3(1.,.26,.04),vec3(1.,.62,.3),clamp(trail*1.4,0.,1.)); col=mix(col,vec3(1.,.9,.78),peak);
+      gl_FragColor=vec4(col*lvl*1.6,cell*row*ends);
+    }`});
+  core.add(new THREE.Mesh(new THREE.SphereGeometry(1.507,220,8,Math.PI/2-1.36,2.72,Math.PI/2-.205,.135),ledMat));
+  const chrome=new THREE.MeshPhysicalMaterial({color:0x8a7f76,metalness:1,roughness:.38,envMapIntensity:.32});
+  [[-.255,.016],[-.026,.016]].forEach(([o,hh])=>core.add(new THREE.Mesh(new THREE.SphereGeometry(1.512,220,3,Math.PI/2-1.44,2.88,Math.PI/2+o,hh),chrome)));
+  const modLED=[];
+
+  // soft light pool under the head
+  const tex=glowTex();
+  const pool=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:.32,depthWrite:false,blending:THREE.AdditiveBlending}));
+  pool.scale.set(5.5,1.1,1); pool.position.set(0,-2.25,0); rig.add(pool);
+
+  // particles drifting in (the chain being read)
+  const IN=700, ig=new THREE.BufferGeometry(), dirs=new Float32Array(IN*3), seeds=new Float32Array(IN), spd=new Float32Array(IN);
+  for(let i=0;i<IN;i++){const v=new THREE.Vector3().randomDirection(); v.y*=.7; v.normalize(); dirs.set([v.x,v.y,v.z],i*3); seeds[i]=Math.random(); spd[i]=.04+Math.random()*.08;}
+  ig.setAttribute('position',new THREE.BufferAttribute(new Float32Array(IN*3),3));
+  ig.setAttribute('aDir',new THREE.BufferAttribute(dirs,3)); ig.setAttribute('aSeed',new THREE.BufferAttribute(seeds,1)); ig.setAttribute('aSpd',new THREE.BufferAttribute(spd,1));
+  const inMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,
+    uniforms:{uT:{value:0},uPR:{value:PR},uAmt:{value:1}},
+    vertexShader:`attribute vec3 aDir; attribute float aSeed; attribute float aSpd; uniform float uT; uniform float uPR; uniform float uAmt; varying float vA; varying float vW;
+    void main(){ float p=fract(aSeed+uT*aSpd); float e=p*p*(3.-2.*p);
+      vec3 pos=mix(aDir*(6.5+aSeed*5.),aDir*1.8,e);
+      vA=smoothstep(0.,.25,p)*(1.-smoothstep(.8,1.,p))*uAmt*.7; vW=step(.8,aSeed);
+      vec4 mv=modelViewMatrix*vec4(pos,1.); gl_PointSize=uPR*(1.+aSeed*2.)*(16./-mv.z); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`varying float vA; varying float vW; void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,0.,d); vec3 c=mix(vec3(1.,.42,.12),vec3(1.,.86,.72),vW); gl_FragColor=vec4(c*(1.+smoothstep(.22,0.,d)),a*vA); }`});
+  const inflow=new THREE.Points(ig,inMat); inflow.frustumCulled=false; rig.add(inflow);
+
+  // rings: instrument ticks, fine line with riders, dashed commit orbit
+  const spins=[];
+  function pivot(rx,rz){const pv=new THREE.Group();pv.rotation.set(rx,0,rz);rig.add(pv);const sp=new THREE.Group();pv.add(sp);return [pv,sp];}
+  {
+    const [pv,sp]=pivot(1.25,.25), R=2.35, N=240;
+    const im=new THREE.InstancedMesh(new THREE.BoxGeometry(.007,.05,.007),new THREE.MeshBasicMaterial({color:new THREE.Color(1,.45,.18),transparent:true,opacity:.6,toneMapped:false}),N);
+    const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),ps=new THREE.Vector3(),z=new THREE.Vector3(0,0,1);
+    for(let i=0;i<N;i++){const a=i/N*Math.PI*2,lg=i%10===0;ps.set(Math.cos(a)*R,Math.sin(a)*R,0);q.setFromAxisAngle(z,a-Math.PI/2);sc.set(1,lg?2.6:1,1);m4.compose(ps,q,sc);im.setMatrixAt(i,m4);}
+    sp.add(im); spins.push([sp,.12]);
+  }
+  let riderMat;
+  {
+    const [pv,sp]=pivot(1.05,-.35), R=2.85;
+    pv.add(new THREE.Mesh(new THREE.TorusGeometry(R,.0035,6,360),new THREE.MeshBasicMaterial({color:new THREE.Color(1,.5,.25),transparent:true,opacity:.32,toneMapped:false})));
+    const n=4,g=new THREE.BufferGeometry(),off=new Float32Array(n),sp2=new Float32Array(n);
+    for(let i=0;i<n;i++){off[i]=i/n*6.283+Math.random()*.4;sp2[i]=-.22*(.8+Math.random()*.5);}
+    g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*3),3)); g.setAttribute('aOff',new THREE.BufferAttribute(off,1)); g.setAttribute('aSpd',new THREE.BufferAttribute(sp2,1));
+    riderMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,uniforms:{uT:{value:0},uR:{value:R},uPR:{value:PR},uC:{value:new THREE.Color(1.6,.75,.3)}},
+      vertexShader:`attribute float aOff; attribute float aSpd; uniform float uT; uniform float uR; uniform float uPR; varying float vA; void main(){ float a=aOff+uT*aSpd; vec3 pos=vec3(cos(a)*uR,sin(a)*uR,0.); vA=1.; vec4 mv=modelViewMatrix*vec4(pos,1.); gl_PointSize=uPR*8.*(12./-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader:PT_FRAG});
+    const rd=new THREE.Points(g,riderMat); rd.frustumCulled=false; pv.add(rd);
+  }
+  const [pvC,spC]=pivot(1.32,.08), RC=3.35;
+  const cpts=[]; for(let i=0;i<=480;i++){const a=i/480*Math.PI*2;cpts.push(new THREE.Vector3(Math.cos(a)*RC,Math.sin(a)*RC,0));}
+  const dash=new THREE.Line(new THREE.BufferGeometry().setFromPoints(cpts),new THREE.LineDashedMaterial({color:new THREE.Color(1,.5,.25),dashSize:.06,gapSize:.08,transparent:true,opacity:.25,toneMapped:false}));
+  dash.computeLineDistances(); pvC.add(dash); spins.push([spC,.12]);
+
+  // commit crystals
+  const BN=9, blocks=[];
+  const bGeo=new RoundedBoxGeometry(.36,.36,.36,4,.06);
+  const bMat=new THREE.MeshPhysicalMaterial({color:0x101012,metalness:.3,roughness:.1,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:1.1,transparent:true,opacity:.62});
+  const eGeo=new THREE.EdgesGeometry(new THREE.BoxGeometry(.372,.372,.372));
+  const kGeo=new THREE.OctahedronGeometry(.085,0);
+  for(let i=0;i<BN;i++){
+    const g=new THREE.Group();
+    const kern=new THREE.Mesh(kGeo,new THREE.MeshBasicMaterial({color:new THREE.Color(2.6,1.,.36),toneMapped:false})); g.add(kern);
+    g.add(new THREE.Mesh(bGeo,bMat));
+    const em=new THREE.LineBasicMaterial({color:new THREE.Color(1.3,.5,.16),transparent:true,toneMapped:false}); g.add(new THREE.LineSegments(eGeo,em));
+    const a=Math.PI/2-1.75+i/(BN-1)*3.5;
+    g.visible=false; spC.add(g);
+    blocks.push({g,em,kern,target:new THREE.Vector3(Math.cos(a)*RC,Math.sin(a)*RC,0),spin:(Math.random()-.5)*2});
+  }
+  const linkGeo=new THREE.BufferGeometry(), linkPos=new Float32Array((BN-1)*6);
+  linkGeo.setAttribute('position',new THREE.BufferAttribute(linkPos,3));
+  const links=new THREE.LineSegments(linkGeo,new THREE.LineBasicMaterial({color:new THREE.Color(1.5,.55,.18),transparent:true,opacity:.7,toneMapped:false}));
+  links.frustumCulled=false; spC.add(links);
+
+  const composer=new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene,camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(256,256),.7,.42,1.0));
+  composer.addPass(new OutputPass());
+
+  let W=0,H=0;
+  function layout(){
+    const w=canvas.clientWidth,h=canvas.clientHeight; if(!w||!h) return;
+    if(w!==W||h!==H){W=w;H=h;renderer.setSize(w,h,false);composer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  }
+  let visible=true; new IntersectionObserver(e=>visible=e[0].isIntersecting).observe(canvas);
+  const clock=new THREE.Clock(); let p=0,mx=0,my=0;
+  const tmp=new THREE.Vector3(), ss=v=>v*v*(3-2*v);
+
+  (function tick(){
+    requestAnimationFrame(tick);
+    if(!visible) return;
+    layout();
+    const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime, idle=N.reduce?0:1;
+    p+=(N.heroP-p)*(1-Math.exp(-dt*6));
+    mx+=(N.mouse.x-mx)*(1-Math.exp(-dt*3)); my+=(N.mouse.y-my)*(1-Math.exp(-dt*3));
+    const narrow=innerWidth<860, ph=innerWidth<620;
+    camera.position.set(0,0,lerp(11,10.4,sm(.4,1,p))); camera.lookAt(0,0,0);
+    camera.fov=ph?44:30; camera.updateProjectionMatrix();
+    rig.position.set(narrow?0:2.75, ph?-2.75:(narrow?-2.45:-.05), 0);
+    rig.scale.setScalar(ph?.62:(narrow?.68:.86));
+
+    head.rotation.y=lerp(head.rotation.y,-.18+mx*.38+Math.sin(t*.4)*.06*idle,.08);
+    head.rotation.x=lerp(head.rotation.x,my*.2+Math.sin(t*.55)*.03*idle,.08);
+    head.position.y=Math.sin(t*.9)*.05*idle;
+
+    const c=sm(.48,.92,p); let flash=0, settled=0;
+    spC.worldToLocal(tmp.copy(rig.position));
+    blocks.forEach((b,i)=>{
+      const k=clamp((c-i*.075)/.28), e=ss(k);
+      b.g.visible=k>0;
+      b.g.position.lerpVectors(tmp,b.target,e);
+      b.g.scale.setScalar(.2+.8*e);
+      b.g.rotation.set(b.spin*(1-e)*3+t*.15*idle,(1-e)*4+t*.2*idle,b.spin*(1-e)*2);
+      b.kern.rotation.x+=dt*1.4; b.kern.rotation.y+=dt*1.1;
+      flash=Math.max(flash,k>0&&k<1?Math.sin(k*Math.PI):0);
+      b.em.opacity=.3+.7*e;
+      if(k>=1) settled++;
+    });
+    for(let i=0;i<BN-1;i++){const a=blocks[i].g.position,b=blocks[i+1].g.position;linkPos.set([a.x,a.y,a.z,b.x,b.y,b.z],i*6);}
+    linkGeo.setDrawRange(0,Math.max(0,settled-1)*2); linkGeo.attributes.position.needsUpdate=true;
+    dash.material.opacity=.2+c*.3;
+    spins.forEach(([sp,s])=>sp.rotation.z+=dt*s*.25*idle);
+    riderMat.uniforms.uT.value=t;
+    ledMat.uniforms.uT.value=idle?t:1.2; ledMat.uniforms.uI.value=1+flash*.8+c*.2;
+    const pulse=.55+.45*Math.sin(t*2.4); modLED.forEach(m=>m.color.setRGB(1.6*pulse,.55*pulse,.18*pulse));
+    inMat.uniforms.uT.value=t; inMat.uniforms.uAmt.value=1-c*.55;
+    pool.material.opacity=.26+flash*.25;
+    composer.render();
+  })();
+})();
+
+/* ===================== CTA: horizon ===================== */
+(function horizon(){
+  const canvas=document.getElementById('cta3d');
+  const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+  const PR=Math.min(devicePixelRatio,1.75); renderer.setPixelRatio(PR);
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(BG);
+  const camera=new THREE.PerspectiveCamera(32,1,.1,200);
+
+  const R=18, planetY=-R-1.6;
+  const planet=new THREE.Mesh(new THREE.SphereGeometry(R,192,192),new THREE.ShaderMaterial({
+    uniforms:{uT:{value:0}},
+    vertexShader:`varying vec3 vN; varying vec3 vW; varying vec3 vP; void main(){ vN=normalize(normalMatrix*normal); vP=position; vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader:`varying vec3 vN; varying vec3 vW; varying vec3 vP; uniform float uT;
+    void main(){
+      vec3 V=normalize(cameraPosition-vW); float f=1.-max(dot(normalize(vN),V),0.);
+      float rim=pow(f,5.);
+      float lat=abs(sin(atan(vP.z,vP.x)*36.+uT*.05))*.0+0.;
+      float grid=smoothstep(.985,1.,abs(sin(vP.x*1.6)))*.06+smoothstep(.985,1.,abs(sin(vP.z*1.6)))*.06;
+      vec3 base=vec3(.02,.016,.014)+vec3(.9,.3,.08)*grid*(1.-f)*.6;
+      vec3 c=base+vec3(1.,.42,.12)*rim*1.8+vec3(1.,.86,.7)*pow(f,14.)*1.2;
+      gl_FragColor=vec4(c,1.);
+    }`}));
+  planet.position.y=planetY; scene.add(planet);
+
+  const atmo=new THREE.Mesh(new THREE.SphereGeometry(R*1.035,160,160),new THREE.ShaderMaterial({
+    transparent:true,depthWrite:false,side:THREE.BackSide,blending:THREE.AdditiveBlending,
+    vertexShader:`varying vec3 vN; varying vec3 vW; void main(){ vN=normalize(normalMatrix*normal); vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }`,
+    fragmentShader:`varying vec3 vN; varying vec3 vW;
+    void main(){ vec3 V=normalize(cameraPosition-vW); float d=dot(normalize(vN),V); float g=pow(clamp(1.+d*1.0,0.,1.),5.);
+      gl_FragColor=vec4(vec3(1.,.38,.1)*g*1.25,g); }`}));
+  atmo.position.y=planetY; scene.add(atmo);
+
+  const tex=glowTex();
+  const sun=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.95}));
+  sun.scale.set(22,5.5,1); sun.position.set(0,-1.55,-2); scene.add(sun);
+  const core=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+  core.scale.set(5,1.6,1); core.position.set(0,-1.6,-1.9); scene.add(core);
+
+  // dust
+  const DN=500, dg=new THREE.BufferGeometry(), dp=new Float32Array(DN*3);
+  for(let i=0;i<DN;i++){dp[i*3]=(Math.random()-.5)*30; dp[i*3+1]=Math.random()*12-1.5; dp[i*3+2]=-Math.random()*14;}
+  dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
+  const dust=new THREE.Points(dg,new THREE.PointsMaterial({map:tex,size:.12,transparent:true,opacity:.6,depthWrite:false,blending:THREE.AdditiveBlending,color:0xffb38a}));
+  scene.add(dust);
+
+  // floating commit cards (glass, rounded, with sparkline)
+  function tileTex(i){
+    const W=1024,H=640,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+    const path=()=>{g.beginPath();g.roundRect(6,6,W-12,H-12,46)};
+    path(); let gr=g.createLinearGradient(0,0,W,H); gr.addColorStop(0,'rgba(48,20,9,.95)'); gr.addColorStop(.55,'rgba(18,13,11,.95)'); gr.addColorStop(1,'rgba(10,10,10,.95)'); g.fillStyle=gr; g.fill();
+    g.save(); path(); g.clip();
+    g.strokeStyle='rgba(255,160,110,.05)'; g.lineWidth=2; for(let x=0;x<W;x+=48){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()} for(let y=0;y<H;y+=48){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
+    gr=g.createLinearGradient(0,0,0,H*.55); gr.addColorStop(0,'rgba(255,210,180,.12)'); gr.addColorStop(1,'rgba(255,210,180,0)'); g.fillStyle=gr; g.fillRect(0,0,W,H*.55);
+    g.restore();
+    path(); gr=g.createLinearGradient(0,0,W,H); gr.addColorStop(0,'rgba(255,150,90,.95)'); gr.addColorStop(.5,'rgba(255,150,90,.12)'); gr.addColorStop(1,'rgba(255,150,90,.55)'); g.strokeStyle=gr; g.lineWidth=4; g.stroke();
+    const revealed=i%2===0;
+    g.fillStyle='#FF8A55'; g.font='500 30px "Geist Mono", monospace'; g.fillText('COMMIT',60,96);
+    g.fillStyle='#8A7A70'; g.font='26px "Geist Mono", monospace'; g.fillText('day '+(i+1)+' / 30',60,138);
+    const chip=revealed?'REVEALED':'COMMITTED'; g.font='500 24px "Geist Mono", monospace'; const cw=g.measureText(chip).width+64;
+    g.beginPath(); g.roundRect(W-60-cw,62,cw,50,25); g.fillStyle=revealed?'rgba(255,90,31,.18)':'rgba(255,255,255,.05)'; g.fill(); g.strokeStyle=revealed?'rgba(255,140,80,.7)':'rgba(255,255,255,.18)'; g.lineWidth=2; g.stroke();
+    g.fillStyle=revealed?'#FF8A55':'#A7A29C'; g.beginPath(); g.arc(W-60-cw+28,87,6,0,7); g.fill(); g.fillText(chip,W-60-cw+44,96);
+    let h='';for(let k=0;k<16;k++)h+='0123456789abcdef'[Math.random()*16|0];
+    g.fillStyle='#F2EFEA'; g.font='300 50px "Geist", sans-serif'; g.fillText('0x'+h.match(/.{4}/g).join(' ')+'…',60,250);
+    const cols=[['ASSET','Stock Token'],['DIRECTION',i%3?'Down':'Up'],['HORIZON','7 days']];
+    cols.forEach(([k,v],n)=>{const x=60+n*300; g.fillStyle='#8A7A70'; g.font='22px "Geist Mono", monospace'; g.fillText(k,x,320); g.fillStyle='#F2EFEA'; g.font='400 34px "Geist", sans-serif'; g.fillText(v,x,364);});
+    const pts=[]; let y=0; for(let k=0;k<=40;k++){y+= (Math.random()-.46)*14; pts.push([60+k*(W-120)/40, 520+Math.max(-70,Math.min(40,y))]);}
+    g.beginPath(); g.moveTo(pts[0][0],590); pts.forEach(([x,yy])=>g.lineTo(x,yy)); g.lineTo(pts[pts.length-1][0],590); g.closePath();
+    gr=g.createLinearGradient(0,440,0,590); gr.addColorStop(0,'rgba(255,90,31,.35)'); gr.addColorStop(1,'rgba(255,90,31,0)'); g.fillStyle=gr; g.fill();
+    g.beginPath(); pts.forEach(([x,yy],k)=>k?g.lineTo(x,yy):g.moveTo(x,yy)); g.strokeStyle='#FF6A2B'; g.lineWidth=4; g.stroke();
+    const last=pts[pts.length-1]; g.fillStyle='#FFD2B5'; g.beginPath(); g.arc(last[0],last[1],8,0,7); g.fill();
+    const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; return t;
+  }
+  const tiles=[];
+  const spots=[[-5.8,2.6,-3.5,.1],[5.9,3,-3.5,-.14],[-5,-.15,-1.2,.06],[5.1,.2,-1.4,-.08]];
+  spots.forEach((s,i)=>{
+    const m=new THREE.Group();
+    const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:.22,depthWrite:false,blending:THREE.AdditiveBlending}));
+    halo.scale.set(4.4,3,1); halo.position.z=-.05; m.add(halo);
+    m.add(new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.5),new THREE.MeshBasicMaterial({map:tileTex(i),transparent:true})));
+    m.position.set(s[0],s[1],s[2]); m.rotation.set(0,-s[0]*.05,s[3]); scene.add(m);
+    tiles.push({m,base:m.position.clone(),ph:Math.random()*6.28,depth:1/(1-s[2]*.2)});
+  });
+
+  let W=0,H=0;
+  function layout(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;if(w!==W||h!==H){W=w;H=h;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}}
+  let visible=false; new IntersectionObserver(e=>visible=e[0].isIntersecting).observe(canvas);
+  const clock=new THREE.Clock(); let cp=0,mx=0,my=0;
+  (function tick(){
+    requestAnimationFrame(tick);
+    if(!visible) return;
+    layout();
+    const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime, idle=N.reduce?0:1;
+    cp+=(N.ctaP-cp)*(1-Math.exp(-dt*4)); mx+=(N.mouse.x-mx)*.04; my+=(N.mouse.y-my)*.04;
+    const narrow=innerWidth<760;
+    camera.fov=narrow?58:32;
+    camera.position.set(mx*.5,lerp(.6,-.1,cp)-my*.2,narrow?11:12); camera.lookAt(0,narrow?lerp(2.9,2.4,cp):lerp(.9,.3,cp),0);
+    camera.updateProjectionMatrix();
+    planet.rotation.y+=dt*.01*idle; planet.material.uniforms.uT.value=t;
+    sun.material.opacity=.75+Math.sin(t*1.3)*.08*idle+cp*.15;
+    tiles.forEach((o,i)=>{
+      o.m.visible=innerWidth>=620&&(!narrow||i>1);
+      o.m.position.x=o.base.x*(narrow?.55:1)+mx*.4*o.depth;
+      o.m.position.y=o.base.y+Math.sin(t*.7+o.ph)*.12*idle-my*.2*o.depth+lerp(-.6,.4,cp)*o.depth*.6;
+      o.m.rotation.x=Math.sin(t*.5+o.ph)*.05*idle;
+    });
+    dust.rotation.y=t*.01*idle;
+    renderer.render(scene,camera);
+  })();
+})();
+</script>
+</body>
+</html>

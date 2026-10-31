@@ -1,0 +1,5 @@
+.visual/
+.next/
+.env.local
+tsconfig.tsbuildinfo
+next-env.d.ts

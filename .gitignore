@@ -1,0 +1,20 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+.turbo/
+.next/
+coverage/
+out/
+cache/
+broadcast/
+contracts/lib/
+*.log
+.DS_Store
+
+# Vercel
+.vercel/
+
+.vercel
+.env*

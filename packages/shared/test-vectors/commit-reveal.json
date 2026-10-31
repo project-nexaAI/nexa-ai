@@ -1,0 +1,29 @@
+{
+  "description": "keccak256(abi.encode(string text, address asset, uint8 direction, uint32 horizon, bytes32 salt)). Dipakai bersama forge test dan Vitest.",
+  "vectors": [
+    {
+      "text": "NVDA akan ditutup lebih tinggi dalam 7 hari",
+      "asset": "0x000000000000000000000000000000000000dEaD",
+      "direction": 1,
+      "horizon": 604800,
+      "salt": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "hash": "0xb3608905953b23622917d8bc13fb273ee8d23838793deb6f603b25188fe28848"
+    },
+    {
+      "text": "ETH akan turun dalam 7 hari",
+      "asset": "0x000000000000000000000000000000000000dEaD",
+      "direction": 2,
+      "horizon": 604800,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000000ab",
+      "hash": "0xd8a1c0a70cfb2e5929646869e1171b5c18f0f34add78d19ed15628fc5178ed76"
+    },
+    {
+      "text": "",
+      "asset": "0x000000000000000000000000000000000000dEaD",
+      "direction": 1,
+      "horizon": 3600,
+      "salt": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "hash": "0x09c3df342fb1dd9b21be74dccc1bb97d37f21cc8650885feb818d008f14d3c47"
+    }
+  ]
+}

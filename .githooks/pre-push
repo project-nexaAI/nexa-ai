@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+[ -f package.json ] && pnpm lint && pnpm typecheck && pnpm test
+[ -f contracts/foundry.toml ] && (cd contracts && forge test)
+exit 0
