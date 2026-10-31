@@ -15,6 +15,20 @@
       "when": 1793379017870,
       "tag": "0001_tearful_ares",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793420920753,
+      "tag": "0002_loud_korg",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793421297455,
+      "tag": "0003_pretty_gateway",
+      "breakpoints": true
     }
   ]
 }

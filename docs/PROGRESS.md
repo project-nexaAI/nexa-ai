@@ -54,3 +54,5 @@ Posting X selama 30 hari menunggu "Deploy testnet", keystore/saldo, dan izin X l
 - [x] Paket audit `docs/audit/README.md`, checklist launch `docs/launch-checklist.md`
 - [ ] Adaptor swapper Uniswap v4 (BLOCKERS #11); fork test dengan NVDA asli (#12); audit eksternal (#13)
 - [ ] `/burn` terhubung ke event BurnVault (butuh indexer, BLOCKERS #7)
+- 2026-10-31: `/burn` kini membaca tabel `burns` (event `Burned` BurnVault, migrasi 0002; total + daftar terbaru + link Blockscout), dengan test. `/rug-radar` sudah ada dan membaca `pons_tokens`. **Keduanya kosong sampai ada penulis datanya**: `burns` menunggu BurnVault ter-deploy + pembaca event; `pons_tokens` menunggu indexer Envio (BLOCKERS #7).
+- 2026-10-31: Tahap 5 dimulai: `GET /signals` (header `x-api-key`, hash SHA-256 di tabel `api_keys`, batas 60 req/menit per kunci, 503 selama `PAID_FEATURES_ENABLED=false`), skema + fixture + openapi + `api-client.getSignals`, 5 test. Kunci dibuat dengan `pnpm --filter @nexa-ai/api keys:create "<label>"`. **Belum**: `/leaderboard` (butuh keputusan produk: sumber data KOL), `/ask` (butuh alamat USDG terverifikasi), SSE + Telegram Pro, SIWE.

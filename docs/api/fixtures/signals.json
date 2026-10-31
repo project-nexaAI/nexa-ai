@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "id": 7,
+      "kind": "prediction_of_the_day",
+      "content": "Prediction of the Day: NVDA up over 7 days. Committed on-chain before this post. Not financial advice.",
+      "postedAt": "2026-12-01T09:00:00.000Z",
+      "ledgerId": 3
+    }
+  ]
+}

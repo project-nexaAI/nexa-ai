@@ -1,11 +1,13 @@
+import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { createDb, ponsTokens, predictions } from '@nexa-ai/db'
+import { apiKeys, burns, createDb, ponsTokens, postQueue, predictions } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  signalsResponseSchema,
 } from '@nexa-ai/api-client'
 import { buildApp } from '../src/app'
 import { buildOpenApi } from '../src/openapi'
@@ -60,8 +62,11 @@ const revealed = (ledgerId: number, direction: 1 | 2, returnBps: number, won: bo
 describe.skipIf(!dbUp)('API publik', () => {
   beforeEach(async () => {
     seq = 0
+    await db.delete(postQueue)
+    await db.delete(apiKeys)
     await db.delete(predictions)
     await db.delete(ponsTokens)
+    await db.delete(burns)
   })
   afterAll(async () => {
     await app.close()
@@ -163,10 +168,80 @@ describe.skipIf(!dbUp)('API publik', () => {
     })
   })
 
-  it('GET /burn: keadaan nol sampai BurnVault ada', async () => {
-    const body = burnResponseSchema.parse((await get('/burn')).json())
-    expect(body.totalBurned.raw).toBe('0')
-    expect(body.burns).toEqual([])
+  describe('GET /burn', () => {
+    it('kosong: total nol', async () => {
+      const body = burnResponseSchema.parse((await get('/burn')).json())
+      expect(body.totalBurned).toEqual({ raw: '0', decimals: 18, formatted: '0' })
+      expect(body.burns).toEqual([])
+    })
+
+    it('menjumlahkan semua burn, terbaru dulu, dengan link Blockscout', async () => {
+      await db.insert(burns).values([
+        { id: `${h(1)}-0`, txHash: h(1), nexaBurned: '1500000000000000000', pairSpent: '10', at: day(2), blockNumber: 10n },
+        { id: `${h(2)}-3`, txHash: h(2), nexaBurned: '2500000000000000000000', pairSpent: '20', at: day(1), blockNumber: 20n },
+      ])
+      const body = burnResponseSchema.parse((await get('/burn')).json())
+      expect(body.totalBurned).toEqual({ raw: '2501500000000000000000', decimals: 18, formatted: '2501.5' })
+      expect(body.burns.map((b) => b.txHash)).toEqual([h(2), h(1)])
+      expect(body.burns[0]!.amount.formatted).toBe('2500')
+      expect(body.burns[0]!.txUrl).toBe(`${EXPLORER}/tx/${h(2)}`)
+    })
+  })
+
+  describe('GET /signals (berbayar)', () => {
+    const KEY = 'nexa_test_key_123'
+    const paid = buildApp({ db, explorerUrl: EXPLORER, paidFeaturesEnabled: true, signalsRateLimitPerMinute: 3, now: () => NOW })
+    const call = (key?: string, query = '') => paid.inject({ method: 'GET', url: `/signals${query}`, headers: key ? { 'x-api-key': key } : {} })
+    const addKey = (key: string, active = true) =>
+      db.insert(apiKeys).values({ keyHash: createHash('sha256').update(key).digest('hex'), label: 'test', active })
+
+    it('mati (503) selama PAID_FEATURES_ENABLED=false, meski kunci valid', async () => {
+      await addKey(KEY)
+      const res = await app.inject({ method: 'GET', url: '/signals', headers: { 'x-api-key': KEY } })
+      expect(res.statusCode).toBe(503)
+      expect(res.json()).toEqual({ error: 'paid_features_disabled' })
+    })
+
+    it('tanpa kunci atau kunci salah atau kunci nonaktif: 401', async () => {
+      await addKey(KEY)
+      await addKey('nonaktif', false)
+      expect((await call()).statusCode).toBe(401)
+      expect((await call('salah')).statusCode).toBe(401)
+      expect((await call('nonaktif')).statusCode).toBe(401)
+    })
+
+    it('200: hanya post yang sudah terbit, terbaru dulu, dengan ledgerId bila prediksi', async () => {
+      await addKey(KEY)
+      await seed({ ledgerId: 5, status: 'posted' })
+      const [pred] = await db.select().from(predictions)
+      await db.insert(postQueue).values([
+        { kind: 'prediction_of_the_day', content: 'lama', status: 'posted', postedAt: day(2), predictionId: pred!.id },
+        { kind: 'daily_summary', content: 'baru', status: 'posted', postedAt: day(1) },
+        { kind: 'daily_summary', content: 'belum terbit', status: 'approved' },
+        { kind: 'daily_summary', content: 'menunggu', status: 'pending_approval' },
+      ])
+      const res = await call(KEY)
+      expect(res.statusCode).toBe(200)
+      const body = signalsResponseSchema.parse(res.json())
+      expect(body.items.map((i) => i.content)).toEqual(['baru', 'lama'])
+      expect(body.items[0]!.ledgerId).toBeNull()
+      expect(body.items[1]!.ledgerId).toBe(5)
+      expect(res.headers['cache-control']).toBe('private, no-store')
+    })
+
+    it('limit divalidasi', async () => {
+      await addKey(KEY)
+      expect((await call(KEY, '?limit=0')).statusCode).toBe(400)
+      expect((await call(KEY, '?limit=101')).statusCode).toBe(400)
+    })
+
+    it('batas laju per kunci: permintaan ke-4 dalam semenit = 429 + Retry-After', async () => {
+      await addKey(KEY)
+      for (let i = 0; i < 3; i++) expect((await call(KEY)).statusCode).toBe(200)
+      const res = await call(KEY)
+      expect(res.statusCode).toBe(429)
+      expect(Number(res.headers['retry-after'])).toBeGreaterThan(0)
+    })
   })
 
   it('GET /healthz', async () => {

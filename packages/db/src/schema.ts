@@ -72,6 +72,20 @@ export const ponsTrades = pgTable(
   (t) => [index('pons_trades_token_at_idx').on(t.token, t.at)],
 )
 
+/** Event `Burned` dari BurnVault. $NEXA selalu 18 desimal (token Pons). */
+export const burns = pgTable(
+  'burns',
+  {
+    id: text('id').primaryKey(), // `${txHash}-${logIndex}`
+    txHash: text('tx_hash').notNull(),
+    nexaBurned: amount('nexa_burned').notNull(),
+    pairSpent: amount('pair_spent').notNull(),
+    at: ts('at').notNull(),
+    blockNumber: bigint('block_number', { mode: 'bigint' }).notNull(),
+  },
+  (t) => [index('burns_at_idx').on(t.at)],
+)
+
 export const whaleTransfers = pgTable(
   'whale_transfers',
   {
@@ -147,6 +161,15 @@ export const postQueue = pgTable(
   },
   (t) => [index('post_queue_status_idx').on(t.status, t.scheduledAt)],
 )
+
+/** Kunci Signals API. Hanya hash SHA-256 yang disimpan; kunci asli ditampilkan sekali saat dibuat. */
+export const apiKeys = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  keyHash: text('key_hash').notNull().unique(),
+  label: text('label').notNull(),
+  active: boolean('active').notNull().default(true),
+  createdAt: ts('created_at').notNull().defaultNow(),
+})
 
 export const riskguardLog = pgTable('riskguard_log', {
   id: serial('id').primaryKey(),
