@@ -1,3 +1,4 @@
+import { NavMagnet } from '@/components/wallet/NavMagnet'
 import { WalletButton } from '@/components/wallet/WalletButton'
 import { X_URL } from '@/lib/site'
 
@@ -40,7 +41,7 @@ export function Nav({ base = '' }: { base?: string }) {
             ))}
           </nav>
           <div className="nav-r">
-            <a href={X_URL} target="_blank" rel="noopener" className="x-btn nav-x" aria-label="NEXA on X">
+            <a href={X_URL} target="_blank" rel="noopener" className="x-btn nav-x" aria-label="NEXA on X" data-magnet="">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <use href="#nx-x" />
               </svg>
@@ -53,6 +54,7 @@ export function Nav({ base = '' }: { base?: string }) {
           </div>
         </div>
       </header>
+      <NavMagnet />
       <div className="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="Menu" hidden>
         <nav>
           {PAGES.map((p) => (

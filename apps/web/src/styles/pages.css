@@ -4,10 +4,6 @@
 .pg-head h1{font-size:clamp(38px,5vw,64px);font-weight:300;letter-spacing:-.035em;line-height:1.02}
 .pg-head h1 .dim{color:var(--ink-3)}
 .pg-head p{color:var(--ink-2);font-size:16px;max-width:620px}
-.pg-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:34px}
-.pg-tabs a{font-size:13px;padding:8px 16px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);transition:color .2s,border-color .2s,background .2s}
-.pg-tabs a:hover{color:var(--ink);border-color:var(--line-2)}
-.pg-tabs a[aria-current="page"]{color:#120700;background:var(--org);border-color:var(--org)}
 .pg-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
 .pg-stat{padding:20px;display:flex;flex-direction:column;gap:8px}
 .pg-stat .n{font-size:clamp(28px,3vw,40px);font-weight:300;letter-spacing:-.03em;line-height:1}
@@ -118,13 +114,14 @@ a.pg-row:hover{border-color:var(--line-2)}
   .nav-x{display:none}
   .wallet-btn{padding-left:16px}
 }
-/* Desain landing menyembunyikan .btn-light di navbar mobile (tombol Follow on X lama); tombol wallet tetap tampil, versi ringkas. */
+@media (max-width:350px){
+  .nav .logo span{display:none}
+}
+/* Ikon X di navbar: efek hover sama dengan tombol oranye (warna aksen + gerak magnet dari NavMagnet) */
+.nav-x{color:var(--ink);will-change:transform}
+.nav-x:hover{background:var(--org-2);border-color:var(--org-2);color:#120700}
 @media (max-width:620px){
-  .nav-r .wallet .btn-light{display:inline-flex;padding:0 6px 0 16px;min-height:44px;gap:8px}
   .wl-full{display:none}
   .wl-short{display:inline}
   .wallet-pop{right:-52px}
-}
-@media (max-width:350px){
-  .nav .logo span{display:none}
 }

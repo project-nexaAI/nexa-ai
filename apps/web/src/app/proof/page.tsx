@@ -36,7 +36,6 @@ export default async function ProofPage() {
   const proof = await safe(api().getProof())
   return (
     <PageShell
-      current="/proof"
       label="Proof of Intelligence"
       title="Every call,"
       dim="on-chain and scored."

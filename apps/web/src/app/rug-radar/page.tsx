@@ -11,7 +11,6 @@ export default async function RugRadarPage() {
   const radar = await safe(api().getRugRadar())
   return (
     <PageShell
-      current="/rug-radar"
       label="Rug radar"
       title="New Pons launches,"
       dim="with the red flags up front."

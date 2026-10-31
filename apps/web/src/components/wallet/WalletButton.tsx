@@ -102,7 +102,8 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
     <div className="wallet" ref={root}>
       <button
         type="button"
-        className="btn btn-light wallet-btn"
+        className="btn btn-org wallet-btn"
+        data-magnet=""
         onClick={() => (me ? setOpen((o) => !o) : void signIn())}
         disabled={busy}
         aria-haspopup={me ? 'dialog' : undefined}

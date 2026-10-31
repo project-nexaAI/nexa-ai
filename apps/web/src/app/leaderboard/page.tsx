@@ -10,7 +10,6 @@ export default async function LeaderboardPage() {
   const kols = board?.entries.filter((e) => !e.isNexa) ?? []
   return (
     <PageShell
-      current="/leaderboard"
       label="NEXA vs KOL"
       title="Accuracy,"
       dim="not follower count."

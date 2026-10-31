@@ -10,7 +10,6 @@ export default async function BurnPage() {
   const burn = await safe(api().getBurn())
   return (
     <PageShell
-      current="/burn"
       label="Burn tracker"
       title="$NEXA burned,"
       dim="verifiable on-chain."
