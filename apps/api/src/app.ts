@@ -3,19 +3,26 @@ import { createHash } from 'node:crypto'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
+import { apiKeys, askPayments, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
 import {
+  askRequestSchema,
+  askResponseSchema,
   burnResponseSchema,
+  leaderboardResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
+  type AskResponse,
   type BurnResponse,
+  type LeaderboardResponse,
   type Prediction,
   type ProofResponse,
   type RugRadarResponse,
   type SignalsResponse,
 } from '@nexa-ai/api-client'
+import { kolStats, rankEntries } from './leaderboard'
+import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 
 export type Db = ReturnType<typeof createDb>['db']
@@ -24,7 +31,7 @@ export interface AppConfig {
   db: Db
   /** Basis Blockscout, tanpa slash akhir (mis. https://explorer.testnet.chain.robinhood.com). */
   explorerUrl: string
-  /** Asal web yang diizinkan CORS (env WEB_ORIGIN). Kosong = CORS dimatikan. */
+  /** Asal web yang diizinkan CORS (env WEB_ORIGIN; beberapa asal dipisah koma). Kosong = CORS dimatikan. */
   webOrigin?: string
   /** alamat aset (huruf kecil) -> simbol, untuk prediksi yang sudah di-reveal. */
   symbols?: Record<string, string>
@@ -32,6 +39,10 @@ export interface AppConfig {
   paidFeaturesEnabled?: boolean
   /** Batas permintaan per kunci API per menit. */
   signalsRateLimitPerMinute?: number
+  /** Call ternilai minimum agar masuk peringkat leaderboard (env LEADERBOARD_MIN_SCORED). */
+  leaderboardMinScored?: number
+  /** Ask NEXA: pembayaran USDG on-chain. Tanpa ini POST /ask menjawab 503. */
+  ask?: AskConfig
   now?: () => Date
 }
 
@@ -49,7 +60,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const symbols = cfg.symbols ?? {}
   const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
 
-  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin, methods: ['GET'] })
+  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key'] })
 
   function toPrediction(row: PredictionRow): Prediction {
     const committedAt = row.committedAt!
@@ -164,6 +175,29 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     return body
   })
 
+  // NEXA vs KOL: leaderboard akurasi. Hanya KOL yang opted_in; baris NEXA dihitung dari /proof yang sama.
+  app.get('/leaderboard', async (_req, reply) => {
+    const rows = await publicRows(cfg.db)
+    const scoredRows = rows.filter((r) => r.status === 'revealed' && alignedBps(r) !== null)
+    const nexa = {
+      handle: 'nexa',
+      displayName: 'NEXA',
+      isNexa: true,
+      scored: scoredRows.length,
+      wins: scoredRows.filter((r) => r.won === true).length,
+      pending: rows.filter((r) => r.status !== 'revealed').length,
+      avgReturnBps: scoredRows.length ? Math.round(scoredRows.reduce((a, r) => a + alignedBps(r)!, 0) / scoredRows.length) : null,
+    }
+    const minScored = cfg.leaderboardMinScored ?? 3
+    const body: LeaderboardResponse = leaderboardResponseSchema.parse({
+      updatedAt: now().toISOString(),
+      minScored,
+      entries: rankEntries([nexa, ...(await kolStats(cfg.db))], minScored),
+    })
+    cache(reply)
+    return body
+  })
+
   // Burn tracker: event `Burned` BurnVault. $NEXA 18 desimal. Kosong sampai BurnVault ada dan ter-index.
   const NEXA_DECIMALS = 18
   const units = (raw: bigint) => ({ raw: raw.toString(), decimals: NEXA_DECIMALS, formatted: formatUnits(raw, NEXA_DECIMALS) })
@@ -219,6 +253,39 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
         postedAt: r.post.postedAt!.toISOString(),
         ledgerId: r.ledgerId,
       })),
+    })
+    void reply.header('cache-control', 'private, no-store')
+    return body
+  })
+
+  // Ask NEXA: berbayar ($1 USDG per laporan). Pembayaran diverifikasi on-chain SEBELUM analisis dijalankan.
+  app.post('/ask', async (req, reply) => {
+    if (!cfg.paidFeaturesEnabled || !cfg.ask) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const parsed = askRequestSchema.safeParse(req.body)
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body' })
+    const { address, txHash } = parsed.data
+
+    const [used] = await cfg.db.select().from(askPayments).where(eq(askPayments.txHash, txHash.toLowerCase()))
+    if (used) return reply.code(409).send({ error: 'payment_already_used' })
+    const pay = await verifyUsdgPayment(cfg.ask, txHash as `0x${string}`)
+    if (!pay.ok) return reply.code(402).send({ error: pay.reason })
+
+    // Token terlalu baru atau tanpa data: tidak dibahas dan pembayaran TIDAK dihabiskan (boleh dipakai lagi).
+    const result = await buildRiskReport(cfg.db, address, now())
+    if (result.kind !== 'report') return reply.code(422).send({ error: result.kind === 'too_new' ? 'token_too_new' : 'no_data' })
+
+    const claimed = await cfg.db
+      .insert(askPayments)
+      .values({ txHash: txHash.toLowerCase(), payer: pay.payer, amount: pay.amount.toString(), askedAddress: address.toLowerCase() })
+      .onConflictDoNothing()
+      .returning({ txHash: askPayments.txHash })
+    if (claimed.length === 0) return reply.code(409).send({ error: 'payment_already_used' })
+
+    const body: AskResponse = askResponseSchema.parse({
+      address,
+      generatedAt: now().toISOString(),
+      report: result.report,
+      paymentTxUrl: tx(txHash),
     })
     void reply.header('cache-control', 'private, no-store')
     return body

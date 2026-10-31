@@ -7,6 +7,8 @@ import {
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
+  askResponseSchema,
+  leaderboardResponseSchema,
 } from '../src'
 
 describe('fixture cocok dengan skema response', () => {
@@ -17,6 +19,8 @@ describe('fixture cocok dengan skema response', () => {
   it('prediction', () => expect(() => predictionResponseSchema.parse(fixtures.prediction)).not.toThrow())
   it('rug-radar', () => expect(() => rugRadarResponseSchema.parse(fixtures.rugRadar)).not.toThrow())
   it('burn', () => expect(() => burnResponseSchema.parse(fixtures.burn)).not.toThrow())
+  it('leaderboard', () => expect(() => leaderboardResponseSchema.parse(fixtures.leaderboard)).not.toThrow())
+  it('ask', () => expect(() => askResponseSchema.parse(fixtures.ask)).not.toThrow())
   it('signals', () => expect(() => signalsResponseSchema.parse(fixtures.signals)).not.toThrow())
 })
 

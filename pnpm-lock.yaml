@@ -32,12 +32,18 @@ importers:
       '@nexa-ai/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@nexa-ai/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       drizzle-orm:
         specifier: ^0.36.0
         version: 0.36.4(@types/react@19.0.2)(postgres@3.4.9)(react@19.3.1)
       fastify:
         specifier: 5.2.0
         version: 5.2.0
+      viem:
+        specifier: ^2.21.0
+        version: 2.57.13(typescript@5.9.3)(zod@3.25.76)
       zod:
         specifier: ^3.23.8
         version: 3.25.76

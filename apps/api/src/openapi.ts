@@ -1,7 +1,10 @@
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import type { ZodTypeAny } from 'zod'
 import {
+  askRequestSchema,
+  askResponseSchema,
   burnResponseSchema,
+  leaderboardResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
@@ -47,8 +50,28 @@ export function buildOpenApi() {
       '/rug-radar': {
         get: { summary: 'Launch Pons V2 terbaru dengan red flag', responses: { '200': ok('Daftar launch', rugRadarResponseSchema) } },
       },
+      '/leaderboard': {
+        get: {
+          summary: 'NEXA vs KOL: leaderboard akurasi. Hanya KOL yang bersedia dinilai; peringkat butuh minimal minScored call ternilai.',
+          responses: { '200': ok('Peringkat akurasi', leaderboardResponseSchema) },
+        },
+      },
       '/burn': {
         get: { summary: 'Burn tracker $NEXA (BurnVault)', responses: { '200': ok('Total dan riwayat burn', burnResponseSchema) } },
+      },
+      '/ask': {
+        post: {
+          summary: 'Ask NEXA (berbayar, $1 USDG): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.',
+          requestBody: { required: true, content: { 'application/json': { schema: schema(askRequestSchema) } } },
+          responses: {
+            '200': { description: 'Laporan risiko', content: { 'application/json': { schema: schema(askResponseSchema) } } },
+            '400': err('body tidak valid'),
+            '402': err('pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid'),
+            '409': err('pembayaran sudah dipakai'),
+            '422': err('token_too_new (< 1 jam) atau no_data; pembayaran tidak dihabiskan'),
+            '503': err('fitur berbayar belum aktif'),
+          },
+        },
       },
       '/signals': {
         get: {

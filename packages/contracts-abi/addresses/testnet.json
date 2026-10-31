@@ -2,6 +2,6 @@
   "network": "testnet",
   "deployer": "0x1f4cD14B5CDD15436950d626CBCb0e21084F462D",
   "agent": null,
-  "treasury": null,
+  "treasury": "0xb71e729b85908195B77Bd927554e8FC8dfF8CE84",
   "contracts": {}
 }

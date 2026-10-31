@@ -1,0 +1,17 @@
+{
+  "address": "0x3333333333333333333333333333333333333333",
+  "generatedAt": "2026-12-01T12:00:00.000Z",
+  "report": {
+    "name": "Example Token",
+    "symbol": "EXT",
+    "ageSeconds": 18000,
+    "graduated": false,
+    "creatorTaxBps": 1500,
+    "topHolderShareBps": null,
+    "trades": { "total": 3, "buys": 2, "sells": 1 },
+    "redFlags": ["High creator tax"],
+    "unknowns": ["konsentrasi holder belum dianalisis"],
+    "disclaimer": "Ringkasan data on-chain otomatis. Bukan nasihat keuangan."
+  },
+  "paymentTxUrl": "https://robinhoodchain.blockscout.com/tx/0x0000000000000000000000000000000000000000000000000000000000000010"
+}
