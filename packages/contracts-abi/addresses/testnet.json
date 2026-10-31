@@ -1,7 +1,9 @@
 {
   "network": "testnet",
   "deployer": "0x1f4cD14B5CDD15436950d626CBCb0e21084F462D",
-  "agent": null,
+  "agent": "0x35Ca52DAd343a80A3Be6b09091B74Dd3e5864561",
   "treasury": "0xb71e729b85908195B77Bd927554e8FC8dfF8CE84",
-  "contracts": {}
+  "contracts": {
+    "NexaLedger": "0xEF1fBbd8ea7dC858Dc88332AcD43Ba58b9bD81C0"
+  }
 }
