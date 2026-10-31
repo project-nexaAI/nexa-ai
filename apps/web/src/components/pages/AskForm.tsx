@@ -6,7 +6,7 @@ import { bpsText, fmtAge } from '@/lib/format'
 import { getToken } from '@/lib/session'
 
 const CREDIT_MESSAGES: Record<string, string> = {
-  '401': 'Sign in on the Account page first to use a free holder credit.',
+  '401': 'Connect your wallet in the top bar first to use a free holder credit.',
   '403': 'This wallet does not hold enough $NEXA for free reports.',
   '402': 'No free reports left this month. You can still pay $1 in USDG.',
 }

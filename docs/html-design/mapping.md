@@ -44,4 +44,3 @@ Memakai nav/footer dan token landing yang sama; gaya tambahan di `apps/web/src/s
 | `/burn` | `app/burn/page.tsx` | `GET /burn` | Kosong sampai BurnVault ada |
 | `/ask` | `app/ask/page.tsx` + `AskForm` (client) | `POST /ask` | Menjawab "belum dibuka" selama fitur berbayar mati; alamat bayar dari `NEXT_PUBLIC_ASK_PAYMENT_ADDRESS` |
 | Landing `#explore` | `components/landing/Explore.tsx` | — | Pintu masuk ke halaman di atas |
-| `/account` | `app/account/page.tsx` + `AccountPanel` (client) | `GET /auth/nonce`, `POST /auth/verify`, `GET /me`, `POST /auth/logout` | Login wallet (window.ethereum + SIWE via viem); sesi di sessionStorage. "Not open yet" selama benefit holder belum dikonfigurasi |
