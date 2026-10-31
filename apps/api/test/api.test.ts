@@ -256,8 +256,10 @@ describe('OpenAPI', () => {
   })
 
   it('setiap path di OpenAPI punya route', () => {
-    for (const path of Object.keys(buildOpenApi().paths)) {
-      expect(app.hasRoute({ method: 'GET', url: path.replace(/\{(\w+)\}/g, ':$1') }), path).toBe(true)
+    for (const [path, ops] of Object.entries(buildOpenApi().paths)) {
+      for (const method of Object.keys(ops)) {
+        expect(app.hasRoute({ method: method.toUpperCase() as 'GET' | 'POST', url: path.replace(/\{(\w+)\}/g, ':$1') }), `${method} ${path}`).toBe(true)
+      }
     }
   })
 

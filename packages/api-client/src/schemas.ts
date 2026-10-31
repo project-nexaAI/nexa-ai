@@ -101,3 +101,32 @@ export const signalsResponseSchema = z.object({
   ),
 })
 export type SignalsResponse = z.infer<typeof signalsResponseSchema>
+
+export const askRequestSchema = z.object({
+  /** Alamat token yang dianalisis. */
+  address: z.string().regex(/^0x[0-9a-fA-F]{40}$/),
+  /** Tx pembayaran USDG ke penerima Ask NEXA. */
+  txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+})
+export type AskRequest = z.infer<typeof askRequestSchema>
+
+export const askResponseSchema = z.object({
+  address: z.string(),
+  generatedAt: iso,
+  /** Ringkasan risiko berbasis data indexer saja. Tanpa data = "tidak tahu", bukan tebakan. */
+  report: z.object({
+    name: z.string().nullable(),
+    symbol: z.string().nullable(),
+    ageSeconds: z.number().int().nonnegative(),
+    graduated: z.boolean(),
+    creatorTaxBps: z.number().int().nullable(),
+    topHolderShareBps: z.number().int().nullable(),
+    trades: z.object({ total: z.number().int().nonnegative(), buys: z.number().int().nonnegative(), sells: z.number().int().nonnegative() }),
+    redFlags: z.array(z.string()),
+    unknowns: z.array(z.string()),
+    disclaimer: z.string(),
+  }),
+  paymentTxUrl: z.string().url(),
+})
+export type AskResponse = z.infer<typeof askResponseSchema>
+

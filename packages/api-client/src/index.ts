@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import askFixture from '../../../docs/api/fixtures/ask.json'
 import burnFixture from '../../../docs/api/fixtures/burn.json'
 import predictionFixture from '../../../docs/api/fixtures/prediction.json'
 import proofFixture from '../../../docs/api/fixtures/proof.json'
@@ -6,11 +7,14 @@ import proofPopulatedFixture from '../../../docs/api/fixtures/proof.populated.js
 import rugRadarFixture from '../../../docs/api/fixtures/rug-radar.json'
 import signalsFixture from '../../../docs/api/fixtures/signals.json'
 import {
+  askResponseSchema,
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
+  type AskRequest,
+  type AskResponse,
   type BurnResponse,
   type PredictionResponse,
   type ProofResponse,
@@ -28,6 +32,7 @@ export const fixtures = {
   rugRadar: rugRadarFixture,
   burn: burnFixture,
   signals: signalsFixture,
+  ask: askFixture,
 } as const
 
 export interface ApiClientOptions {
@@ -53,7 +58,20 @@ export function createApiClient(opts: ApiClientOptions = {}) {
     if (!res.ok) throw new Error(`API ${path}: HTTP ${res.status}`)
     return schema.parse(await res.json())
   }
+  /** POST /ask: berbayar. Tx pembayaran USDG harus sudah terkonfirmasi sebelum dipanggil. */
+  async function ask(req: AskRequest): Promise<AskResponse> {
+    if (opts.useFixtures) return askResponseSchema.parse(askFixture)
+    if (!opts.baseUrl) throw new Error('baseUrl API belum di-set')
+    const res = await f(`${opts.baseUrl.replace(/\/$/, '')}/ask`, {
+      method: 'POST',
+      headers: { accept: 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify(req),
+    })
+    if (!res.ok) throw new Error(`API /ask: HTTP ${res.status}`)
+    return askResponseSchema.parse(await res.json())
+  }
   return {
+    ask,
     getProof: (): Promise<ProofResponse> =>
       get('/proof', proofResponseSchema, opts.proofFixture === 'populated' ? proofPopulatedFixture : proofFixture),
     getPrediction: (id: number): Promise<PredictionResponse> => get(`/predictions/${id}`, predictionResponseSchema, predictionFixture),

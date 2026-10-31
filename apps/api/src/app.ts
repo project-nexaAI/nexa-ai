@@ -3,19 +3,23 @@ import { createHash } from 'node:crypto'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
+import { apiKeys, askPayments, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
 import {
+  askRequestSchema,
+  askResponseSchema,
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
   signalsResponseSchema,
+  type AskResponse,
   type BurnResponse,
   type Prediction,
   type ProofResponse,
   type RugRadarResponse,
   type SignalsResponse,
 } from '@nexa-ai/api-client'
+import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 
 export type Db = ReturnType<typeof createDb>['db']
@@ -32,6 +36,8 @@ export interface AppConfig {
   paidFeaturesEnabled?: boolean
   /** Batas permintaan per kunci API per menit. */
   signalsRateLimitPerMinute?: number
+  /** Ask NEXA: pembayaran USDG on-chain. Tanpa ini POST /ask menjawab 503. */
+  ask?: AskConfig
   now?: () => Date
 }
 
@@ -49,7 +55,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const symbols = cfg.symbols ?? {}
   const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
 
-  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin, methods: ['GET'] })
+  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin, methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key'] })
 
   function toPrediction(row: PredictionRow): Prediction {
     const committedAt = row.committedAt!
@@ -219,6 +225,39 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
         postedAt: r.post.postedAt!.toISOString(),
         ledgerId: r.ledgerId,
       })),
+    })
+    void reply.header('cache-control', 'private, no-store')
+    return body
+  })
+
+  // Ask NEXA: berbayar ($1 USDG per laporan). Pembayaran diverifikasi on-chain SEBELUM analisis dijalankan.
+  app.post('/ask', async (req, reply) => {
+    if (!cfg.paidFeaturesEnabled || !cfg.ask) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const parsed = askRequestSchema.safeParse(req.body)
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body' })
+    const { address, txHash } = parsed.data
+
+    const [used] = await cfg.db.select().from(askPayments).where(eq(askPayments.txHash, txHash.toLowerCase()))
+    if (used) return reply.code(409).send({ error: 'payment_already_used' })
+    const pay = await verifyUsdgPayment(cfg.ask, txHash as `0x${string}`)
+    if (!pay.ok) return reply.code(402).send({ error: pay.reason })
+
+    // Token terlalu baru atau tanpa data: tidak dibahas dan pembayaran TIDAK dihabiskan (boleh dipakai lagi).
+    const result = await buildRiskReport(cfg.db, address, now())
+    if (result.kind !== 'report') return reply.code(422).send({ error: result.kind === 'too_new' ? 'token_too_new' : 'no_data' })
+
+    const claimed = await cfg.db
+      .insert(askPayments)
+      .values({ txHash: txHash.toLowerCase(), payer: pay.payer, amount: pay.amount.toString(), askedAddress: address.toLowerCase() })
+      .onConflictDoNothing()
+      .returning({ txHash: askPayments.txHash })
+    if (claimed.length === 0) return reply.code(409).send({ error: 'payment_already_used' })
+
+    const body: AskResponse = askResponseSchema.parse({
+      address,
+      generatedAt: now().toISOString(),
+      report: result.report,
+      paymentTxUrl: tx(txHash),
     })
     void reply.header('cache-control', 'private, no-store')
     return body

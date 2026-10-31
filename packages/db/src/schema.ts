@@ -180,6 +180,15 @@ export const apiKeys = pgTable('api_keys', {
   createdAt: ts('created_at').notNull().defaultNow(),
 })
 
+/** Pembayaran Ask NEXA yang sudah dipakai. tx_hash unik: satu pembayaran = satu laporan (anti replay). */
+export const askPayments = pgTable('ask_payments', {
+  txHash: text('tx_hash').primaryKey(),
+  payer: text('payer').notNull(),
+  amount: amount('amount').notNull(), // unit terkecil USDG (6 desimal)
+  askedAddress: text('asked_address').notNull(),
+  createdAt: ts('created_at').notNull().defaultNow(),
+})
+
 export const riskguardLog = pgTable('riskguard_log', {
   id: serial('id').primaryKey(),
   contentType: text('content_type').notNull(),
