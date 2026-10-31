@@ -47,6 +47,13 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 | Kredensial | `~/.config/nexa-ai/supabase-testnet.env` (di luar repo; berisi `DATABASE_URL`). Tidak pernah ditampilkan |
 | Migrasi | Drizzle 0000, 0001 sudah dijalankan (9 tabel). Tabel pg-boss dibuat worker saat pertama jalan |
 
-## Railway
+## Railway (testnet)
 
-Belum dibuat. Menunggu branch `testnet` di GitHub (push) dan langkah berikutnya dari "Deploy testnet".
+| Item | Nilai |
+| --- | --- |
+| Project | `nexa-ai-testnet` (id `a3cb031c-a7d1-40e4-a883-318be3bda766`), environment `production`, workspace `bayusmd's Projects` |
+| Service | `worker`, `api` dari repo `project-nexaAI/nexa-ai`, branch `testnet`. Region `iad` (US East). Indexer belum ada (menunggu ABI Pons) |
+| Build / start | `pnpm install --frozen-lockfile` / `pnpm --filter @nexa-ai/<worker\|api> start` (healthcheck api `/healthz`). Juga ada di `apps/*/railway.json` |
+| Variabel (nama) worker | `DATABASE_URL`, `RPC_URL`, `CHAIN_ID`, `CHAIN_ENV`, `X_POST_MODE=dry`, `AGENT_ADDRESS`, `TREASURY_ADDRESS`, `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_SMALL`, `LLM_MODEL_LARGE`, `PAID_FEATURES_ENABLED=false` |
+| Variabel (nama) api | `DATABASE_URL`, `EXPLORER_URL`, `PAID_FEATURES_ENABLED=false` |
+| Diisi manusia | `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (worker); `NEXA_LEDGER_ADDRESS` setelah deploy #17; `WEB_ORIGIN` (api) |
