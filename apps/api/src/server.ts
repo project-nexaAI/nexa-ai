@@ -7,6 +7,7 @@ const env = z
     DATABASE_URL: z.string().min(1),
     PORT: z.coerce.number().int().default(4000),
     WEB_ORIGIN: z.string().optional(),
+    PAID_FEATURES_ENABLED: z.enum(['true', 'false']).default('false'),
     EXPLORER_URL: z.string().url().default('https://explorer.testnet.chain.robinhood.com'),
     /** JSON: {"0xalamat": "NVDA"} */
     ASSET_SYMBOLS: z.string().default('{}'),
@@ -19,6 +20,7 @@ const app = buildApp({
   db,
   explorerUrl: env.EXPLORER_URL.replace(/\/$/, ''),
   webOrigin: env.WEB_ORIGIN,
+  paidFeaturesEnabled: env.PAID_FEATURES_ENABLED === 'true',
   symbols: Object.fromEntries(Object.entries(symbols).map(([k, v]) => [k.toLowerCase(), v])),
 })
 

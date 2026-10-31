@@ -162,6 +162,15 @@ export const postQueue = pgTable(
   (t) => [index('post_queue_status_idx').on(t.status, t.scheduledAt)],
 )
 
+/** Kunci Signals API. Hanya hash SHA-256 yang disimpan; kunci asli ditampilkan sekali saat dibuat. */
+export const apiKeys = pgTable('api_keys', {
+  id: serial('id').primaryKey(),
+  keyHash: text('key_hash').notNull().unique(),
+  label: text('label').notNull(),
+  active: boolean('active').notNull().default(true),
+  createdAt: ts('created_at').notNull().defaultNow(),
+})
+
 export const riskguardLog = pgTable('riskguard_log', {
   id: serial('id').primaryKey(),
   contentType: text('content_type').notNull(),

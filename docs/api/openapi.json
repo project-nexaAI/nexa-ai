@@ -691,6 +691,139 @@
           }
         }
       }
+    },
+    "/signals": {
+      "get": {
+        "summary": "Signals API (berbayar): feed post publik NEXA. Butuh header x-api-key; mati sampai PAID_FEATURES_ENABLED=true.",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feed sinyal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "postedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "ledgerId": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "content",
+                          "postedAt",
+                          "ledgerId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "kunci API tidak ada atau tidak valid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "batas laju terlampaui (header Retry-After)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "fitur berbayar belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

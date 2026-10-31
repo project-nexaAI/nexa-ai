@@ -6,6 +6,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  signalsResponseSchema,
 } from '../src'
 
 describe('fixture cocok dengan skema response', () => {
@@ -16,6 +17,7 @@ describe('fixture cocok dengan skema response', () => {
   it('prediction', () => expect(() => predictionResponseSchema.parse(fixtures.prediction)).not.toThrow())
   it('rug-radar', () => expect(() => rugRadarResponseSchema.parse(fixtures.rugRadar)).not.toThrow())
   it('burn', () => expect(() => burnResponseSchema.parse(fixtures.burn)).not.toThrow())
+  it('signals', () => expect(() => signalsResponseSchema.parse(fixtures.signals)).not.toThrow())
 })
 
 describe('createApiClient', () => {

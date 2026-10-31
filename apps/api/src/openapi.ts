@@ -5,6 +5,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  signalsResponseSchema,
 } from '@nexa-ai/api-client'
 
 const schema = (s: ZodTypeAny) => zodToJsonSchema(s, { target: 'openApi3', $refStrategy: 'none' })
@@ -48,6 +49,21 @@ export function buildOpenApi() {
       },
       '/burn': {
         get: { summary: 'Burn tracker $NEXA (BurnVault)', responses: { '200': ok('Total dan riwayat burn', burnResponseSchema) } },
+      },
+      '/signals': {
+        get: {
+          summary: 'Signals API (berbayar): feed post publik NEXA. Butuh header x-api-key; mati sampai PAID_FEATURES_ENABLED=true.',
+          parameters: [
+            { name: 'x-api-key', in: 'header', required: true, schema: { type: 'string' } },
+            { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+          ],
+          responses: {
+            '200': { description: 'Feed sinyal', content: { 'application/json': { schema: schema(signalsResponseSchema) } } },
+            '401': err('kunci API tidak ada atau tidak valid'),
+            '429': err('batas laju terlampaui (header Retry-After)'),
+            '503': err('fitur berbayar belum aktif'),
+          },
+        },
       },
     },
   }

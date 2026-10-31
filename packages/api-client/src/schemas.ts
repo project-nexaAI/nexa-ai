@@ -86,3 +86,18 @@ export const burnResponseSchema = z.object({
   ),
 })
 export type BurnResponse = z.infer<typeof burnResponseSchema>
+
+export const signalsResponseSchema = z.object({
+  /** Post publik NEXA yang sudah terbit, terbaru dulu. */
+  items: z.array(
+    z.object({
+      id: z.number().int().nonnegative(),
+      kind: z.string(),
+      content: z.string(),
+      postedAt: iso,
+      /** Id NexaLedger bila post ini adalah prediksi yang ter-commit; selain itu null. */
+      ledgerId: z.number().int().nonnegative().nullable(),
+    }),
+  ),
+})
+export type SignalsResponse = z.infer<typeof signalsResponseSchema>

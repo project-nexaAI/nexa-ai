@@ -1,17 +1,20 @@
 import cors from '@fastify/cors'
+import { createHash } from 'node:crypto'
 import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { burns, ponsTokens, predictions, type createDb } from '@nexa-ai/db'
+import { apiKeys, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  signalsResponseSchema,
   type BurnResponse,
   type Prediction,
   type ProofResponse,
   type RugRadarResponse,
+  type SignalsResponse,
 } from '@nexa-ai/api-client'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 
@@ -25,6 +28,10 @@ export interface AppConfig {
   webOrigin?: string
   /** alamat aset (huruf kecil) -> simbol, untuk prediksi yang sudah di-reveal. */
   symbols?: Record<string, string>
+  /** Fitur berbayar (Signals API dst.) mati sampai true (env PAID_FEATURES_ENABLED). */
+  paidFeaturesEnabled?: boolean
+  /** Batas permintaan per kunci API per menit. */
+  signalsRateLimitPerMinute?: number
   now?: () => Date
 }
 
@@ -173,6 +180,47 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
       })),
     })
     cache(reply)
+    return body
+  })
+
+  // Signals API: berbayar, jadi mati sampai PAID_FEATURES_ENABLED=true; butuh kunci API + batas laju.
+  const rateWindow = new Map<number, { start: number; count: number }>()
+  const rateLimit = cfg.signalsRateLimitPerMinute ?? 60
+  app.get('/signals', async (req, reply) => {
+    if (!cfg.paidFeaturesEnabled) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const key = req.headers['x-api-key']
+    if (typeof key !== 'string' || key.length === 0) return reply.code(401).send({ error: 'api_key_required' })
+    const keyHash = createHash('sha256').update(key).digest('hex')
+    const [row] = await cfg.db.select().from(apiKeys).where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.active, true)))
+    if (!row) return reply.code(401).send({ error: 'invalid_api_key' })
+
+    const t = now().getTime()
+    const w = rateWindow.get(row.id)
+    if (!w || t - w.start >= 60_000) rateWindow.set(row.id, { start: t, count: 1 })
+    else if (++w.count > rateLimit) {
+      void reply.header('retry-after', String(Math.max(1, Math.ceil((w.start + 60_000 - t) / 1000))))
+      return reply.code(429).send({ error: 'rate_limited' })
+    }
+
+    const q = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20) }).safeParse(req.query)
+    if (!q.success) return reply.code(400).send({ error: 'invalid_query' })
+    const rows = await cfg.db
+      .select({ post: postQueue, ledgerId: predictions.ledgerId })
+      .from(postQueue)
+      .leftJoin(predictions, eq(postQueue.predictionId, predictions.id))
+      .where(and(eq(postQueue.status, 'posted'), isNotNull(postQueue.postedAt)))
+      .orderBy(desc(postQueue.postedAt))
+      .limit(q.data.limit)
+    const body: SignalsResponse = signalsResponseSchema.parse({
+      items: rows.map((r) => ({
+        id: r.post.id,
+        kind: r.post.kind,
+        content: r.post.content,
+        postedAt: r.post.postedAt!.toISOString(),
+        ledgerId: r.ledgerId,
+      })),
+    })
+    void reply.header('cache-control', 'private, no-store')
     return body
   })
 
