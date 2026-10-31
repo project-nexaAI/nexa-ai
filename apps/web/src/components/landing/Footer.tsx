@@ -1,7 +1,7 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { X_URL } from '@/lib/site'
 
-export function Footer() {
+export function Footer({ base = '' }: { base?: string }) {
   return (
     <footer>
       <div className="wrap">
@@ -28,16 +28,32 @@ export function Footer() {
           </div>
           {" "}
           <nav className="flinks" aria-label="Footer">
-            <a href="#proof">
+            <a href={`${base}#proof`}>
               Proof
             </a>
             {" "}
-            <a href="#pricing">
+            <a href={`${base}#pricing`}>
               Pricing
             </a>
             {" "}
-            <a href="#token">
+            <a href={`${base}#token`}>
               $NEXA
+            </a>
+            {" "}
+            <a href="/rug-radar">
+              Rug radar
+            </a>
+            {" "}
+            <a href="/leaderboard">
+              NEXA vs KOL
+            </a>
+            {" "}
+            <a href="/burn">
+              Burn tracker
+            </a>
+            {" "}
+            <a href="/ask">
+              Ask NEXA
             </a>
             {" "}
             <a href="/privacy">
