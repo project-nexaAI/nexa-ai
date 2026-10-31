@@ -16,10 +16,11 @@ if (!url) {
 
 const [cmd, idArg] = process.argv.slice(2)
 const { db, client } = createDb(url)
-// Telegram live hanya bila token & chat id diisi manusia; selain itu dry (hanya log).
+// Alert Pro: chat PRIBADI (TELEGRAM_PRO_CHAT_ID), bukan kanal publik (TELEGRAM_CHAT_ID), karena alert Pro harus
+// lebih awal 15 menit dari publik. Tanpa token dan chat id Pro: dry (hanya log).
 const notifier: Notifier =
-  process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID
-    ? new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, process.env.TELEGRAM_CHAT_ID)
+  process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_PRO_CHAT_ID
+    ? new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, process.env.TELEGRAM_PRO_CHAT_ID)
     : new DryTelegram()
 
 function idOrExit(): number {

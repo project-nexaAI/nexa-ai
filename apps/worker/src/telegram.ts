@@ -1,4 +1,4 @@
-import type { Db } from './queue'
+import type { Db, PostMode } from './queue'
 import { PipelineError, approvePost, getPost } from './queue'
 
 /** Kanal notifikasi (Telegram untuk alert Pro dan kanal cadangan). */
@@ -34,8 +34,29 @@ export class TelegramBot implements Notifier {
 }
 
 /**
+ * Kanal cadangan PUBLIK (brief: Telegram sebagai kanal cadangan X). Terkirim bersamaan dengan post publik di X
+ * (setelah tunda 15 menit), BUKAN saat persetujuan: alert Pro harus lebih awal dari publik. Mode dry hanya mencatat log:
+ * mengirim ke kanal publik sama dengan menerbitkan, jadi hanya terjadi di mode live. Gagal kirim tidak menghentikan pipeline.
+ */
+export async function mirrorToBackup(opts: { mode: PostMode; notifier?: Notifier }, content: string): Promise<'sent' | 'dry' | 'none' | 'failed'> {
+  if (opts.mode === 'dry') {
+    console.log(`[telegram:backup:dry] ${content}`)
+    return 'dry'
+  }
+  if (!opts.notifier) return 'none'
+  try {
+    await opts.notifier.send(content)
+    return 'sent'
+  } catch (e) {
+    console.error('telegram backup gagal:', e instanceof Error ? e.message : String(e))
+    return 'failed'
+  }
+}
+
+/**
  * Alert Pro real-time: terkirim saat post disetujui, sedangkan post publik di X baru terbit 15 menit kemudian
  * (jadwal di antrian). Hanya post yang lolos RiskGuard dan disetujui yang pernah sampai ke sini.
+ * `notifier` harus berupa chat PRIBADI Pro (TELEGRAM_PRO_CHAT_ID), bukan kanal publik.
  */
 export async function approveAndAlert(db: Db, notifier: Notifier, id: number): Promise<void> {
   await approvePost(db, id)

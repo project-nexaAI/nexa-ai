@@ -8,6 +8,7 @@ import { publishDue, revealMatured, type CycleDeps } from './cycle'
 import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
 import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
 import { createLedgerClient } from './ledger'
+import { TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
 import { MAINNET_ORACLE_ASSETS, createFeedReader } from './oracle'
 
@@ -22,6 +23,9 @@ const env = z
     X_POST_MODE: z.enum(['dry', 'live']).default('dry'),
     LOOP_SECONDS: z.coerce.number().int().min(10).default(60),
     /** Prediction of the Day: hanya berjalan bila LLM_API_KEY ada (mock LLM tidak boleh meng-commit apa pun on-chain). */
+    /** Kanal cadangan publik; tanpa keduanya tidak ada Telegram dari worker. */
+    TELEGRAM_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_CHAT_ID: z.string().optional(),
     LLM_API_KEY: z.string().optional(),
     LLM_BASE_URL: z.string().url().optional(),
     LLM_MODEL_SMALL: z.string().default('mimo-v2.6-flash'),
@@ -51,6 +55,7 @@ const deps: CycleDeps | null = ledgerReady
       db,
       encKey: env.PREIMAGE_KEY!,
       mode: 'dry',
+      ...(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? { backup: new TelegramBot(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID) } : {}),
       ledger: createLedgerClient({
         rpcUrl: env.RPC_URL,
         chainId: env.CHAIN_ID,
