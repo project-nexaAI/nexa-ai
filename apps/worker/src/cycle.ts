@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { decryptJson, encryptJson, randomSalt } from './crypto'
 import type { LedgerClient } from './ledger'
 import { generateStructured, type LlmClient, type Usage } from './llm'
+import { mirrorToBackup, type Notifier } from './telegram'
 import { PipelineError, dueForPublish, enqueuePost, type Db, type EnqueueResult, type PostMode } from './queue'
 
 export const PREDICTION_HORIZON_SECONDS = 7 * 24 * 3600
@@ -17,6 +18,8 @@ export interface CycleDeps {
   /** Kunci 32 byte hex untuk mengenkripsi preimage (env PREIMAGE_KEY). */
   encKey: string
   mode: PostMode
+  /** Kanal cadangan publik (Telegram); dipakai bersamaan dengan post publik. Opsional. */
+  backup?: Notifier
 }
 
 interface Preimage {
@@ -159,6 +162,7 @@ export async function publishDue(deps: CycleDeps, now = new Date()): Promise<num
         .set({ status: 'posted' })
         .where(and(eq(predictions.id, post.predictionId), eq(predictions.status, 'committed')))
     }
+    await mirrorToBackup({ mode: post.mode, ...(deps.backup ? { notifier: deps.backup } : {}) }, post.content)
     published.push(post.id)
   }
   return published

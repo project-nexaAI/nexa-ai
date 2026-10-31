@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { createDb, postQueue, riskguardLog } from '@nexa-ai/db'
 import { enqueuePost, getPost } from '../src/queue'
-import { DryTelegram, TelegramBot, approveAndAlert } from '../src/telegram'
+import { DryTelegram, TelegramBot, approveAndAlert, mirrorToBackup } from '../src/telegram'
 
 const url = process.env.TEST_DATABASE_URL ?? 'postgres://nexa:nexa@localhost:5432/nexa_test'
 const { db, client } = createDb(url)
@@ -54,5 +54,18 @@ describe('TelegramBot', () => {
     const bad = new TelegramBot('SECRET-TOKEN', '42', (async () => new Response('x', { status: 401 })) as unknown as typeof fetch)
     await expect(bad.send('halo')).rejects.toThrow(/401/)
     await bad.send('x').catch((e: Error) => expect(e.message).not.toContain('SECRET-TOKEN'))
+  })
+})
+
+describe('kanal cadangan publik', () => {
+  it('mode dry hanya log (tidak mengirim ke kanal publik); live mengirim; tanpa notifier tidak ada; gagal tidak melempar', async () => {
+    const tg = new DryTelegram()
+    expect(await mirrorToBackup({ mode: 'dry', notifier: tg }, 'isi')).toBe('dry')
+    expect(tg.sent).toEqual([]) // dry tidak menyentuh notifier sama sekali
+    expect(await mirrorToBackup({ mode: 'live', notifier: tg }, 'isi')).toBe('sent')
+    expect(tg.sent).toEqual(['isi'])
+    expect(await mirrorToBackup({ mode: 'live' }, 'isi')).toBe('none')
+    const boom = { send: async () => { throw new Error('Telegram HTTP 500') } }
+    expect(await mirrorToBackup({ mode: 'live', notifier: boom }, 'isi')).toBe('failed')
   })
 })
