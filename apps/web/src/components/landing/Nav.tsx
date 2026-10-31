@@ -1,7 +1,8 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { X_URL } from '@/lib/site'
 
-export function Nav() {
+/** `base` = "/" di halaman dalam supaya tautan jangkar menuju landing. */
+export function Nav({ base = '' }: { base?: string }) {
   return (
     <>
       <header className="nav" id="nav">
@@ -16,24 +17,28 @@ export function Nav() {
           </a>
           {" "}
           <nav className="links" aria-label="Main">
-            <a href="#proof">
+            <a href={`${base}#proof`}>
               Proof
             </a>
             {" "}
-            <a href="#feed">
+            <a href={`${base}#feed`}>
               Daily feed
             </a>
             {" "}
-            <a href="#how">
+            <a href={`${base}#how`}>
               How it works
             </a>
             {" "}
-            <a href="#pricing">
+            <a href={`${base}#pricing`}>
               Pricing
             </a>
             {" "}
-            <a href="#token">
+            <a href={`${base}#token`}>
               $NEXA
+            </a>
+            {" "}
+            <a href={`${base}#explore`}>
+              Dashboards
             </a>
           </nav>
           {" "}
@@ -56,24 +61,28 @@ export function Nav() {
       </header>
       <div className="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="Menu" hidden>
         <nav>
-          <a href="#proof">
+          <a href={`${base}#proof`}>
             Proof
           </a>
           {" "}
-          <a href="#feed">
+          <a href={`${base}#feed`}>
             Daily feed
           </a>
           {" "}
-          <a href="#how">
+          <a href={`${base}#how`}>
             How it works
           </a>
           {" "}
-          <a href="#pricing">
+          <a href={`${base}#pricing`}>
             Pricing
           </a>
           {" "}
-          <a href="#token">
+          <a href={`${base}#token`}>
             $NEXA
+          </a>
+          {" "}
+          <a href={`${base}#explore`}>
+            Dashboards
           </a>
         </nav>
         {" "}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import '@/styles/tokens.css'
 import '@/styles/landing.css'
+import '@/styles/pages.css'
 import { SITE_URL, X_HANDLE } from '@/lib/site'
 
 const TITLE = 'NEXA: the superintelligence influencer on Robinhood Chain'

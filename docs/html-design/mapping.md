@@ -30,3 +30,17 @@ Data diambil lewat `@nexa-ai/api-client` (`NEXT_PUBLIC_USE_FIXTURES=true` → fi
 - Font dari Google Fonts (Geist, Geist Mono, Instrument Serif) dipakai apa adanya.
 - three.js: desain memuat dari CDN jsdelivr; di web dipasang dari npm (`three@0.165.0`, versi sama).
 - Perbedaan tampilan dengan HTML asli: hanya pada layar pendek (tinggi <= 780px), lihat DECISIONS (koreksi hero). Di luar itu identik.
+
+## Halaman dalam (dibuat tanpa desain HTML, 2026-10-31)
+
+Memakai nav/footer dan token landing yang sama; gaya tambahan di `apps/web/src/styles/pages.css`. Semua halaman server-rendered (`force-dynamic`), data via `@nexa-ai/api-client`; gagal ambil data menampilkan keadaan "Data unavailable".
+
+| Halaman | Komponen/berkas | Endpoint | Catatan |
+| --- | --- | --- | --- |
+| `/proof` | `app/proof/page.tsx` | `GET /proof` | Statistik, Prediction of the Day berjalan, riwayat + link Blockscout |
+| `/predictions/[id]` | `app/predictions/[id]/page.tsx` | `GET /predictions/:id` | Teks baru terlihat setelah reveal; 404 bila tidak ada |
+| `/rug-radar` | `app/rug-radar/page.tsx` + `AutoRefresh` | `GET /rug-radar` | Muat ulang tiap 15 detik |
+| `/leaderboard` | `app/leaderboard/page.tsx` | `GET /leaderboard` | Menandai bahwa call KOL tidak di-commit on-chain |
+| `/burn` | `app/burn/page.tsx` | `GET /burn` | Kosong sampai BurnVault ada |
+| `/ask` | `app/ask/page.tsx` + `AskForm` (client) | `POST /ask` | Menjawab "belum dibuka" selama fitur berbayar mati; alamat bayar dari `NEXT_PUBLIC_ASK_PAYMENT_ADDRESS` |
+| Landing `#explore` | `components/landing/Explore.tsx` | — | Pintu masuk ke halaman di atas |

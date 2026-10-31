@@ -1,4 +1,5 @@
 import { Cta } from '@/components/landing/Cta'
+import { Explore } from '@/components/landing/Explore'
 import { Feed } from '@/components/landing/Feed'
 import { Footer } from '@/components/landing/Footer'
 import { Hero } from '@/components/landing/Hero'
@@ -26,6 +27,7 @@ export default async function Page() {
       <Marquee />
       <main className="wrap">
         <Proof />
+        <Explore />
         <Feed />
         <How />
         <Pricing />
