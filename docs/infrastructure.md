@@ -53,7 +53,8 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 | --- | --- |
 | Project | `nexa-ai-testnet` (id `a3cb031c-a7d1-40e4-a883-318be3bda766`), environment `production`, workspace `bayusmd's Projects` |
 | Service | `worker`, `api` dari repo `project-nexaAI/nexa-ai`, branch `testnet`. Region `iad` (US East). Indexer belum ada (menunggu ABI Pons) |
-| Build / start | `pnpm install --frozen-lockfile` / `pnpm --filter @nexa-ai/<worker\|api> start` (healthcheck api `/healthz`). Juga ada di `apps/*/railway.json` |
+| Status | `worker` dan `api` Online (2026-10-31). Worker: commit/reveal NONAKTIF sampai `AGENT_PRIVATE_KEY`, `NEXA_LEDGER_ADDRESS`, `PREIMAGE_KEY` diisi. Domain publik belum dibuat |
+| Build / start | `pnpm install --frozen-lockfile` / `pnpm --filter @nexa-ai/<worker\|api> start` (healthcheck api `/healthz`). Diatur lewat API Railway (`serviceInstanceUpdate`); `apps/*/railway.json` tidak terbaca karena service berakar di root repo |
 | Variabel (nama) worker | `DATABASE_URL`, `RPC_URL`, `CHAIN_ID`, `CHAIN_ENV`, `X_POST_MODE=dry`, `AGENT_ADDRESS`, `TREASURY_ADDRESS`, `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL_SMALL`, `LLM_MODEL_LARGE`, `PAID_FEATURES_ENABLED=false` |
 | Variabel (nama) api | `DATABASE_URL`, `EXPLORER_URL`, `PAID_FEATURES_ENABLED=false` |
 | Diisi manusia | `AGENT_PRIVATE_KEY`, `LLM_API_KEY`, `PREIMAGE_KEY` (worker); `NEXA_LEDGER_ADDRESS` setelah deploy #17; `WEB_ORIGIN` (api) |
