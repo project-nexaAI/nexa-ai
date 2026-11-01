@@ -13,6 +13,7 @@ import { dispatchProAlerts, pollTelegram } from './pro'
 import { TelegramApi, TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
 import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader } from './oracle'
+import { createDexClient, makeDexSource } from './dex'
 import { runDailyReports, type ReportDeps } from './reports'
 
 const env = z
@@ -39,6 +40,9 @@ const env = z
     PONS_REPORT_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(15),
     /** JSON [{"symbol":"NVDA","asset":"0x..","feed":"0x.."}] feed Chainlink Stock Token (RPC oracle); kosong = Stock Token mainnet (NVDA). */
     SUMMARY_ASSETS: z.string().optional(),
+    /** Selisih DEX vs oracle: pool Uniswap v4 NVDA/USDG terdalam dipilih otomatis; DEX_POOL_ID mengunci satu pool (0x + 64 heks). Kedalaman minimum dalam USDG. */
+    DEX_POOL_ID: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional().or(z.literal('')),
+    DEX_MIN_DEPTH_USDG: z.coerce.number().positive().default(1000),
     /** JSON [{"symbol":"NVDA","asset":"0x..."}]; kosong = aset mainnet bila CHAIN_ID=4663. Feed harus terdaftar di NexaLedger. */
     PREDICTION_ASSETS: z.string().optional(),
     /** Keeper harga TESTNET: wallet sendiri (bukan agent) yang mendorong round ke feed tiruan. Kosong = nonaktif. */
@@ -115,6 +119,16 @@ const reports: ReportDeps | null = llm
       llm,
       mode: 'dry',
       history: createFeedHistory(env.ORACLE_RPC_URL),
+      ...(CHAINS.mainnet.uniswapV4.poolManager && CHAINS.mainnet.usdg
+        ? {
+            dex: makeDexSource(createDexClient(env.ORACLE_RPC_URL, CHAINS.mainnet.uniswapV4.poolManager), {
+              usdg: CHAINS.mainnet.usdg,
+              usdgDecimals: 6,
+              minDepthUsdg: env.DEX_MIN_DEPTH_USDG,
+              ...(env.DEX_POOL_ID ? { poolIdOverride: env.DEX_POOL_ID as `0x${string}` } : {}),
+            }),
+          }
+        : {}),
       cfg: { summaryHourUtc: env.DAILY_SUMMARY_HOUR_UTC, ponsHourUtc: env.PONS_REPORT_HOUR_UTC, stockAssets, maxAttemptsPerDay: 3, minRetryMs: 15 * 60 * 1000 },
       state: new Map(),
     }

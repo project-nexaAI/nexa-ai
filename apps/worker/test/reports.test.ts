@@ -249,3 +249,54 @@ describe.skipIf(!dbUp)('laporan Pons V2', () => {
     expect((await runDailyReports(make(echo, history([])), NOW)).pons).toBe('blocked')
   })
 })
+
+describe.skipIf(!dbUp)('ringkasan harian: selisih DEX vs oracle', () => {
+  beforeEach(clean)
+  // oracle $200.70 (+35 bps / 25 jam); kuotasi DEX palsu
+  const quote = (priceE8: bigint): ReportDeps['dex'] => async () => ({ priceE8, poolId: `0x${'ab'.repeat(32)}`, depthUsdg: '4220289', poolsChecked: 43 })
+  const withDex = (llm: MockLlm, dex: ReportDeps['dex']): ReportDeps => ({ ...make(llm), dex })
+
+  it('DEX di atas oracle: selisih masuk prompt, fakta terlacak, post masuk antrian', async () => {
+    const text = 'NVDA sits at $200.70, up 0.35% (35 bps) over the last 25 hours. The DEX price of $205.02 sits 2.15% above the oracle (215 bps).'
+    const llm = new MockLlm(() => json(text))
+    const r = await runDailyReports(withDex(llm, quote(20_502_000_000n)), NOW)
+    expect(r.summary).toBe('queued')
+    const prompt = llm.calls[0]!.user
+    expect(prompt).toContain('"dex":{"price":"$205.02"')
+    expect(prompt).toContain('"direction":"above"')
+    expect(prompt).toContain('215 bps')
+    expect(prompt).toContain('is present')
+    expect((await db.select().from(postQueue))[0]).toMatchObject({ status: 'pending_approval', content: text })
+  })
+
+  it('DEX di bawah oracle: arah "below", bps dibulatkan ke nol', async () => {
+    const llm = new MockLlm(() => json('NVDA sits at $200.70. The DEX price of $199.00 sits 0.84% below the oracle (84 bps).'))
+    const r = await runDailyReports(withDex(llm, quote(19_900_000_000n)), NOW)
+    expect(r.summary).toBe('queued')
+    expect(llm.calls[0]!.user).toContain('"direction":"below"')
+    expect(llm.calls[0]!.user).toContain('"bps":"84 bps"')
+  })
+
+  it('angka DEX yang tidak ada di data tetap diblokir (NUMBER_UNTRACED)', async () => {
+    const llm = new MockLlm(() => json('NVDA sits at $200.70. The DEX price of $205.02 sits 3% above the oracle.'))
+    expect((await runDailyReports(withDex(llm, quote(20_502_000_000n)), NOW)).summary).toBe('blocked')
+  })
+
+  it('selisih tidak wajar (> 20%) dibuang: ringkasan tidak membahas DEX', async () => {
+    const llm = new MockLlm(() => json('NVDA sits at $200.70, up 0.35% (35 bps) over the last 25 hours.'))
+    const r = await runDailyReports(withDex(llm, quote(10_000_000_000n)), NOW) // $100 vs $200,70 = -50%
+    expect(r.summary).toBe('queued')
+    expect(llm.calls[0]!.user).toContain('"dex":null')
+    expect(llm.calls[0]!.user).toContain('DEX prices are not available')
+  })
+
+  it('DEX gagal atau tanpa pool yang cukup dalam: ringkasan tetap dibuat tanpa DEX', async () => {
+    const llm = new MockLlm(() => json('NVDA sits at $200.70, up 0.35% (35 bps) over the last 25 hours.'))
+    const boom = await runDailyReports(withDex(llm, async () => { throw new Error('rpc') }), NOW)
+    expect(boom.summary).toBe('queued')
+    await clean()
+    const none = await runDailyReports(withDex(llm, async () => null), NOW)
+    expect(none.summary).toBe('queued')
+    expect(llm.calls.every((c) => c.user.includes('"dex":null'))).toBe(true)
+  })
+})

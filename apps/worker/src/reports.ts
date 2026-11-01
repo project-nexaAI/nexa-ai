@@ -4,6 +4,7 @@ import { postQueue } from '@nexa-ai/db'
 import { REPORT_SYSTEM, buildPonsPrompt, buildSummaryPrompt, ponsFacts, summaryFacts, type StockSummaryItem } from '../prompts/reports'
 import { recordLlmCosts } from './cycle'
 import { DAY_MS, loadPonsHighlights, loadWhaleSummary } from './facts'
+import { MAX_PLAUSIBLE_GAP_BPS, dexGapBps, type DexSource } from './dex'
 import { generateStructured, type LlmClient } from './llm'
 import { DEFAULT_MAX_STALE_SECONDS, formatUsd, priceChange, type FeedHistory, type OracleAsset } from './oracle'
 import { enqueuePost, type Db, type PostMode } from './queue'
@@ -26,6 +27,8 @@ export interface ReportDeps {
   llm: LlmClient
   mode: PostMode
   history: FeedHistory
+  /** Harga DEX untuk selisih terhadap oracle (opsional; tanpa ini ringkasan tidak membahas DEX). */
+  dex?: DexSource
   cfg: ReportConfig
   /** Waktu percobaan terakhir per jenis (di memori). */
   state: Map<string, number>
@@ -74,6 +77,20 @@ async function runOnce(d: ReportDeps, kind: string, hourUtc: number, now: Date, 
   return r.status === 'rejected' ? 'blocked' : 'queued'
 }
 
+/** Selisih DEX vs oracle. Gagal, tidak ada pool yang cukup dalam, atau selisih tidak wajar (> 20%) = null: tidak dibahas. */
+async function dexFor(d: ReportDeps, a: OracleAsset, oracle: { answer: bigint; decimals: number }): Promise<{ price: string; gapBps: number } | null> {
+  if (!d.dex) return null
+  try {
+    const q = await d.dex(a.asset)
+    if (!q) return null
+    const gap = dexGapBps(q.priceE8, oracle.answer, oracle.decimals)
+    if (gap === null || Math.abs(gap) > MAX_PLAUSIBLE_GAP_BPS) return null
+    return { price: `$${formatUsd(q.priceE8, 8)}`, gapBps: gap }
+  } catch {
+    return null
+  }
+}
+
 /** Ringkasan Stock Token: harga oracle, perubahan dalam jendela ~24 jam, dan transfer whale dari indexer. DEX vs oracle belum tersedia. */
 async function buildSummary(d: ReportDeps, now: Date): Promise<Built | null> {
   const items: StockSummaryItem[] = []
@@ -88,11 +105,13 @@ async function buildSummary(d: ReportDeps, now: Date): Promise<Built | null> {
     if (latest.answer <= 0n || latest.updatedAt === 0n || nowSec - latest.updatedAt > BigInt(DEFAULT_MAX_STALE_SECONDS)) continue
     const change = await priceChange(d.history, a.feed)
     const whales = await loadWhaleSummary(d.db, a.asset, new Date(now.getTime() - DAY_MS))
+    const dex = await dexFor(d, a, latest)
     items.push({
       symbol: a.symbol,
       price: `$${formatUsd(latest.answer, latest.decimals)}`,
       change: change ? { bps: change.changeBps, windowHours: change.windowHours } : null,
       whales,
+      dex,
     })
   }
   if (items.length === 0) return null
