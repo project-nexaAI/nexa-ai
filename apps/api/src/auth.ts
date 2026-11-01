@@ -6,6 +6,7 @@ import { askCreditUses, authNonces, authSessions } from '@nexa-ai/db'
 import type { MeResponse } from '@nexa-ai/api-client'
 import type { Db } from './app'
 import { formatUnits } from './format'
+import { proStatus } from './pro'
 
 const erc20 = parseAbi(['function balanceOf(address) view returns (uint256)'])
 
@@ -116,5 +117,6 @@ export async function buildMe(db: Db, cfg: AuthConfig, address: string, now: Dat
     address,
     holder,
     benefits: { earlyAlerts: holder.isHolder, freeAsksPerMonth: perMonth, freeAsksRemaining: Math.max(0, perMonth - used), month: monthKey(now) },
+    pro: await proStatus(db, address, now),
   }
 }

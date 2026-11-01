@@ -159,6 +159,13 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
               ) : (
                 <p className="wallet-note">Holder benefits open after $NEXA launches.</p>
               )}
+              <div className="wallet-row">
+                <span className="k">NEXA Pro</span>
+                <span className="v">{me.pro.active ? `Active until ${me.pro.expiresAt?.slice(0, 10)}` : 'Not active'}</span>
+              </div>
+              <a className="pg-link wallet-link" href="/pro">
+                {me.pro.active ? 'Manage NEXA Pro →' : 'Get NEXA Pro →'}
+              </a>
               <a className="pg-link wallet-link" href="/ask">
                 Use a free report on Ask NEXA →
               </a>

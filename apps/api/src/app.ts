@@ -1,10 +1,15 @@
 import cors from '@fastify/cors'
 import { createHash } from 'node:crypto'
-import { and, desc, eq, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, type createDb } from '@nexa-ai/db'
+import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, proAlerts, type createDb } from '@nexa-ai/db'
 import {
+  alertEventSchema,
+  proPlanResponseSchema,
+  proSubscribeRequestSchema,
+  proSubscribeResponseSchema,
+  telegramLinkResponseSchema,
   askRequestSchema,
   askResponseSchema,
   meResponseSchema,
@@ -29,6 +34,7 @@ import { buildMe, createNonce, endSession, monthKey, sessionFrom, verifyLogin, t
 import { kolStats, rankEntries } from './leaderboard'
 import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
+import { createLinkCode, proStatus, subscribe, unlinkTelegram, type ProConfig } from './pro'
 
 export type Db = ReturnType<typeof createDb>['db']
 
@@ -50,6 +56,8 @@ export interface AppConfig {
   ask?: AskConfig
   /** Login wallet (SIWE) dan benefit holder. Tanpa ini /auth/* dan /me menjawab 503. */
   auth?: AuthConfig
+  /** NEXA Pro (langganan USDG, alert stream, Telegram). Tanpa ini /pro/* dan /alerts/stream menjawab 503. */
+  pro?: ProConfig
   now?: () => Date
 }
 
@@ -67,7 +75,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const symbols = cfg.symbols ?? {}
   const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
 
-  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key', 'authorization'] })
+  if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key', 'authorization', 'last-event-id'] })
 
   function toPrediction(row: PredictionRow): Prediction {
     const committedAt = row.committedAt!
@@ -298,6 +306,129 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     if (!s) return reply.code(401).send({ error: 'login_required' })
     void reply.header('cache-control', 'private, no-store')
     return meResponseSchema.parse(await buildMe(cfg.db, auth!, s.address, now()))
+  })
+
+  // ---- NEXA Pro ($19/bulan): langganan USDG on-chain, alert real-time (SSE) dan Telegram. Di belakang flag fitur berbayar.
+  const pro = cfg.pro
+  const proOn = () => Boolean(cfg.paidFeaturesEnabled && pro)
+  const price = () => ({ raw: pro!.payment.minAmount.toString(), decimals: 6, formatted: formatUnits(pro!.payment.minAmount, 6) })
+
+  app.get('/pro/plan', async (_req, reply) => {
+    if (!proOn()) return reply.code(503).send({ error: 'paid_features_disabled' })
+    cache(reply)
+    return proPlanResponseSchema.parse({
+      price: price(),
+      durationDays: pro!.days,
+      recipient: pro!.payment.recipient,
+      usdgAddress: pro!.payment.usdg,
+      chainId: pro!.chainId,
+      telegramBot: pro!.telegramBot ?? null,
+    })
+  })
+
+  app.post('/pro/subscribe', async (req, reply) => {
+    if (!proOn() || !auth) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (!s) return reply.code(401).send({ error: 'login_required' })
+    const parsed = proSubscribeRequestSchema.safeParse(req.body)
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_body' })
+    const r = await subscribe(cfg.db, pro!, s.address, parsed.data.txHash, now())
+    if (!r.ok) return reply.code(r.status).send({ error: r.error })
+    void reply.header('cache-control', 'private, no-store')
+    return proSubscribeResponseSchema.parse({ active: true, expiresAt: r.expiresAt.toISOString(), addedDays: r.addedDays, paymentTxUrl: tx(parsed.data.txHash) })
+  })
+
+  app.post('/pro/telegram/link', async (req, reply) => {
+    if (!proOn() || !auth) return reply.code(503).send({ error: 'paid_features_disabled' })
+    if (!pro!.telegramBot) return reply.code(503).send({ error: 'telegram_not_configured' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (!s) return reply.code(401).send({ error: 'login_required' })
+    if (!(await proStatus(cfg.db, s.address, now())).active) return reply.code(402).send({ error: 'subscription_required' })
+    const { code, expiresAt } = await createLinkCode(cfg.db, s.address, now())
+    void reply.header('cache-control', 'private, no-store')
+    return telegramLinkResponseSchema.parse({ code, url: `https://t.me/${pro!.telegramBot}?start=${code}`, expiresAt: expiresAt.toISOString() })
+  })
+
+  app.post('/pro/telegram/unlink', async (req, reply) => {
+    if (!proOn() || !auth) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (!s) return reply.code(401).send({ error: 'login_required' })
+    await unlinkTelegram(cfg.db, s.address)
+    return reply.code(204).send()
+  })
+
+  // Stream alert (SSE). Alert dibuat saat post disetujui, 15 menit sebelum post publik di X.
+  // Tanpa Last-Event-ID, stream dimulai dari alert terbaru saat ini (hanya yang baru); dengan itu, melanjutkan dari id tersebut.
+  let shuttingDown = false
+  // preClose (bukan onClose): server menunggu koneksi terbuka selesai, jadi stream harus diberi tahu lebih dulu.
+  app.addHook('preClose', async () => {
+    shuttingDown = true
+  })
+  app.get('/alerts/stream', async (req, reply) => {
+    if (!proOn() || !auth) return reply.code(503).send({ error: 'paid_features_disabled' })
+    const s = await sessionFrom(cfg.db, req.headers.authorization, now())
+    if (!s) return reply.code(401).send({ error: 'login_required' })
+    if (!(await proStatus(cfg.db, s.address, now())).active) return reply.code(402).send({ error: 'subscription_required' })
+
+    const header = Number(req.headers['last-event-id'])
+    let last = Number.isInteger(header) && header >= 0 ? header : ((await cfg.db.select({ id: proAlerts.id }).from(proAlerts).orderBy(desc(proAlerts.id)).limit(1))[0]?.id ?? 0)
+
+    const pollMs = pro!.alertPollMs ?? 3000
+    const heartbeatMs = pro!.heartbeatMs ?? 15_000
+    const raw = reply.raw
+    void reply.hijack()
+    // Header CORS yang sudah diset plugin ikut dibawa; hijack melewati penulisan header normal.
+    raw.writeHead(200, {
+      ...(reply.getHeaders() as Record<string, string>),
+      'content-type': 'text/event-stream; charset=utf-8',
+      'cache-control': 'no-store, no-transform',
+      connection: 'keep-alive',
+      'x-accel-buffering': 'no',
+    })
+    raw.write('retry: 5000\n: connected\n\n')
+
+    let closed = false
+    let wake: (() => void) | null = null
+    raw.on('close', () => {
+      closed = true
+      wake?.()
+    })
+    const sleep = (ms: number) =>
+      new Promise<void>((resolve) => {
+        const t = setTimeout(resolve, ms)
+        wake = () => {
+          clearTimeout(t)
+          resolve()
+        }
+      })
+
+    let lastWrite = Date.now()
+    let lastCheck = Date.now()
+    try {
+      while (!closed && !shuttingDown) {
+        const rows = await cfg.db.select().from(proAlerts).where(gt(proAlerts.id, last)).orderBy(asc(proAlerts.id)).limit(50)
+        for (const r of rows) {
+          const ev = alertEventSchema.parse({ id: r.id, kind: r.kind, content: r.content, createdAt: r.createdAt.toISOString(), publicAt: r.publicAt ? r.publicAt.toISOString() : null })
+          raw.write(`id: ${r.id}\nevent: alert\ndata: ${JSON.stringify(ev)}\n\n`)
+          last = r.id
+          lastWrite = Date.now()
+        }
+        if (Date.now() - lastWrite >= heartbeatMs) {
+          raw.write(': ping\n\n')
+          lastWrite = Date.now()
+        }
+        // Langganan atau sesi berakhir: tutup stream (klien akan melihat 402/401 saat tersambung ulang).
+        if (Date.now() - lastCheck >= 30_000) {
+          lastCheck = Date.now()
+          if (!(await sessionFrom(cfg.db, req.headers.authorization, now())) || !(await proStatus(cfg.db, s.address, now())).active) break
+        }
+        if (rows.length < 50) await sleep(pollMs)
+      }
+    } catch {
+      /* koneksi putus atau DB gagal sesaat: tutup, klien menyambung ulang dengan Last-Event-ID */
+    } finally {
+      raw.end()
+    }
   })
 
   // Ask NEXA: $1 USDG per laporan, atau kredit gratis bulanan holder $NEXA (butuh sesi login).

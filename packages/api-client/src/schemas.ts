@@ -186,5 +186,60 @@ export const meResponseSchema = z.object({
     /** Bulan UTC kredit berlaku, `YYYY-MM`. */
     month: z.string(),
   }),
+  /** Langganan NEXA Pro milik alamat ini. */
+  pro: z.object({
+    active: z.boolean(),
+    /** Akhir masa aktif; null bila belum pernah berlangganan. Tetap terisi setelah kedaluwarsa. */
+    expiresAt: iso.nullable(),
+    /** Chat Telegram pribadi sudah ditautkan untuk menerima alert. */
+    telegramLinked: z.boolean(),
+  }),
 })
 export type MeResponse = z.infer<typeof meResponseSchema>
+
+// ------------------------------------------------------------- NEXA Pro
+
+const unitAmount = z.object({ raw: z.string().regex(/^\d+$/), decimals: z.number().int(), formatted: z.string() })
+
+export const proPlanResponseSchema = z.object({
+  /** Harga per periode dalam USDG (6 desimal), nilai mentah dan terformat. */
+  price: unitAmount,
+  durationDays: z.number().int().positive(),
+  /** Kirim USDG ke alamat ini di chain `chainId`, lalu kirim tx hash ke POST /pro/subscribe. */
+  recipient: z.string(),
+  usdgAddress: z.string(),
+  chainId: z.number().int().positive(),
+  /** Username bot Telegram (tanpa @) untuk alert; null bila Telegram belum dikonfigurasi. */
+  telegramBot: z.string().nullable(),
+})
+export type ProPlanResponse = z.infer<typeof proPlanResponseSchema>
+
+export const proSubscribeRequestSchema = z.object({ txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/) })
+export type ProSubscribeRequest = z.infer<typeof proSubscribeRequestSchema>
+
+export const proSubscribeResponseSchema = z.object({
+  active: z.boolean(),
+  expiresAt: iso,
+  addedDays: z.number().int().positive(),
+  paymentTxUrl: z.string().url(),
+})
+export type ProSubscribeResponse = z.infer<typeof proSubscribeResponseSchema>
+
+export const telegramLinkResponseSchema = z.object({
+  /** Kode sekali pakai; kirim `/start <kode>` ke bot (atau buka `url`). Berlaku singkat. */
+  code: z.string(),
+  url: z.string().url(),
+  expiresAt: iso,
+})
+export type TelegramLinkResponse = z.infer<typeof telegramLinkResponseSchema>
+
+/** Satu alert di stream SSE `GET /alerts/stream` (event `alert`, data = JSON ini). */
+export const alertEventSchema = z.object({
+  id: z.number().int().positive(),
+  kind: z.string(),
+  content: z.string(),
+  createdAt: iso,
+  /** Jadwal post publik di X (15 menit setelah alert). */
+  publicAt: iso.nullable(),
+})
+export type AlertEvent = z.infer<typeof alertEventSchema>

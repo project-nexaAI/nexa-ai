@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createPublicClient, createTestClient, createWalletClient, defineChain, http, type Address, type Hex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { costLog, createDb, postQueue, predictions, riskguardLog } from '@nexa-ai/db'
+import { costLog, createDb, postQueue, proAlerts, predictions, riskguardLog } from '@nexa-ai/db'
 import { nexaLedgerAbi } from '@nexa-ai/contracts-abi'
 import { DIRECTION } from '@nexa-ai/shared'
 import { approvePost } from '../src/queue'
@@ -57,6 +57,7 @@ function readArtifact(path: string) {
 }
 
 async function clean() {
+  await db.delete(proAlerts)
   await db.delete(postQueue)
   await db.delete(riskguardLog)
   await db.delete(predictions)

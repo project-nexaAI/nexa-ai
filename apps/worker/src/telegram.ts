@@ -33,6 +33,50 @@ export class TelegramBot implements Notifier {
   }
 }
 
+/** Galat Telegram Bot API. Hanya status HTTP; URL (yang memuat token) tidak pernah ikut di pesan. */
+export class TelegramError extends Error {
+  constructor(readonly status: number) {
+    super(`Telegram HTTP ${status}`)
+  }
+}
+
+export interface TelegramUpdate {
+  update_id: number
+  message?: { chat: { id: number; type: string }; text?: string }
+}
+
+/** Pengirim pesan ke chat tertentu (pelanggan Pro). */
+export interface ChatSender {
+  sendMessage(chatId: string, text: string): Promise<void>
+}
+
+/** Telegram Bot API untuk bot Pro: kirim ke chat pelanggan dan membaca update (`/start <kode>`). Token tidak pernah di-log. */
+export class TelegramApi implements ChatSender {
+  constructor(
+    private readonly token: string,
+    private readonly fetchImpl: typeof fetch = fetch,
+  ) {}
+
+  private async call<T>(method: string, body: unknown): Promise<T> {
+    const res = await this.fetchImpl(`https://api.telegram.org/bot${this.token}/${method}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new TelegramError(res.status)
+    return ((await res.json()) as { result: T }).result
+  }
+
+  async sendMessage(chatId: string, text: string): Promise<void> {
+    await this.call('sendMessage', { chat_id: chatId, text, disable_web_page_preview: true })
+  }
+
+  /** Long polling: menunggu hingga `timeoutSec` detik untuk update baru dengan id >= offset. */
+  getUpdates(offset: number, timeoutSec: number): Promise<TelegramUpdate[]> {
+    return this.call('getUpdates', { offset, timeout: timeoutSec, allowed_updates: ['message'] })
+  }
+}
+
 /**
  * Kanal cadangan PUBLIK (brief: Telegram sebagai kanal cadangan X). Terkirim bersamaan dengan post publik di X
  * (setelah tunda 15 menit), BUKAN saat persetujuan: alert Pro harus lebih awal dari publik. Mode dry hanya mencatat log:

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, predictions } from '@nexa-ai/db'
+import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, proAlerts, predictions } from '@nexa-ai/db'
 import {
   burnResponseSchema,
   predictionResponseSchema,
@@ -63,6 +63,7 @@ const revealed = (ledgerId: number, direction: 1 | 2, returnBps: number, won: bo
 describe.skipIf(!dbUp)('API publik', () => {
   beforeEach(async () => {
     seq = 0
+    await db.delete(proAlerts)
     await db.delete(postQueue)
     await db.delete(kolCalls)
     await db.delete(kolAccounts)

@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import alertFixture from '../../../docs/api/fixtures/alert.json'
+import proPlanFixture from '../../../docs/api/fixtures/pro-plan.json'
+import proSubscribeFixture from '../../../docs/api/fixtures/pro-subscribe.json'
+import telegramLinkFixture from '../../../docs/api/fixtures/telegram-link.json'
 import askFixture from '../../../docs/api/fixtures/ask.json'
 import burnFixture from '../../../docs/api/fixtures/burn.json'
 import meFixture from '../../../docs/api/fixtures/me.json'
@@ -11,6 +15,14 @@ import proofPopulatedFixture from '../../../docs/api/fixtures/proof.populated.js
 import rugRadarFixture from '../../../docs/api/fixtures/rug-radar.json'
 import signalsFixture from '../../../docs/api/fixtures/signals.json'
 import {
+  alertEventSchema,
+  proPlanResponseSchema,
+  proSubscribeResponseSchema,
+  telegramLinkResponseSchema,
+  type AlertEvent,
+  type ProPlanResponse,
+  type ProSubscribeResponse,
+  type TelegramLinkResponse,
   askResponseSchema,
   burnResponseSchema,
   meResponseSchema,
@@ -22,6 +34,7 @@ import {
   rugRadarResponseSchema,
   signalsResponseSchema,
   type AskRequest,
+  type ProSubscribeRequest,
   type MeResponse,
   type NonceResponse,
   type SessionResponse,
@@ -50,7 +63,48 @@ export const fixtures = {
   nonce: nonceFixture,
   session: sessionFixture,
   me: meFixture,
+  proPlan: proPlanFixture,
+  proSubscribe: proSubscribeFixture,
+  telegramLink: telegramLinkFixture,
+  alert: alertFixture,
 } as const
+
+/** Satu event SSE mentah (`event:`, `id:`, `data:`). Baris komentar (`:`) diabaikan. */
+export interface SseMessage {
+  event: string
+  id: string | null
+  data: string
+}
+
+/** Memecah teks SSE bertahap. Panggil `push` dengan potongan teks; kembalian = event yang sudah lengkap. */
+export function createSseParser() {
+  let buf = ''
+  return {
+    push(chunk: string): SseMessage[] {
+      buf += chunk.replace(/\r\n/g, '\n')
+      const out: SseMessage[] = []
+      let i: number
+      while ((i = buf.indexOf('\n\n')) !== -1) {
+        const block = buf.slice(0, i)
+        buf = buf.slice(i + 2)
+        let event = 'message'
+        let id: string | null = null
+        const data: string[] = []
+        for (const line of block.split('\n')) {
+          if (line === '' || line.startsWith(':')) continue
+          const c = line.indexOf(':')
+          const field = c === -1 ? line : line.slice(0, c)
+          const value = c === -1 ? '' : line.slice(c + 1).replace(/^ /, '')
+          if (field === 'event') event = value
+          else if (field === 'id') id = value
+          else if (field === 'data') data.push(value)
+        }
+        if (data.length > 0) out.push({ event, id, data: data.join('\n') })
+      }
+      return out
+    },
+  }
+}
 
 export interface ApiClientOptions {
   /** Basis URL API (mis. NEXT_PUBLIC_API_URL). Diabaikan jika useFixtures. */
@@ -113,7 +167,56 @@ export function createApiClient(opts: ApiClientOptions = {}) {
     if (opts.useFixtures) return
     await send('POST', '/auth/logout', null, { token, body: {} })
   }
+  /** Rencana NEXA Pro (harga, penerima, chain) untuk membangun transfer USDG. */
+  async function getProPlan(): Promise<ProPlanResponse> {
+    if (opts.useFixtures) return proPlanResponseSchema.parse(proPlanFixture)
+    return send('GET', '/pro/plan', proPlanResponseSchema)
+  }
+  /** Daftarkan pembayaran USDG yang sudah terkonfirmasi; butuh sesi login. Memperpanjang masa aktif. */
+  async function proSubscribe(req: ProSubscribeRequest, token: string): Promise<ProSubscribeResponse> {
+    if (opts.useFixtures) return proSubscribeResponseSchema.parse(proSubscribeFixture)
+    return send('POST', '/pro/subscribe', proSubscribeResponseSchema, { body: req, token })
+  }
+  /** Kode tautan Telegram untuk pelanggan aktif. */
+  async function linkTelegram(token: string): Promise<TelegramLinkResponse> {
+    if (opts.useFixtures) return telegramLinkResponseSchema.parse(telegramLinkFixture)
+    return send('POST', '/pro/telegram/link', telegramLinkResponseSchema, { token, body: {} })
+  }
+  async function unlinkTelegram(token: string): Promise<void> {
+    if (opts.useFixtures) return
+    await send('POST', '/pro/telegram/unlink', null, { token, body: {} })
+  }
+  /**
+   * Alert Pro real-time (SSE lewat fetch, supaya header Authorization bisa dikirim; EventSource tidak bisa).
+   * Selesai bila stream ditutup atau `signal` dibatalkan. `lastEventId` melanjutkan dari alert terakhir yang diterima.
+   */
+  async function streamAlerts(o: { token: string; onAlert: (a: AlertEvent) => void; signal?: AbortSignal; lastEventId?: number }): Promise<void> {
+    if (opts.useFixtures) {
+      o.onAlert(alertEventSchema.parse(alertFixture))
+      return
+    }
+    const headers: Record<string, string> = { accept: 'text/event-stream', authorization: `Bearer ${o.token}` }
+    if (o.lastEventId !== undefined) headers['last-event-id'] = String(o.lastEventId)
+    const res = await f(`${base()}/alerts/stream`, { headers, ...(o.signal ? { signal: o.signal } : {}) })
+    if (!res.ok || !res.body) throw new Error(`API /alerts/stream: HTTP ${res.status}`)
+    const parser = createSseParser()
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) return
+      for (const m of parser.push(value)) {
+        if (m.event !== 'alert') continue
+        const parsed = alertEventSchema.safeParse(JSON.parse(m.data))
+        if (parsed.success) o.onAlert(parsed.data)
+      }
+    }
+  }
   return {
+    getProPlan,
+    proSubscribe,
+    linkTelegram,
+    unlinkTelegram,
+    streamAlerts,
     ask,
     getNonce,
     verify,

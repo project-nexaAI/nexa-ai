@@ -292,3 +292,56 @@ export const costLog = pgTable(
   },
   (t) => [index('cost_log_cat_at_idx').on(t.category, t.createdAt)],
 )
+
+// ------------------------------------------------------------- NEXA Pro
+
+/** Langganan Pro per alamat wallet (ber-checksum). Aktif selama `expires_at` di masa depan. */
+export const proSubscriptions = pgTable('pro_subscriptions', {
+  address: text('address').primaryKey(),
+  expiresAt: ts('expires_at').notNull(),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+})
+
+/** Pembayaran langganan yang sudah diklaim (satu tx hash hanya boleh dipakai sekali). */
+export const proPayments = pgTable('pro_payments', {
+  txHash: text('tx_hash').primaryKey(),
+  payer: text('payer').notNull(),
+  amount: amount('amount').notNull(), // unit terkecil USDG (6 desimal)
+  days: integer('days').notNull(),
+  createdAt: ts('created_at').notNull().defaultNow(),
+})
+
+/**
+ * Alert Pro: dibuat saat post disetujui (atau lolos otomatis), 15 menit SEBELUM post publik di X.
+ * Sumber stream SSE dan pengiriman Telegram; `telegram_dispatched_at` menandai fan-out ke pelanggan sudah dilakukan.
+ */
+export const proAlerts = pgTable(
+  'pro_alerts',
+  {
+    id: serial('id').primaryKey(),
+    postId: integer('post_id')
+      .notNull()
+      .unique()
+      .references(() => postQueue.id),
+    kind: text('kind').notNull(),
+    content: text('content').notNull(),
+    publicAt: ts('public_at'), // jadwal post publik di X
+    createdAt: ts('created_at').notNull().defaultNow(),
+    telegramDispatchedAt: ts('telegram_dispatched_at'),
+  },
+  (t) => [index('pro_alerts_dispatch_idx').on(t.telegramDispatchedAt)],
+)
+
+/** Chat Telegram pribadi milik pelanggan (satu alamat, satu chat). */
+export const telegramLinks = pgTable('telegram_links', {
+  address: text('address').primaryKey(),
+  chatId: text('chat_id').notNull().unique(),
+  linkedAt: ts('linked_at').notNull().defaultNow(),
+})
+
+/** Kode sekali pakai untuk menautkan chat Telegram ke alamat wallet (`/start <kode>` ke bot). */
+export const telegramLinkCodes = pgTable('telegram_link_codes', {
+  code: text('code').primaryKey(),
+  address: text('address').notNull(),
+  expiresAt: ts('expires_at').notNull(),
+})

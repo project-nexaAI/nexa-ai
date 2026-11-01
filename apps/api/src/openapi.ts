@@ -1,6 +1,11 @@
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import type { ZodTypeAny } from 'zod'
 import {
+  alertEventSchema,
+  proPlanResponseSchema,
+  proSubscribeRequestSchema,
+  proSubscribeResponseSchema,
+  telegramLinkResponseSchema,
   askRequestSchema,
   askResponseSchema,
   meResponseSchema,
@@ -86,6 +91,63 @@ export function buildOpenApi() {
           summary: 'Profil sesi: status holder $NEXA dan benefit (alert lebih cepat, kredit Ask gratis).',
           parameters: [{ name: 'authorization', in: 'header', required: true, schema: { type: 'string' } }],
           responses: { '200': { description: 'Profil', content: { 'application/json': { schema: schema(meResponseSchema) } } }, '401': err('login_required'), '503': err('fitur belum aktif') },
+        },
+      },
+      '/pro/plan': {
+        get: {
+          summary: 'NEXA Pro: harga, lama periode, penerima USDG, dan chain. Mati sampai PAID_FEATURES_ENABLED=true.',
+          responses: { '200': ok('Rencana Pro', proPlanResponseSchema), '503': err('fitur berbayar belum aktif') },
+        },
+      },
+      '/pro/subscribe': {
+        post: {
+          summary: 'Aktifkan atau perpanjang NEXA Pro dengan tx pembayaran USDG yang sudah terkonfirmasi. Pengirim tx harus sama dengan alamat sesi; membayar kelipatan harga memberi kelipatan periode.',
+          parameters: [{ name: 'authorization', in: 'header', required: true, schema: { type: 'string' } }],
+          requestBody: { required: true, content: { 'application/json': { schema: schema(proSubscribeRequestSchema) } } },
+          responses: {
+            '200': { description: 'Langganan aktif', content: { 'application/json': { schema: schema(proSubscribeResponseSchema) } } },
+            '400': err('body tidak valid'),
+            '401': err('login_required'),
+            '402': err('pembayaran tidak sah: tx_not_found, tx_failed, no_payment, underpaid'),
+            '403': err('payer_mismatch'),
+            '409': err('payment_already_used'),
+            '503': err('fitur berbayar belum aktif'),
+          },
+        },
+      },
+      '/pro/telegram/link': {
+        post: {
+          summary: 'Kode sekali pakai (10 menit) untuk menautkan chat Telegram pribadi: kirim `/start <kode>` ke bot. Hanya pelanggan aktif.',
+          parameters: [{ name: 'authorization', in: 'header', required: true, schema: { type: 'string' } }],
+          responses: {
+            '200': { description: 'Kode tautan', content: { 'application/json': { schema: schema(telegramLinkResponseSchema) } } },
+            '401': err('login_required'),
+            '402': err('subscription_required'),
+            '503': err('paid_features_disabled atau telegram_not_configured'),
+          },
+        },
+      },
+      '/pro/telegram/unlink': {
+        post: {
+          summary: 'Putuskan chat Telegram dari alamat sesi.',
+          parameters: [{ name: 'authorization', in: 'header', required: true, schema: { type: 'string' } }],
+          responses: { '204': { description: 'Selesai' }, '401': err('login_required'), '503': err('fitur berbayar belum aktif') },
+        },
+      },
+      '/alerts/stream': {
+        get: {
+          summary:
+            'Alert Pro real-time (Server-Sent Events). Alert terkirim saat post disetujui, 15 menit sebelum post publik di X. Event `alert` berisi JSON AlertEvent. Tanpa Last-Event-ID stream dimulai dari alert terbaru; dengan itu melanjutkan dari id tersebut. Butuh langganan aktif.',
+          parameters: [
+            { name: 'authorization', in: 'header', required: true, schema: { type: 'string' } },
+            { name: 'last-event-id', in: 'header', required: false, schema: { type: 'integer', minimum: 0 } },
+          ],
+          responses: {
+            '200': { description: 'text/event-stream; setiap event `alert` membawa AlertEvent', content: { 'text/event-stream': { schema: schema(alertEventSchema) } } },
+            '401': err('login_required'),
+            '402': err('subscription_required'),
+            '503': err('fitur berbayar belum aktif'),
+          },
         },
       },
       '/ask': {

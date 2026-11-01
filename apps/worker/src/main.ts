@@ -9,7 +9,8 @@ import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
 import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
 import { optionalEncKey, optionalPrivateKey } from './keys'
 import { createLedgerClient } from './ledger'
-import { TelegramBot } from './telegram'
+import { dispatchProAlerts, pollTelegram } from './pro'
+import { TelegramApi, TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
 import { MAINNET_ORACLE_ASSETS, createFeedReader } from './oracle'
 
@@ -121,6 +122,10 @@ if (env.KEEPER_PRIVATE_KEY && mirrors.length > 0) {
     mirrors,
   }
 }
+// NEXA Pro: bot Telegram yang sama menautkan chat pelanggan (/start <kode>) dan mengirim alert 15 menit sebelum post publik.
+const proBot = env.TELEGRAM_BOT_TOKEN ? new TelegramApi(env.TELEGRAM_BOT_TOKEN) : null
+console.log(proBot ? 'worker: alert Pro Telegram AKTIF (tautan chat + pengiriman ke pelanggan)' : 'worker: alert Pro Telegram NONAKTIF (butuh TELEGRAM_BOT_TOKEN)')
+
 console.log(keeper ? `worker: keeper harga testnet AKTIF (${mirrors.map((m) => m.symbol).join(', ')})` : 'worker: keeper harga testnet NONAKTIF (butuh KEEPER_PRIVATE_KEY dan feed tiruan; hanya testnet)')
 let lastKeeperAt = 0
 
@@ -142,6 +147,10 @@ async function tick(): Promise<void> {
     const notable = res.filter((r) => r.action === 'pushed' || r.action.endsWith('failed') || r.action.endsWith('error') || r.action === 'source_stale')
     if (notable.length) console.log(`worker: keeper: ${notable.map((r) => `${r.symbol}=${r.action}`).join(' ')}`)
   }
+  if (proBot) {
+    const d = await dispatchProAlerts(db, proBot)
+    if (d.alerts) console.log(`worker: alert Pro: ${d.alerts} alert, ${d.sent} terkirim, ${d.failed} gagal, ${d.skippedPublic} sudah publik`)
+  }
   if (!deps) return
   if (daily) {
     const step = await runDailyPrediction(daily)
@@ -154,6 +163,20 @@ async function tick(): Promise<void> {
 
 let stopping = false
 for (const sig of ['SIGINT', 'SIGTERM'] as const) process.on(sig, () => (stopping = true))
+
+// Long polling bot Pro berjalan terpisah dari siklus utama, supaya penautan chat terasa langsung (bukan menunggu LOOP_SECONDS).
+if (proBot) {
+  void (async () => {
+    while (!stopping) {
+      try {
+        await pollTelegram(db, proBot, 25)
+      } catch (e) {
+        console.error('worker: polling Telegram gagal:', e instanceof Error ? e.message : String(e))
+        await new Promise((r) => setTimeout(r, 5000))
+      }
+    }
+  })()
+}
 
 while (!stopping) {
   try {
