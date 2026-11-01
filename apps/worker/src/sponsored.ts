@@ -32,7 +32,7 @@ const requestSchema = z.object({
 const textSchema = z.object({ text: z.string().min(10).max(280) })
 
 const sponsoredSystem = `${REPORT_SYSTEM}
-- Ini KONTEN SPONSOR. Teks WAJIB diawali persis dengan kata "Sponsored" lalu titik dua. Riset netral: sebutkan data apa adanya, tanpa rekomendasi, rating, pilihan utama, atau ajakan apa pun. Sebutkan sekali bahwa ini konten berbayar dari klien.`
+- This is SPONSORED CONTENT. The text MUST start with exactly the word "Sponsored" followed by a colon. Keep the research neutral: state the data as it is, with no recommendation, rating, top pick, or call to action. Say once that this is paid content from the client.`
 
 function factsFor(f: TokenFacts): string[] {
   const out = [String(f.trades.total), String(f.trades.buys), String(f.trades.sells)]
@@ -44,19 +44,19 @@ function factsFor(f: TokenFacts): string[] {
 function promptFor(client: string, f: TokenFacts): string {
   const data = {
     client,
-    symbol: f.symbol ?? 'token tanpa simbol yang aman ditampilkan',
+    symbol: f.symbol ?? 'token without a safe symbol to display',
     graduated: f.graduated,
     trades: f.trades,
     creatorTax: f.creatorTaxBps === null ? null : `${bpsToPercent(f.creatorTaxBps)}% (${f.creatorTaxBps} bps)`,
     topHolderShare: f.topHolderShareBps === null ? null : `${bpsToPercent(f.topHolderShareBps)}% (${f.topHolderShareBps} bps)`,
     redFlags: f.redFlags,
   }
-  return `Tulis ringkasan riset berlabel "Sponsored" tentang token milik klien, hanya dari DATA indexer. Sertakan red flag apa adanya (jangan disembunyikan, jangan dipuji).
+  return `Write a research summary labeled "Sponsored" about the client's token, from the indexer DATA only. Include the red flags as they are (do not hide them, do not praise).
 
-DATA (hasil tool, satu-satunya sumber angka):
+DATA (tool results, the only source of numbers):
 ${JSON.stringify(data)}
 
-Balas HANYA JSON: {"text": "Sponsored: <teks post>"}`
+Reply with JSON ONLY: {"text": "Sponsored: <post text>"}`
 }
 
 /**

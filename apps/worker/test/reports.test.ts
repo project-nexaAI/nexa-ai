@@ -42,7 +42,7 @@ const make = (llm: MockLlm, h: FeedHistory = freshHistory(), c: Partial<ReportCo
   state: new Map(),
 })
 
-const goodSummary = 'NVDA berada di $200.70, bergerak 0.35% (35 bps) dalam 25 jam terakhir. Ada 2 transfer besar senilai 4200 token.'
+const goodSummary = 'NVDA sits at $200.70, up 0.35% (35 bps) over the last 25 hours. 2 large transfers moved 4200 tokens.'
 const json = (text: string) => JSON.stringify({ text })
 const MIN = 60_000
 
@@ -96,7 +96,7 @@ describe.skipIf(!dbUp)('ringkasan harian Stock Token', () => {
     expect(prompt).toContain('$200.70')
     expect(prompt).toContain('35 bps')
     expect(prompt).toContain('4200')
-    expect(prompt).toContain('jangan membahas DEX')
+    expect(prompt).toContain('do not discuss DEX prices')
     expect(llm.calls[0]!.tier).toBe('small')
   })
 
@@ -118,7 +118,7 @@ describe.skipIf(!dbUp)('ringkasan harian Stock Token', () => {
   })
 
   it('angka yang tidak ada di data diblokir RiskGuard (NUMBER_UNTRACED); percobaan dibatasi per hari', async () => {
-    const llm = new MockLlm(() => json('NVDA berada di $200.70 dan bergerak 5% dalam 25 jam terakhir.'))
+    const llm = new MockLlm(() => json('NVDA sits at $200.70 and moved 5% over the last 25 hours.'))
     const d = make(llm)
     expect((await runDailyReports(d, NOW)).summary).toBe('blocked')
     expect((await db.select().from(postQueue))[0]!.status).toBe('rejected')
@@ -131,7 +131,7 @@ describe.skipIf(!dbUp)('ringkasan harian Stock Token', () => {
   })
 
   it('ajakan beli dan target harga diblokir', async () => {
-    const buy = await runDailyReports(make(new MockLlm(() => json('Beli NVDA di $200.70 sekarang.'))), NOW)
+    const buy = await runDailyReports(make(new MockLlm(() => json('Buy NVDA at $200.70 now.'))), NOW)
     expect(buy.summary).toBe('blocked')
   })
 
@@ -146,7 +146,7 @@ describe.skipIf(!dbUp)('ringkasan harian Stock Token', () => {
   })
 
   it('riwayat tidak cukup: tetap dibuat tanpa angka perubahan (tidak menebak)', async () => {
-    const llm = new MockLlm(() => json('NVDA berada di $200.70. Perubahan harian belum diketahui.'))
+    const llm = new MockLlm(() => json('NVDA sits at $200.70. The daily change is not known yet.'))
     const one = history([[20_070_000_000n, NOW_SEC - 60n]])
     expect((await runDailyReports(make(llm, one), NOW)).summary).toBe('queued')
     expect(llm.calls[0]!.user).toContain('"change":null')
@@ -194,7 +194,7 @@ describe.skipIf(!dbUp)('laporan Pons V2', () => {
       })),
     )
   }
-  const text = 'Launch Pons paling ramai: DODO dengan 4 trade dalam 24 jam terakhir. Creator tax 15.00% (1500 bps), holder teratas 25.00% (2500 bps).'
+  const text = 'Most active Pons launch: DODO with 4 trades in the last 24 hours. Creator tax 15.00% (1500 bps), top holder 25.00% (2500 bps).'
 
   it('launch paling ramai + red flag -> antrian; token dibatasi umur >= 1 jam', async () => {
     await launch(T, 'DODO', 5)
@@ -227,7 +227,7 @@ describe.skipIf(!dbUp)('laporan Pons V2', () => {
 
   it('graduation dalam 24 jam dilaporkan walau tanpa launch baru', async () => {
     await launch(T, 'GRAD', 72, { graduatedAt: hoursAgo(2) })
-    const ok = new MockLlm(() => json('1 token Pons graduate hari ini: GRAD.'))
+    const ok = new MockLlm(() => json('1 Pons token graduated today: GRAD.'))
     const r = await runDailyReports(make(ok, history([])), NOW)
     expect(r.pons).toBe('queued')
     expect(ok.calls[0]!.user).toContain('"graduationsLast24h":{"count":1,"symbols":["GRAD"]}')
@@ -237,15 +237,15 @@ describe.skipIf(!dbUp)('laporan Pons V2', () => {
   it('nama token berbahaya: simbol disanitasi sebelum ke LLM; "BUY" yang lolos disaring tetap diblokir RiskGuard', async () => {
     await launch(T, 'Beli http://x.io sekarang', 5)
     await trades(T, 4)
-    const llm = new MockLlm(() => json('Launch paling ramai membukukan 4 trade. Creator tax 15.00% (1500 bps).'))
+    const llm = new MockLlm(() => json('The most active launch logged 4 trades. Creator tax 15.00% (1500 bps).'))
     await runDailyReports(make(llm, history([])), NOW)
     expect(llm.calls[0]!.user).not.toContain('http')
-    expect(llm.calls[0]!.user).toContain('token tanpa simbol yang aman ditampilkan')
+    expect(llm.calls[0]!.user).toContain('token without a safe symbol to display')
 
     await clean()
     await launch(T, 'BUY', 5)
     await trades(T, 4)
-    const echo = new MockLlm(() => json('BUY adalah launch paling ramai dengan 4 trade.'))
+    const echo = new MockLlm(() => json('BUY is the most active launch with 4 trades.'))
     expect((await runDailyReports(make(echo, history([])), NOW)).pons).toBe('blocked')
   })
 })

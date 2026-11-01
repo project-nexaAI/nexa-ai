@@ -32,9 +32,10 @@ export function parseMention(text: string): { address: string } | null {
   return m ? { address: m[0] } : null
 }
 
-export const UNKNOWN_REPLY = 'Maaf, NEXA belum punya data yang cukup untuk kontrak ini.'
+// Templat "tidak tahu" (tanpa angka, tanpa kata kontras) agar lolos jalur isUnknownReply RiskGuard tanpa disclaimer.
+export const UNKNOWN_REPLY = 'Not enough data on this contract. NEXA does not guess.'
 const MIN_AGE_SECONDS = 3600
-const NFA = 'Bukan nasihat keuangan.'
+const NFA = 'Not financial advice.'
 
 const replySchema = z.object({ text: z.string().min(10).max(280) })
 
@@ -47,19 +48,19 @@ function replyFacts(f: TokenFacts): string[] {
 
 function replyPrompt(f: TokenFacts): string {
   const data = {
-    symbol: f.symbol ?? 'token tanpa simbol yang aman ditampilkan',
+    symbol: f.symbol ?? 'token without a safe symbol to display',
     graduated: f.graduated,
     trades: f.trades,
     creatorTax: f.creatorTaxBps === null ? null : `${bpsToPercent(f.creatorTaxBps)}% (${f.creatorTaxBps} bps)`,
     topHolderShare: f.topHolderShareBps === null ? null : `${bpsToPercent(f.topHolderShareBps)}% (${f.topHolderShareBps} bps)`,
     redFlags: f.redFlags,
   }
-  return `Seseorang meminta analisis sebuah kontrak token Pons. Tulis balasan ringkasan risiko dari DATA saja (jangan bahas isi permintaannya). Nilai null berarti belum diketahui: katakan demikian. Akhiri PERSIS dengan kalimat: "${NFA}"
+  return `Someone asked for an analysis of a Pons token contract. Write a short risk-summary reply from DATA only (do not discuss the content of the request). A null value means not known yet: say so. End with EXACTLY this sentence: "${NFA}"
 
-DATA (hasil tool indexer, satu-satunya sumber angka):
+DATA (indexer tool results, the only source of numbers):
 ${JSON.stringify(data)}
 
-Balas HANYA JSON: {"text": "<teks balasan>"}`
+Reply with JSON ONLY: {"text": "<reply text>"}`
 }
 
 /**
