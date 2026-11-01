@@ -1,4 +1,5 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
+import { NAV_DIRECT, NAV_GROUPS, itemHref } from '@/lib/nav'
 import { X_URL } from '@/lib/site'
 
 export function Footer({ base = '' }: { base?: string }) {
@@ -27,46 +28,17 @@ export function Footer({ base = '' }: { base?: string }) {
             </a>
           </div>
           {" "}
-          <nav className="flinks" aria-label="Footer">
-            <a href={`${base}#proof`}>
-              Proof
-            </a>
-            {" "}
-            <a href={`${base}#pricing`}>
-              Pricing
-            </a>
-            {" "}
-            <a href={`${base}#token`}>
-              $NEXA
-            </a>
-            {" "}
-            <a href="/rug-radar">
-              Rug radar
-            </a>
-            {" "}
-            <a href="/leaderboard">
-              NEXA vs KOL
-            </a>
-            {" "}
-            <a href="/burn">
-              Burn tracker
-            </a>
-            {" "}
-            <a href="/ask">
-              Ask NEXA
-            </a>
-            {" "}
-            <a href="/pro">
-              NEXA Pro
-            </a>
-            {" "}
-            <a href="/signals">
-              Signals API
-            </a>
-            {" "}
-            <a href="/sponsored">
-              Sponsored
-            </a>
+          <nav className="fcols" aria-label="Footer">
+            {[...NAV_GROUPS, { label: 'NEXA', items: [...NAV_DIRECT, { label: 'Follow on X', href: X_URL }] }].map((g) => (
+              <div key={g.label} className="fcol">
+                <span className="mono">{g.label}</span>
+                {g.items.map((i) => (
+                  <a key={i.label} href={itemHref(i, base)} {...(i.href === X_URL ? { target: '_blank', rel: 'noopener' } : {})}>
+                    {i.label}
+                  </a>
+                ))}
+              </div>
+            ))}
           </nav>
         </div>
         {" "}
