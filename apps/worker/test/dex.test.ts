@@ -166,3 +166,28 @@ describe('makeDexSource', () => {
     expect(scanned.windows).toBeGreaterThan(after1) // kedaluwarsa
   })
 })
+
+describe('ketahanan terhadap galat RPC sementara', () => {
+  it('discoverPools mengulang jendela yang gagal sesaat dan tetap menemukan semua pool', async () => {
+    const base = fakeClient({ 1: { usd: 205, liquidity: 1n }, 2: { usd: 205, liquidity: 1n } })
+    const failedOnce = new Set<string>()
+    const flaky: DexClient = {
+      ...base,
+      initializedPools: async (c0, c1, from, to) => {
+        const key = `${from}-${to}`
+        if (!failedOnce.has(key)) {
+          failedOnce.add(key)
+          throw new Error('RPC Request failed.')
+        }
+        return base.initializedPools(c0, c1, from, to)
+      },
+    }
+    const ids = await discoverPools(flaky, NVDA, USDG, 9_000_000n)
+    expect(ids.sort()).toEqual([id(1), id(2)])
+  })
+
+  it('galat yang menetap dilempar (pemanggil memutuskan: ringkasan tanpa DEX)', async () => {
+    const dead: DexClient = { ...fakeClient({ 1: { usd: 205, liquidity: 1n } }), initializedPools: async () => { throw new Error('RPC Request failed.') } }
+    await expect(discoverPools(dead, NVDA, USDG, 9_000_000n)).rejects.toThrow(/RPC Request failed/)
+  }, 20_000)
+})
