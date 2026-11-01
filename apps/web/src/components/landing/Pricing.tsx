@@ -1,4 +1,6 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
+import Link from 'next/link'
+
 export function Pricing() {
   return (
     <section className="sec" id="pricing">
@@ -19,7 +21,7 @@ export function Pricing() {
       </div>
       {" "}
       <div className="price" data-stagger="">
-        <div className="card plan hot tilt spot">
+        <Link href="/pro" className="card plan hot tilt spot">
           <span className="mono">
             NEXA Pro
           </span>
@@ -35,9 +37,9 @@ export function Pricing() {
           <p>
             Real-time alerts on the web and Telegram. Public posts on X reach everyone else 15 minutes later.
           </p>
-        </div>
+        </Link>
         {" "}
-        <div className="card plan tilt spot">
+        <Link href="/ask" className="card plan tilt spot">
           <span className="mono">
             Ask NEXA
           </span>
@@ -53,9 +55,9 @@ export function Pricing() {
           <p>
             A full risk report for one contract or token address.
           </p>
-        </div>
+        </Link>
         {" "}
-        <div className="card plan tilt spot">
+        <Link href="/signals" className="card plan tilt spot">
           <span className="mono">
             Signals API
           </span>
@@ -71,9 +73,9 @@ export function Pricing() {
           <p>
             A JSON feed for trading bots, dashboards and communities.
           </p>
-        </div>
+        </Link>
         {" "}
-        <div className="card plan tilt spot">
+        <Link href="/sponsored" className="card plan tilt spot">
           <span className="mono">
             Sponsored deep-dive
           </span>
@@ -89,7 +91,7 @@ export function Pricing() {
           <p>
             Project research labelled Sponsored, with no buy recommendation.
           </p>
-        </div>
+        </Link>
       </div>
       {" "}
       <div className="perk" data-reveal="">
