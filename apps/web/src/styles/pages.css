@@ -50,22 +50,13 @@ a.pg-row:hover{border-color:var(--line-2)}
 .pg-steps li::before{content:counter(s);flex:none;width:26px;height:26px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-family:var(--mono);font-size:11px;color:var(--ink)}
 .pg-big{font-size:clamp(40px,6vw,76px);font-weight:300;letter-spacing:-.04em;line-height:1}
 .pg-live{display:inline-flex;align-items:center;gap:8px}
-/* Bagian "Explore" di landing */
-.ex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.ex-card{padding:22px;display:flex;flex-direction:column;gap:10px;min-height:150px;transition:border-color .25s,transform .35s var(--ease)}
-.ex-card:hover{border-color:var(--line-2);transform:translateY(-3px)}
-.ex-card h3{font-size:22px;font-weight:300;letter-spacing:-.02em}
-.ex-card p{color:var(--ink-2);font-size:14px;flex:1}
-.ex-card .go{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--org-2)}
 @media (max-width:900px){
   .pg-grid{grid-template-columns:repeat(2,1fr)}
-  .ex-grid{grid-template-columns:repeat(2,1fr)}
   .pg-row,.pg-row.lb{grid-template-columns:1fr 1fr}
   .pg-row .main,.pg-row.lb .main{grid-column:1/-1}
 }
 @media (max-width:560px){
   .pg{padding-top:110px}
-  .ex-grid{grid-template-columns:1fr}
 }
 
 /* Navbar: ikon X bulat tanpa latar putih, tombol connect wallet, dan 8 tautan */
