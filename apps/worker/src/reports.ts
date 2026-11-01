@@ -94,7 +94,10 @@ async function dexFor(d: ReportDeps, a: OracleAsset, oracle: { answer: bigint; d
     }
     return { price: `$${formatUsd(q.priceE8, 8)}`, gapBps: gap }
   } catch (e) {
-    console.warn(`worker: DEX ${a.symbol} gagal: ${e instanceof Error ? e.message.slice(0, 160) : String(e)}`)
+    // Pesan ringkas viem ("RPC Request failed") menyembunyikan penyebab; sertakan detail dan penyebabnya.
+    const x = e as { shortMessage?: string; details?: string; message?: string; cause?: { message?: string; status?: number } }
+    const detail = [x.shortMessage ?? x.message, x.details, x.cause?.status ? `HTTP ${x.cause.status}` : x.cause?.message].filter(Boolean).join(' | ')
+    console.warn(`worker: DEX ${a.symbol} gagal: ${detail.slice(0, 240)}`)
     return null
   }
 }

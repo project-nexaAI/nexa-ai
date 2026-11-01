@@ -60,16 +60,33 @@ export function createDexClient(rpcUrl: string, poolManager: Address): DexClient
 }
 
 /** Semua pool asset/USDG (urutan mata uang v4: alamat lebih kecil = currency0). */
-export async function discoverPools(c: DexClient, asset: Address, usdg: Address, windowBlocks = 9_000_000n): Promise<Hex[]> {
+export async function discoverPools(c: DexClient, asset: Address, usdg: Address, windowBlocks = 2_000_000n): Promise<Hex[]> {
   const [c0, c1] = BigInt(usdg) < BigInt(asset) ? [usdg, asset] : [asset, usdg]
   const head = await c.head()
-  const ids: Hex[] = []
+  // Jendela kecil + paralelisme rendah + ulang dengan jeda: permintaan getLogs besar ditolak RPC dari server hosting
+  // ("RPC Request failed" di Railway), padahal berhasil dari lokal.
+  const windows: [bigint, bigint][] = []
   for (let to = head; ; to -= windowBlocks) {
     const from = to - windowBlocks + 1n > 0n ? to - windowBlocks + 1n : 0n
-    ids.push(...(await c.initializedPools(c0, c1, from, to)))
+    windows.push([from, to])
     if (from === 0n) break
   }
-  return [...new Set(ids)]
+  const found = await mapLimit(windows, 4, ([from, to]) => retry(() => c.initializedPools(c0, c1, from, to)))
+  return [...new Set(found.flat())]
+}
+
+/** Ulangi `fn` bila gagal (jeda bertambah). Galat terakhir dilempar. */
+async function retry<T>(fn: () => Promise<T>, attempts = 4, baseDelayMs = 400): Promise<T> {
+  let last: unknown
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (e) {
+      last = e
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, baseDelayMs * (i + 1)))
+    }
+  }
+  throw last
 }
 
 export interface PoolSnapshot {
@@ -150,11 +167,11 @@ export async function quoteAsset(c: DexClient, cfg: DexConfig, asset: Address, k
   const pools = cfg.poolIdOverride ? [cfg.poolIdOverride] : (knownPools ?? (await discoverPools(c, asset, cfg.usdg)))
   if (pools.length === 0) return null
 
-  const assetDecimals = await c.decimals(asset)
+  const assetDecimals = await retry(() => c.decimals(asset))
   const snaps = (
-    await mapLimit(pools, 16, async (id) => {
+    await mapLimit(pools, 8, async (id) => {
       try {
-        return await readPool(c, id)
+        return await retry(() => readPool(c, id), 2, 200)
       } catch {
         return null
       }
