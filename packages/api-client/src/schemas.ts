@@ -73,6 +73,31 @@ export const rugRadarResponseSchema = z.object({
 })
 export type RugRadarResponse = z.infer<typeof rugRadarResponseSchema>
 
+const decimalAmount = z.object({ raw: z.string().regex(/^\d+$/), decimals: z.number().int(), formatted: z.string() })
+
+/** Harga Stock Token: oracle Chainlink vs DEX (snapshot worker, jendela 24 jam). Seri dari yang lama ke baru. */
+export const marketResponseSchema = z.object({
+  updatedAt: iso,
+  /** Diurutkan dari pergerakan 24 jam terbesar; aset tanpa perubahan terhitung di belakang. */
+  assets: z.array(
+    z.object({
+      symbol: z.string(),
+      oracle: decimalAmount,
+      /** Null bila tidak ada pool DEX yang cukup dalam atau selisihnya tidak wajar. */
+      dex: decimalAmount.nullable(),
+      /** Positif = DEX di atas oracle. */
+      gapBps: z.number().int().nullable(),
+      gapFormatted: z.string().nullable(),
+      /** Null sampai ada riwayat minimal 1 jam. */
+      changeBps: z.number().int().nullable(),
+      changeFormatted: z.string().nullable(),
+      windowHours: z.number().int().positive().nullable(),
+      series: z.array(z.object({ at: iso, oracle: z.string().regex(/^\d+$/), dex: z.string().regex(/^\d+$/).nullable() })),
+    }),
+  ),
+})
+export type MarketResponse = z.infer<typeof marketResponseSchema>
+
 export const burnResponseSchema = z.object({
   /** Jumlah $NEXA dibakar: mentah (unit terkecil) + desimal + terformat. */
   totalBurned: z.object({ raw: z.string().regex(/^\d+$/), decimals: z.number().int(), formatted: z.string() }),

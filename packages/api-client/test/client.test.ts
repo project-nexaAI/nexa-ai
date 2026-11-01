@@ -6,6 +6,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  marketResponseSchema,
   signalsResponseSchema,
   askResponseSchema,
   meResponseSchema,
@@ -21,6 +22,7 @@ describe('fixture cocok dengan skema response', () => {
   })
   it('prediction', () => expect(() => predictionResponseSchema.parse(fixtures.prediction)).not.toThrow())
   it('rug-radar', () => expect(() => rugRadarResponseSchema.parse(fixtures.rugRadar)).not.toThrow())
+  it('market', () => expect(() => marketResponseSchema.parse(fixtures.market)).not.toThrow())
   it('burn', () => expect(() => burnResponseSchema.parse(fixtures.burn)).not.toThrow())
   it('leaderboard', () => expect(() => leaderboardResponseSchema.parse(fixtures.leaderboard)).not.toThrow())
   it('login wallet dan me', () => {
@@ -37,6 +39,7 @@ describe('createApiClient', () => {
     const c = createApiClient({ useFixtures: true })
     expect((await c.getProof()).stats.winRate).toBeNull()
     expect((await c.getRugRadar()).items[0]?.redFlags).toContain('High creator tax')
+    expect((await c.getMarket()).assets[0]?.symbol).toBe('NVDA')
     expect((await c.getPrediction(7)).revealed?.won).toBe(true)
   })
 

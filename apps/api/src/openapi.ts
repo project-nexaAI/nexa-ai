@@ -18,6 +18,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  marketResponseSchema,
   signalsResponseSchema,
 } from '@nexa-ai/api-client'
 
@@ -59,6 +60,9 @@ export function buildOpenApi() {
       },
       '/rug-radar': {
         get: { summary: 'Launch Pons V2 terbaru dengan red flag', responses: { '200': ok('Daftar launch', rugRadarResponseSchema) } },
+      },
+      '/market': {
+        get: { summary: 'Harga Stock Token: oracle vs DEX, perubahan dan seri 24 jam', responses: { '200': ok('Harga per aset', marketResponseSchema) } },
       },
       '/leaderboard': {
         get: {

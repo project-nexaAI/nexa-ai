@@ -12,12 +12,13 @@ import { Rules } from '@/components/landing/Rules'
 import { Sprite } from '@/components/landing/Sprite'
 import { Token } from '@/components/landing/Token'
 import { LandingEffects } from '@/components/LandingEffects'
+import { api, safe } from '@/lib/api'
 import { loadNxData } from '@/lib/nx-data'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Page() {
-  const data = await loadNxData()
+  const [data, market, radar] = await Promise.all([loadNxData(), safe(api().getMarket()), safe(api().getRugRadar())])
   return (
     <>
       <Sprite />
@@ -26,7 +27,7 @@ export default async function Page() {
       <Marquee />
       <main className="wrap">
         <Proof />
-        <Feed />
+        <Feed market={market} radar={radar} />
         <How />
         <Pricing />
         <Rules />

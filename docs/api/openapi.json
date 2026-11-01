@@ -591,6 +591,157 @@
         }
       }
     },
+    "/market": {
+      "get": {
+        "summary": "Harga Stock Token: oracle vs DEX, perubahan dan seri 24 jam",
+        "responses": {
+          "200": {
+            "description": "Harga per aset",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "assets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "symbol": {
+                            "type": "string"
+                          },
+                          "oracle": {
+                            "type": "object",
+                            "properties": {
+                              "raw": {
+                                "type": "string",
+                                "pattern": "^\\d+$"
+                              },
+                              "decimals": {
+                                "type": "integer"
+                              },
+                              "formatted": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "raw",
+                              "decimals",
+                              "formatted"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "dex": {
+                            "type": "object",
+                            "properties": {
+                              "raw": {
+                                "type": "string",
+                                "pattern": "^\\d+$"
+                              },
+                              "decimals": {
+                                "type": "integer"
+                              },
+                              "formatted": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "raw",
+                              "decimals",
+                              "formatted"
+                            ],
+                            "additionalProperties": false,
+                            "nullable": true
+                          },
+                          "gapBps": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "gapFormatted": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "changeBps": {
+                            "type": "integer",
+                            "nullable": true
+                          },
+                          "changeFormatted": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "windowHours": {
+                            "type": "integer",
+                            "exclusiveMinimum": true,
+                            "minimum": 0,
+                            "nullable": true
+                          },
+                          "series": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "oracle": {
+                                  "type": "string",
+                                  "pattern": "^\\d+$"
+                                },
+                                "dex": {
+                                  "type": "string",
+                                  "pattern": "^\\d+$",
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "at",
+                                "oracle",
+                                "dex"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "symbol",
+                          "oracle",
+                          "dex",
+                          "gapBps",
+                          "gapFormatted",
+                          "changeBps",
+                          "changeFormatted",
+                          "windowHours",
+                          "series"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "updatedAt",
+                    "assets"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/leaderboard": {
       "get": {
         "summary": "NEXA vs KOL: leaderboard akurasi. Hanya KOL yang bersedia dinilai; peringkat butuh minimal minScored call ternilai.",

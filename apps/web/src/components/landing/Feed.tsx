@@ -1,7 +1,17 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
+import type { MarketResponse, RugRadarResponse } from '@nexa-ai/api-client'
+import { fmtAge } from '@/lib/format'
+import { chartGeometry } from '@/lib/market-chart'
 import { X_URL } from '@/lib/site'
 
-export function Feed() {
+const RADAR_ROWS = 3
+
+/** Kartu data nyata: `market` dari /market (snapshot worker) dan `radar` dari /rug-radar; null = API tidak tersedia. */
+export function Feed({ market, radar }: { market: MarketResponse | null; radar: RugRadarResponse | null }) {
+  const top = market?.assets.find((a) => a.series.length >= 2) ?? null
+  const geo = top ? chartGeometry(top.series, top.oracle.decimals) : null
+  const launches = radar?.items.slice(0, RADAR_ROWS) ?? []
+
   return (
     <section className="sec" id="feed">
       <div className="head center">
@@ -26,9 +36,7 @@ export function Feed() {
       {" "}
       <div className="bento" data-stagger="">
         <article className="card wide spot">
-          <span className="illus">
-            Illustration
-          </span>
+          <span className="illus">{geo && top ? `Live · ${top.windowHours ?? 'under 1'}h` : 'Collecting data'}</span>
           {" "}
           <h3>
             Stock Token movers
@@ -39,26 +47,38 @@ export function Feed() {
           </p>
           {" "}
           <div className="viz">
-            <svg viewBox="0 0 600 150" fill="none" aria-hidden="true">
-              <defs>
-                <linearGradient id="spr" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#FF5A1F" stopOpacity=".35" />
-                  <stop offset="1" stopColor="#FF5A1F" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path d="M0 96 C60 92 90 70 140 74 S230 104 280 86 360 40 420 52 520 88 600 64 L600 98 C520 112 470 90 420 92 S330 104 280 104 200 112 140 104 60 110 0 108Z" fill="url(#spr)" />
-              <path className="draw" pathLength="1" d="M0 96 C60 92 90 70 140 74 S230 104 280 86 360 40 420 52 520 88 600 64" stroke="#FF5A1F" strokeWidth="2.5" />
-              <path d="M0 108 C60 110 140 104 200 112 S330 104 420 92 520 112 600 98" stroke="#A7A29C" strokeWidth="1.5" strokeDasharray="4 6" />
-              <g fontFamily="Geist Mono, monospace" fontSize="11" fill="#6E6A66">
-                <text x="0" y="140">
-                  DEX price
-                </text>
-                <text x="110" y="140" fill="#A7A29C">
-                  Chainlink feed
-                </text>
-              </g>
-              <circle cx="420" cy="52" r="5" fill="#FF5A1F" />
-            </svg>
+            {geo && top ? (
+              <div className="mkt">
+                <div className="mkt-row">
+                  <b>{top.symbol}</b>
+                  <span>${top.oracle.formatted}</span>
+                  {top.changeFormatted ? <span className={(top.changeBps ?? 0) < 0 ? 'dn' : 'up'}>{top.changeFormatted} {top.windowHours}h</span> : null}
+                  {top.dex && top.gapFormatted ? <span className="mkt-dex">DEX ${top.dex.formatted} ({top.gapFormatted} vs oracle)</span> : null}
+                </div>
+                <svg viewBox="0 0 600 150" fill="none" role="img" aria-label={`${top.symbol} price: Chainlink feed and DEX, last 24 hours`}>
+                  <defs>
+                    <linearGradient id="spr" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stopColor="#FF5A1F" stopOpacity=".35" />
+                      <stop offset="1" stopColor="#FF5A1F" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d={geo.area} fill="url(#spr)" />
+                  <path className="draw" pathLength="1" d={geo.oracle} stroke="#FF5A1F" strokeWidth="2.5" />
+                  {geo.dex ? <path d={geo.dex} stroke="#A7A29C" strokeWidth="1.5" strokeDasharray="4 6" /> : null}
+                  <g fontFamily="Geist Mono, monospace" fontSize="11" fill="#6E6A66">
+                    <text x="0" y="140">
+                      DEX price
+                    </text>
+                    <text x="110" y="140" fill="#A7A29C">
+                      Chainlink feed
+                    </text>
+                  </g>
+                  <circle cx={geo.last.x} cy={geo.last.y} r="5" fill="#FF5A1F" />
+                </svg>
+              </div>
+            ) : (
+              <p className="mkt-empty">NEXA is collecting Chainlink and DEX prices. The chart appears once there is history to show.</p>
+            )}
           </div>
         </article>
         {" "}
@@ -79,9 +99,7 @@ export function Feed() {
         </article>
         {" "}
         <article className="card spot">
-          <span className="illus">
-            Illustration
-          </span>
+          <span className="illus">{launches.length > 0 ? 'Live' : 'No data yet'}</span>
           {" "}
           <h3>
             Pons V2 launches
@@ -92,31 +110,22 @@ export function Feed() {
           </p>
           {" "}
           <div className="viz">
-            <div className="rows">
-              <div>
-                <span className="av" />
-                <span className="sk" style={{ width: "70%" }} />
-                <span className="flag">
-                  High creator tax
-                </span>
+            {launches.length > 0 ? (
+              <div className="rows">
+                {launches.map((t) => (
+                  <div key={t.token}>
+                    <span className="av">{(t.symbol ?? '?').slice(0, 1).toUpperCase()}</span>
+                    <span className="nm">
+                      {t.symbol ?? 'Unknown'}
+                      <small>{fmtAge(t.ageSeconds)}</small>
+                    </span>
+                    {t.redFlags.length > 0 ? <span className="flag">{t.redFlags[0]}</span> : <span className="flag ok">{t.graduated ? 'Graduated' : 'No flags'}</span>}
+                  </div>
+                ))}
               </div>
-              {" "}
-              <div>
-                <span className="av" />
-                <span className="sk" style={{ width: "55%" }} />
-                <span className="flag">
-                  Holders concentrated
-                </span>
-              </div>
-              {" "}
-              <div>
-                <span className="av" />
-                <span className="sk" style={{ width: "62%" }} />
-                <span className="flag ok">
-                  Graduated
-                </span>
-              </div>
-            </div>
+            ) : (
+              <p className="mkt-empty">No Pons V2 launches indexed yet. New launches show up here within seconds.</p>
+            )}
           </div>
         </article>
         {" "}

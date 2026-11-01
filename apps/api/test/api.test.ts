@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, proAlerts, predictions, whaleTransfers } from '@nexa-ai/db'
+import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, proAlerts, predictions, priceSnapshots, whaleTransfers } from '@nexa-ai/db'
 import {
   signalsWhalesResponseSchema,
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  marketResponseSchema,
   signalsResponseSchema,
   leaderboardResponseSchema,
 } from '@nexa-ai/api-client'
@@ -71,6 +72,7 @@ describe.skipIf(!dbUp)('API publik', () => {
     await db.delete(apiKeys)
     await db.delete(predictions)
     await db.delete(ponsTokens)
+    await db.delete(priceSnapshots)
     await db.delete(burns)
     await db.delete(whaleTransfers)
   })
@@ -171,6 +173,48 @@ describe.skipIf(!dbUp)('API publik', () => {
 
     it('kosong tetap valid', async () => {
       expect(rugRadarResponseSchema.parse((await get('/rug-radar')).json()).items).toEqual([])
+    })
+  })
+
+  describe('GET /market', () => {
+    const at = (minsAgo: number) => new Date(NOW.getTime() - minsAgo * 60_000)
+    const snap = (asset: string, source: 'oracle' | 'dex', price: bigint, minsAgo: number) => ({ asset, source, price: price.toString(), decimals: 8, at: at(minsAgo) })
+
+    it('kosong tetap valid', async () => {
+      expect(marketResponseSchema.parse((await get('/market')).json()).assets).toEqual([])
+    })
+
+    it('oracle vs DEX: selisih, perubahan 24 jam, seri berpasangan; urut dari gerak terbesar', async () => {
+      await db.insert(priceSnapshots).values([
+        snap('NVDA', 'oracle', 21_000_000_000n, 1380), snap('NVDA', 'dex', 20_900_000_000n, 1380),
+        snap('NVDA', 'oracle', 20_000_000_000n, 0), snap('NVDA', 'dex', 19_900_000_000n, 0),
+        snap('ETH', 'oracle', 220_000_000_000n, 1380), snap('ETH', 'oracle', 224_400_000_000n, 0),
+      ])
+      const body = marketResponseSchema.parse((await get('/market')).json())
+      expect(body.assets.map((a) => a.symbol)).toEqual(['NVDA', 'ETH']) // NVDA -4,76% > ETH +2,00%
+      const nvda = body.assets[0]!
+      expect(nvda.oracle).toEqual({ raw: '20000000000', decimals: 8, formatted: '200' })
+      expect(nvda.dex?.formatted).toBe('199')
+      expect(nvda.gapBps).toBe(-50)
+      expect(nvda.gapFormatted).toBe('-0.50%')
+      expect(nvda.changeBps).toBe(-476)
+      expect(nvda.windowHours).toBe(23)
+      expect(nvda.series).toEqual([
+        { at: at(1380).toISOString(), oracle: '21000000000', dex: '20900000000' },
+        { at: at(0).toISOString(), oracle: '20000000000', dex: '19900000000' },
+      ])
+      const eth = body.assets[1]!
+      expect(eth.dex).toBeNull()
+      expect(eth.gapBps).toBeNull()
+      expect(eth.changeBps).toBe(200)
+    })
+
+    it('riwayat kurang dari 1 jam: tanpa perubahan (tidak menebak); data lebih dari 24 jam diabaikan', async () => {
+      await db.insert(priceSnapshots).values([snap('NVDA', 'oracle', 20_000_000_000n, 1500), snap('NVDA', 'oracle', 20_100_000_000n, 30), snap('NVDA', 'oracle', 20_200_000_000n, 0)])
+      const nvda = marketResponseSchema.parse((await get('/market')).json()).assets[0]!
+      expect(nvda.changeBps).toBeNull()
+      expect(nvda.windowHours).toBeNull()
+      expect(nvda.series).toHaveLength(2)
     })
   })
 
