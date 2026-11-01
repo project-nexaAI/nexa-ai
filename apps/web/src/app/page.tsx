@@ -26,7 +26,7 @@ export default async function Page() {
       <Hero />
       <Marquee />
       <main className="wrap">
-        <Proof />
+        <Proof latest={data.latest} />
         <Feed market={market} radar={radar} />
         <How />
         <Pricing />
