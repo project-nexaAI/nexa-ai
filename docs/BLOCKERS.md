@@ -46,4 +46,3 @@ $env:NEXA_LEDGER = "0xEF1fBbd8ea7dC858Dc88332AcD43Ba58b9bD81C0"
 ```
 
 Aset tiruan (deterministik): NVDA `0xaDfc1A4b4F6990753EF12aD5d29a55c718c84Dd0`, ETH `0xfcE985e2175b8667dF234961A3c1687b6A6Bcf0E`. Setelah selesai, ketik "mock sudah deploy": saya memverifikasi `feedOf` on-chain dan mencatat alamat feed.
-| 9 | Konsultasi hukum (OJK) sebelum fitur berbayar aktif di mainnet/publik (keputusan pemilik 1 Nov 2026) | Pemilik berkonsultasi; setelah selesai beri tahu agar `PAID_FEATURES_ENABLED=true` di mainnet | Terbuka |
