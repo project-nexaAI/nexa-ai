@@ -193,8 +193,8 @@ describe.skipIf(!dbUp)('API publik', () => {
       const body = marketResponseSchema.parse((await get('/market')).json())
       expect(body.assets.map((a) => a.symbol)).toEqual(['NVDA', 'ETH']) // NVDA -4,76% > ETH +2,00%
       const nvda = body.assets[0]!
-      expect(nvda.oracle).toEqual({ raw: '20000000000', decimals: 8, formatted: '200' })
-      expect(nvda.dex?.formatted).toBe('199')
+      expect(nvda.oracle).toEqual({ raw: '20000000000', decimals: 8, formatted: '200.00' })
+      expect(nvda.dex?.formatted).toBe('199.00')
       expect(nvda.gapBps).toBe(-50)
       expect(nvda.gapFormatted).toBe('-0.50%')
       expect(nvda.changeBps).toBe(-476)
