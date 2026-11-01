@@ -153,6 +153,9 @@ export function Proof() {
               <svg className="gauge" viewBox="0 0 200 110" aria-hidden="true">
                 <path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#242424" strokeWidth="14" strokeLinecap="round" />
                 <path id="gArc" d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#FF5A1F" strokeWidth="14" strokeLinecap="round" pathLength="1" strokeDasharray="1" strokeDashoffset="1" opacity=".25" />
+                <text id="gTxt" x="100" y="88" textAnchor="middle" fontFamily="Geist Mono, monospace" fontSize="9" fill="#6E6A66">
+                  No scored calls yet
+                </text>
               </svg>
               {" "}
               <p>

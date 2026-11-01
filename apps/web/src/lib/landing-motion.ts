@@ -11,7 +11,8 @@ export function initMotion(NX_DATA) {
 
   // data API (fixture atau asli): label hari Prediction of the Day dan gauge win rate. Tanpa data: tampilan desain apa adanya.
   if(NX_DATA&&NX_DATA.currentDay){const e=document.querySelector('.pod-big em'),sp=document.querySelector('.pod-big span');if(e)e.textContent='Day '+NX_DATA.currentDay;if(sp)sp.textContent='of '+NX_DATA.horizonDays}
-  if(NX_DATA&&NX_DATA.winRate!==null){const a=document.getElementById('gArc');if(a){a.style.strokeDashoffset=String(1-NX_DATA.winRate);a.style.opacity='1';const c=a.closest('.card'),p=c&&c.querySelector('p');if(p)p.textContent='Win rate '+NX_DATA.winRateText+(NX_DATA.avgReturnText?' · average return '+NX_DATA.avgReturnText:'')+' across '+NX_DATA.scored+' scored calls. Each commit links to Blockscout.'}}
+  if(NX_DATA&&NX_DATA.winRate!==null){const a=document.getElementById('gArc');if(a){a.style.strokeDashoffset=String(1-NX_DATA.winRate);a.style.opacity='1';const c=a.closest('.card'),p=c&&c.querySelector('p');if(p)p.textContent='Win rate '+NX_DATA.winRateText+(NX_DATA.avgReturnText?' · average return '+NX_DATA.avgReturnText:'')+' across '+NX_DATA.scored+' scored calls. Each commit links to Blockscout.'}const t=document.getElementById('gTxt');if(t){t.textContent=NX_DATA.winRateText;t.setAttribute('font-size','26');t.setAttribute('fill','#F2EFEA');t.setAttribute('font-family','inherit')}}
+  else if(NX_DATA&&NX_DATA.latest){const a=document.getElementById('gArc'),p=a&&a.closest('.card')&&a.closest('.card').querySelector('p');if(p){const d=new Date(NX_DATA.latest.maturesAt).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});p.textContent='No call has been scored yet. The first one is committed on-chain and matures on '+d+' (UTC); the oracle scores it then. Average return sits next to it, with a Blockscout link for every commit.'}}
 
   // split headings into words
   document.querySelectorAll('[data-split]').forEach(h=>{
