@@ -209,7 +209,16 @@ em.s{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-
 .illus{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);position:absolute;right:20px;top:22px}
 .rows{width:100%;display:grid;gap:8px}
 .rows div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;background:#151515;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.rows .av{width:28px;height:28px;border-radius:50%;background:#222}
+.rows .av{width:28px;height:28px;border-radius:50%;background:#222;display:grid;place-items:center;font-size:12px;color:var(--ink-2)}
+.rows .nm{font-size:13px;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rows .nm small{margin-left:8px;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.mkt{width:100%}
+.mkt-row{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;font-family:var(--mono);font-size:12px;color:var(--ink-2);margin-bottom:6px}
+.mkt-row b{color:var(--ink);font-weight:500}
+.mkt-row .dn{color:#FF8A6B}
+.mkt-row .up{color:#9BD6A8}
+.mkt-row .mkt-dex{color:var(--ink-3)}
+.mkt-empty{font-size:13.5px;color:var(--ink-3);line-height:1.55;max-width:none}
 .sk{height:7px;border-radius:5px;background:#2A2A2A;display:block}
 .flag{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:5px 8px;border-radius:6px;background:rgba(227,52,27,.14);color:#FF8A6B;white-space:nowrap}
 .flag.ok{background:#1D1D1D;color:var(--ink-3)}

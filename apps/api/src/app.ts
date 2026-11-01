@@ -1,9 +1,9 @@
 import cors from '@fastify/cors'
 import { createHash } from 'node:crypto'
-import { and, asc, desc, eq, gt, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull } from 'drizzle-orm'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, proAlerts, whaleTransfers, type createDb } from '@nexa-ai/db'
+import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, priceSnapshots, proAlerts, whaleTransfers, type createDb } from '@nexa-ai/db'
 import {
   alertEventSchema,
   signalsWhalesResponseSchema,
@@ -23,6 +23,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  marketResponseSchema,
   signalsResponseSchema,
   type AskResponse,
   type BurnResponse,
@@ -30,10 +31,12 @@ import {
   type Prediction,
   type ProofResponse,
   type RugRadarResponse,
+  type MarketResponse,
   type SignalsResponse,
 } from '@nexa-ai/api-client'
 import { buildMe, createNonce, endSession, monthKey, sessionFrom, verifyLogin, type AuthConfig } from './auth'
 import { kolStats, rankEntries } from './leaderboard'
+import { buildMarket } from './market'
 import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 import { createLinkCode, proStatus, subscribe, unlinkTelegram, type ProConfig } from './pro'
@@ -188,6 +191,19 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
         explorerUrl: `${cfg.explorerUrl}/address/${r.address}`,
       })),
     })
+    cache(reply)
+    return body
+  })
+
+  // Harga Stock Token: oracle vs DEX dari snapshot worker (24 jam terakhir). Tanpa snapshot = daftar kosong, tidak menebak.
+  app.get('/market', async (_req, reply) => {
+    const t = now()
+    const rows = await cfg.db
+      .select()
+      .from(priceSnapshots)
+      .where(gte(priceSnapshots.at, new Date(t.getTime() - 24 * 3600_000)))
+      .orderBy(asc(priceSnapshots.at))
+    const body: MarketResponse = marketResponseSchema.parse(buildMarket(rows.map((r) => ({ asset: r.asset, source: r.source, price: BigInt(r.price), decimals: r.decimals, at: r.at })), t))
     cache(reply)
     return body
   })

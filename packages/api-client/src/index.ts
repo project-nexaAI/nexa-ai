@@ -14,6 +14,7 @@ import predictionFixture from '../../../docs/api/fixtures/prediction.json'
 import proofFixture from '../../../docs/api/fixtures/proof.json'
 import proofPopulatedFixture from '../../../docs/api/fixtures/proof.populated.json'
 import rugRadarFixture from '../../../docs/api/fixtures/rug-radar.json'
+import marketFixture from '../../../docs/api/fixtures/market.json'
 import signalsFixture from '../../../docs/api/fixtures/signals.json'
 import {
   signalsWhalesResponseSchema,
@@ -35,6 +36,7 @@ import {
   predictionResponseSchema,
   proofResponseSchema,
   rugRadarResponseSchema,
+  marketResponseSchema,
   signalsResponseSchema,
   type AskRequest,
   type ProSubscribeRequest,
@@ -48,6 +50,7 @@ import {
   type PredictionResponse,
   type ProofResponse,
   type RugRadarResponse,
+  type MarketResponse,
   type SignalsResponse,
 } from './schemas'
 
@@ -59,6 +62,7 @@ export const fixtures = {
   proofPopulated: proofPopulatedFixture,
   prediction: predictionFixture,
   rugRadar: rugRadarFixture,
+  market: marketFixture,
   burn: burnFixture,
   signals: signalsFixture,
   ask: askFixture,
@@ -230,6 +234,7 @@ export function createApiClient(opts: ApiClientOptions = {}) {
       get('/proof', proofResponseSchema, opts.proofFixture === 'populated' ? proofPopulatedFixture : proofFixture),
     getPrediction: (id: number): Promise<PredictionResponse> => get(`/predictions/${id}`, predictionResponseSchema, predictionFixture),
     getRugRadar: (): Promise<RugRadarResponse> => get('/rug-radar', rugRadarResponseSchema, rugRadarFixture),
+    getMarket: (): Promise<MarketResponse> => get('/market', marketResponseSchema, marketFixture),
     getLeaderboard: (): Promise<LeaderboardResponse> => get('/leaderboard', leaderboardResponseSchema, leaderboardFixture),
     getBurn: (): Promise<BurnResponse> => get('/burn', burnResponseSchema, burnFixture),
     getSignals: (): Promise<SignalsResponse> => get('/signals', signalsResponseSchema, signalsFixture),

@@ -14,6 +14,7 @@ import { TelegramApi, TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
 import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader } from './oracle'
 import { createDexClient, makeDexSource } from './dex'
+import { recordMarketSnapshots, type MarketDeps } from './market'
 import { runDailyReports, type ReportDeps } from './reports'
 
 const env = z
@@ -40,6 +41,7 @@ const env = z
     PONS_REPORT_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(15),
     /** JSON [{"symbol":"NVDA","asset":"0x..","feed":"0x.."}] feed Chainlink Stock Token (RPC oracle); kosong = Stock Token mainnet (NVDA). */
     SUMMARY_ASSETS: z.string().optional(),
+    MARKET_INTERVAL_SECONDS: z.coerce.number().int().min(60).default(600),
     /** Selisih DEX vs oracle: pool Uniswap v4 NVDA/USDG terdalam dipilih otomatis; DEX_POOL_ID mengunci satu pool (0x + 64 heks). Kedalaman minimum dalam USDG. */
     DEX_POOL_ID: z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional().or(z.literal('')),
     DEX_MIN_DEPTH_USDG: z.coerce.number().positive().default(1000),
@@ -113,22 +115,23 @@ const summaryAssetsSchema = z.array(z.object({ symbol: z.string().min(1), asset:
 const stockAssets = (
   env.SUMMARY_ASSETS ? summaryAssetsSchema.parse(JSON.parse(env.SUMMARY_ASSETS)) : MAINNET_ORACLE_ASSETS.filter((a) => a.symbol !== 'ETH')
 ) as { symbol: string; asset: `0x${string}`; feed: `0x${string}` }[]
+// Sumber harga DEX (Uniswap v4 mainnet) dipakai bersama oleh laporan harian dan snapshot pasar.
+const dexSource =
+  CHAINS.mainnet.uniswapV4.poolManager && CHAINS.mainnet.usdg
+    ? makeDexSource(createDexClient(env.ORACLE_RPC_URL, CHAINS.mainnet.uniswapV4.poolManager), {
+        usdg: CHAINS.mainnet.usdg,
+        usdgDecimals: 6,
+        minDepthUsdg: env.DEX_MIN_DEPTH_USDG,
+        ...(env.DEX_POOL_ID ? { poolIdOverride: env.DEX_POOL_ID as `0x${string}` } : {}),
+      })
+    : undefined
 const reports: ReportDeps | null = llm
   ? {
       db,
       llm,
       mode: 'dry',
       history: createFeedHistory(env.ORACLE_RPC_URL),
-      ...(CHAINS.mainnet.uniswapV4.poolManager && CHAINS.mainnet.usdg
-        ? {
-            dex: makeDexSource(createDexClient(env.ORACLE_RPC_URL, CHAINS.mainnet.uniswapV4.poolManager), {
-              usdg: CHAINS.mainnet.usdg,
-              usdgDecimals: 6,
-              minDepthUsdg: env.DEX_MIN_DEPTH_USDG,
-              ...(env.DEX_POOL_ID ? { poolIdOverride: env.DEX_POOL_ID as `0x${string}` } : {}),
-            }),
-          }
-        : {}),
+      ...(dexSource ? { dex: dexSource } : {}),
       cfg: { summaryHourUtc: env.DAILY_SUMMARY_HOUR_UTC, ponsHourUtc: env.PONS_REPORT_HOUR_UTC, stockAssets, maxAttemptsPerDay: 3, minRetryMs: 15 * 60 * 1000 },
       state: new Map(),
     }
@@ -138,6 +141,17 @@ console.log(
     ? `worker: laporan harian AKTIF (ringkasan Stock Token ${env.DAILY_SUMMARY_HOUR_UTC}:00 UTC, laporan Pons ${env.PONS_REPORT_HOUR_UTC}:00 UTC)`
     : 'worker: laporan harian NONAKTIF (butuh LLM_API_KEY dan LLM_BASE_URL)',
 )
+
+// Snapshot harga oracle dan DEX untuk kartu "Stock Token movers" di web (tanpa LLM). Mainnet read-only; tanpa kunci.
+const market: MarketDeps = {
+  db,
+  history: createFeedHistory(env.ORACLE_RPC_URL),
+  ...(dexSource ? { dex: dexSource } : {}),
+  assets: stockAssets,
+  retentionMs: 8 * 24 * 3600_000,
+}
+console.log(`worker: snapshot harga AKTIF (${stockAssets.map((a) => a.symbol).join(', ')} tiap ${env.MARKET_INTERVAL_SECONDS} dtk)`)
+let lastMarketAt = 0
 
 // Keeper harga testnet: menyalin harga Chainlink mainnet ke feed tiruan agar reveal prediksi bisa berjalan.
 const mirrorSchema = z.array(z.object({ symbol: z.string(), source: z.string().regex(/^0x[0-9a-fA-F]{40}$/), target: z.string().regex(/^0x[0-9a-fA-F]{40}$/) }))
@@ -195,6 +209,10 @@ async function tick(): Promise<void> {
     const res = await mirrorPrices(keeper)
     const notable = res.filter((r) => r.action === 'pushed' || r.action.endsWith('failed') || r.action.endsWith('error') || r.action === 'source_stale')
     if (notable.length) console.log(`worker: keeper: ${notable.map((r) => `${r.symbol}=${r.action}`).join(' ')}`)
+  }
+  if (Date.now() - lastMarketAt >= env.MARKET_INTERVAL_SECONDS * 1000) {
+    lastMarketAt = Date.now()
+    await recordMarketSnapshots(market).catch((e) => console.error('worker: snapshot harga gagal:', e instanceof Error ? e.message : String(e)))
   }
   if (proBot) {
     const d = await dispatchProAlerts(db, proBot)
