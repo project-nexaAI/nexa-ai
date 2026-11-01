@@ -15,6 +15,8 @@ Aturan keras (dilanggar = post dibuang oleh filter):
 - Prediksi wajib diakhiri persis dengan kalimat: "Bukan nasihat keuangan."
 - Maksimal 260 karakter.`
 
+import { bpsToPercent } from '../src/oracle'
+
 export interface PredictionCandidate {
   symbol: string
   asset: `0x${string}`
@@ -22,12 +24,15 @@ export interface PredictionCandidate {
   oraclePrice: string
   /** Selisih harga DEX vs oracle dalam bps jika tersedia. */
   dexVsOracleBps?: number
+  /** Perubahan harga oracle dalam jendela jam yang tertera (dari riwayat round). Tidak ada = riwayat tidak cukup. */
+  change24h?: { bps: number; windowHours: number }
 }
 
 /** Fakta bernilai angka dari satu kandidat; dipakai prompt dan RiskGuard (angka di teks harus ada di sini). */
 export function candidateFacts(c: PredictionCandidate, horizonDays: number): string[] {
   const facts = [c.oraclePrice, String(horizonDays)]
   if (c.dexVsOracleBps !== undefined) facts.push(`${c.dexVsOracleBps} bps`, `${(c.dexVsOracleBps / 100).toFixed(2)}%`)
+  if (c.change24h) facts.push(`${bpsToPercent(c.change24h.bps)}%`, `${Math.abs(c.change24h.bps)} bps`, String(c.change24h.windowHours))
   return facts
 }
 
@@ -40,9 +45,12 @@ ${JSON.stringify(
     symbol: c.symbol,
     oraclePrice: c.oraclePrice,
     dexVsOracle: c.dexVsOracleBps === undefined ? null : `${c.dexVsOracleBps} bps (${(c.dexVsOracleBps / 100).toFixed(2)}%)`,
+    change: c.change24h ? { percent: `${bpsToPercent(c.change24h.bps)}%`, bps: `${Math.abs(c.change24h.bps)} bps`, hours: c.change24h.windowHours } : null,
     horizonDays,
   })),
 )}
+
+Pilih aset yang punya data paling lengkap. Jika ada "change", sebut perubahan itu satu kali sebagai dasar singkat (mis. momentum atau pembalikan) tanpa klaim kepastian dan tanpa angka lain.
 
 Balas HANYA JSON: {"symbol": "<salah satu symbol di DATA>", "direction": "up" | "down", "text": "<teks post, diakhiri 'Bukan nasihat keuangan.'>"}`
 }

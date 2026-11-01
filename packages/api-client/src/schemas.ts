@@ -243,3 +243,25 @@ export const alertEventSchema = z.object({
   publicAt: iso.nullable(),
 })
 export type AlertEvent = z.infer<typeof alertEventSchema>
+
+// ------------------------------------------------------------- Signals: transfer whale
+
+export const signalsWhalesResponseSchema = z.object({
+  /** Transfer Stock Token besar yang tercatat indexer, terbaru dulu. */
+  items: z.array(
+    z.object({
+      /** `${txHash}-${logIndex}` */
+      id: z.string(),
+      token: z.string(),
+      /** Simbol bila token dikenal (mis. NVDA); selain itu null. */
+      symbol: z.string().nullable(),
+      from: z.string(),
+      to: z.string(),
+      amount: unitAmount,
+      at: iso,
+      txHash: hex,
+      txUrl: z.string().url(),
+    }),
+  ),
+})
+export type SignalsWhalesResponse = z.infer<typeof signalsWhalesResponseSchema>

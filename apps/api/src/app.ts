@@ -1,11 +1,13 @@
 import cors from '@fastify/cors'
 import { createHash } from 'node:crypto'
 import { and, asc, desc, eq, gt, inArray, isNotNull } from 'drizzle-orm'
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, proAlerts, type createDb } from '@nexa-ai/db'
+import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, proAlerts, whaleTransfers, type createDb } from '@nexa-ai/db'
 import {
   alertEventSchema,
+  signalsWhalesResponseSchema,
+  type SignalsWhalesResponse,
   proPlanResponseSchema,
   proSubscribeRequestSchema,
   proSubscribeResponseSchema,
@@ -235,23 +237,59 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   // Signals API: berbayar, jadi mati sampai PAID_FEATURES_ENABLED=true; butuh kunci API + batas laju.
   const rateWindow = new Map<number, { start: number; count: number }>()
   const rateLimit = cfg.signalsRateLimitPerMinute ?? 60
-  app.get('/signals', async (req, reply) => {
-    if (!cfg.paidFeaturesEnabled) return reply.code(503).send({ error: 'paid_features_disabled' })
+  /** Pagar Signals API: flag fitur berbayar, kunci API aktif, batas laju. Mengirim respons sendiri dan mengembalikan false bila ditolak. */
+  async function signalsGate(req: FastifyRequest, reply: FastifyReply): Promise<boolean> {
+    const deny = (code: number, error: string) => {
+      void reply.code(code).send({ error })
+      return false
+    }
+    if (!cfg.paidFeaturesEnabled) return deny(503, 'paid_features_disabled')
     const key = req.headers['x-api-key']
-    if (typeof key !== 'string' || key.length === 0) return reply.code(401).send({ error: 'api_key_required' })
+    if (typeof key !== 'string' || key.length === 0) return deny(401, 'api_key_required')
     const keyHash = createHash('sha256').update(key).digest('hex')
     const [row] = await cfg.db.select().from(apiKeys).where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.active, true)))
-    if (!row) return reply.code(401).send({ error: 'invalid_api_key' })
+    if (!row) return deny(401, 'invalid_api_key')
 
     const t = now().getTime()
     const w = rateWindow.get(row.id)
     if (!w || t - w.start >= 60_000) rateWindow.set(row.id, { start: t, count: 1 })
     else if (++w.count > rateLimit) {
       void reply.header('retry-after', String(Math.max(1, Math.ceil((w.start + 60_000 - t) / 1000))))
-      return reply.code(429).send({ error: 'rate_limited' })
+      return deny(429, 'rate_limited')
     }
+    return true
+  }
+  const limitQuery = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20) })
 
-    const q = z.object({ limit: z.coerce.number().int().min(1).max(100).default(20) }).safeParse(req.query)
+  // Transfer whale Stock Token (data indexer) untuk bot dan dashboard pelanggan Signals API.
+  app.get('/signals/whales', async (req, reply) => {
+    if (!(await signalsGate(req, reply))) return reply
+    const q = limitQuery.safeParse(req.query)
+    if (!q.success) return reply.code(400).send({ error: 'invalid_query' })
+    const rows = await cfg.db.select().from(whaleTransfers).orderBy(desc(whaleTransfers.at)).limit(q.data.limit)
+    const body: SignalsWhalesResponse = signalsWhalesResponseSchema.parse({
+      items: rows.map((r) => {
+        const txHash = r.id.split('-')[0]!
+        return {
+          id: r.id,
+          token: r.token,
+          symbol: symbols[r.token.toLowerCase()] ?? null,
+          from: r.from,
+          to: r.to,
+          amount: { raw: r.amount, decimals: r.decimals, formatted: formatUnits(BigInt(r.amount), r.decimals) },
+          at: r.at.toISOString(),
+          txHash,
+          txUrl: tx(txHash),
+        }
+      }),
+    })
+    void reply.header('cache-control', 'private, no-store')
+    return body
+  })
+
+  app.get('/signals', async (req, reply) => {
+    if (!(await signalsGate(req, reply))) return reply
+    const q = limitQuery.safeParse(req.query)
     if (!q.success) return reply.code(400).send({ error: 'invalid_query' })
     const rows = await cfg.db
       .select({ post: postQueue, ledgerId: predictions.ledgerId })

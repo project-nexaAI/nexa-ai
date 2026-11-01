@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import signalsWhalesFixture from '../../../docs/api/fixtures/signals-whales.json'
 import alertFixture from '../../../docs/api/fixtures/alert.json'
 import proPlanFixture from '../../../docs/api/fixtures/pro-plan.json'
 import proSubscribeFixture from '../../../docs/api/fixtures/pro-subscribe.json'
@@ -15,6 +16,8 @@ import proofPopulatedFixture from '../../../docs/api/fixtures/proof.populated.js
 import rugRadarFixture from '../../../docs/api/fixtures/rug-radar.json'
 import signalsFixture from '../../../docs/api/fixtures/signals.json'
 import {
+  signalsWhalesResponseSchema,
+  type SignalsWhalesResponse,
   alertEventSchema,
   proPlanResponseSchema,
   proSubscribeResponseSchema,
@@ -67,6 +70,7 @@ export const fixtures = {
   proSubscribe: proSubscribeFixture,
   telegramLink: telegramLinkFixture,
   alert: alertFixture,
+  signalsWhales: signalsWhalesFixture,
 } as const
 
 /** Satu event SSE mentah (`event:`, `id:`, `data:`). Baris komentar (`:`) diabaikan. */
@@ -229,6 +233,7 @@ export function createApiClient(opts: ApiClientOptions = {}) {
     getLeaderboard: (): Promise<LeaderboardResponse> => get('/leaderboard', leaderboardResponseSchema, leaderboardFixture),
     getBurn: (): Promise<BurnResponse> => get('/burn', burnResponseSchema, burnFixture),
     getSignals: (): Promise<SignalsResponse> => get('/signals', signalsResponseSchema, signalsFixture),
+    getSignalsWhales: (): Promise<SignalsWhalesResponse> => get('/signals/whales', signalsWhalesResponseSchema, signalsWhalesFixture),
   }
 }
 

@@ -4,6 +4,8 @@ const ITEMS = [
   { href: '/leaderboard', title: 'NEXA vs KOL', text: 'An accuracy leaderboard for KOLs who agree to be scored.' },
   { href: '/burn', title: 'Burn tracker', text: 'Every $NEXA buy-and-burn, verifiable on-chain.' },
   { href: '/ask', title: 'Ask NEXA', text: 'A $1 risk summary for any token, paid in USDG.' },
+  { href: '/signals', title: 'Signals API', text: 'NEXA posts and whale transfers as a JSON feed, with an API key.' },
+  { href: '/sponsored', title: 'Sponsored research', text: 'Paid reports on a token, always labeled and never a recommendation.' },
   { href: '/pro', title: 'NEXA Pro', text: 'Every approved post as a live alert, 15 minutes before it reaches X.' },
 ] as const
 

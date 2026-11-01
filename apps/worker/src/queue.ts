@@ -22,6 +22,8 @@ export interface EnqueueParams {
   mode: PostMode
   /** Wajib untuk kind 'prediction'. */
   predictionId?: number
+  /** id post X yang dibalas (hanya mention_reply). */
+  replyTo?: string
   riskguardConfig?: Partial<RiskGuardConfig>
   now?: Date
 }
@@ -67,6 +69,7 @@ export async function enqueuePost(db: Db, p: EnqueueParams): Promise<EnqueueResu
         status,
         riskguard: decision,
         predictionId: p.predictionId ?? null,
+        replyTo: p.replyTo ?? null,
         scheduledAt: new Date(now.getTime() + PUBLIC_POST_DELAY_MS),
         mode: p.mode,
       })

@@ -4,7 +4,7 @@ import { postQueue, predictions, riskguardLog } from '@nexa-ai/db'
 import { evaluate, toLogEntry, type RiskGuardInput } from '@nexa-ai/riskguard'
 import { NoDataError, commitPrediction, draftPrediction, generatePredictionDraft, queuePredictionPost, type CycleDeps } from './cycle'
 import type { LlmClient } from './llm'
-import { readOracleCandidates, type FeedReader, type OracleAsset } from './oracle'
+import { priceChange, readOracleCandidates, type FeedHistory, type FeedReader, type OracleAsset } from './oracle'
 
 export interface DailyConfig {
   /** Jam UTC paling awal Prediction of the Day dibuat (0-23). */
@@ -27,6 +27,8 @@ export interface DailyDeps {
   cycle: CycleDeps
   llm: LlmClient
   read: FeedReader
+  /** Riwayat round untuk perubahan harga 24 jam (opsional; tanpa ini prediksi hanya memakai harga terkini). */
+  history?: FeedHistory
   cfg: DailyConfig
   state: DailyState
 }
@@ -76,7 +78,16 @@ export async function runDailyPrediction(d: DailyDeps, now = new Date()): Promis
     const feed = await ledger.feedOf(a.asset)
     if (feed !== zeroAddress) withFeeds.push({ ...a, feed })
   }
-  const candidates = await readOracleCandidates(d.read, withFeeds, nowSec)
+  const spot = await readOracleCandidates(d.read, withFeeds, nowSec)
+  const candidates = d.history
+    ? await Promise.all(
+        spot.map(async (c) => {
+          const feed = withFeeds.find((w) => w.asset === c.asset)?.feed
+          const ch = feed ? await priceChange(d.history!, feed) : null
+          return ch ? { ...c, change24h: { bps: ch.changeBps, windowHours: ch.windowHours } } : c
+        }),
+      )
+    : spot
 
   let draft
   try {

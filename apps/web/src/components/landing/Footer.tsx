@@ -59,6 +59,14 @@ export function Footer({ base = '' }: { base?: string }) {
             <a href="/pro">
               NEXA Pro
             </a>
+            {" "}
+            <a href="/signals">
+              Signals API
+            </a>
+            {" "}
+            <a href="/sponsored">
+              Sponsored
+            </a>
           </nav>
         </div>
         {" "}

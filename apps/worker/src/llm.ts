@@ -123,6 +123,18 @@ export class MockLlm implements LlmClient {
   }
 }
 
+/** Klien LLM dari env (dipakai CLI). Null bila LLM_API_KEY atau LLM_BASE_URL kosong: tidak ada yang dibuat tanpa LLM nyata. */
+export function llmFromEnv(env: Record<string, string | undefined>): OpenAiCompatibleLlm | null {
+  if (!env.LLM_API_KEY || !env.LLM_BASE_URL) return null
+  return new OpenAiCompatibleLlm({
+    baseUrl: env.LLM_BASE_URL,
+    apiKey: env.LLM_API_KEY,
+    modelSmall: env.LLM_MODEL_SMALL ?? 'mimo-v2.6-flash',
+    modelLarge: env.LLM_MODEL_LARGE ?? 'mimo-v2.6-pro',
+    pricing: pricingFromEnv(env),
+  })
+}
+
 export class LlmOutputError extends Error {}
 
 function stripFence(text: string): string {
