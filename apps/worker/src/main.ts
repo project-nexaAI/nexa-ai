@@ -12,7 +12,8 @@ import { createLedgerClient } from './ledger'
 import { dispatchProAlerts, pollTelegram } from './pro'
 import { TelegramApi, TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
-import { MAINNET_ORACLE_ASSETS, createFeedReader } from './oracle'
+import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader } from './oracle'
+import { runDailyReports, type ReportDeps } from './reports'
 
 const env = z
   .object({
@@ -33,6 +34,11 @@ const env = z
     LLM_MODEL_SMALL: z.string().default('mimo-v2.6-flash'),
     LLM_MODEL_LARGE: z.string().default('mimo-v2.6-pro'),
     DAILY_PREDICTION_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(9),
+    /** Ringkasan harian Stock Token dan laporan Pons: jam UTC paling awal dibuat (antrian persetujuan, tanpa commit on-chain). */
+    DAILY_SUMMARY_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(13),
+    PONS_REPORT_HOUR_UTC: z.coerce.number().int().min(0).max(23).default(15),
+    /** JSON [{"symbol":"NVDA","asset":"0x..","feed":"0x.."}] feed Chainlink Stock Token (RPC oracle); kosong = Stock Token mainnet (NVDA). */
+    SUMMARY_ASSETS: z.string().optional(),
     /** JSON [{"symbol":"NVDA","asset":"0x..."}]; kosong = aset mainnet bila CHAIN_ID=4663. Feed harus terdaftar di NexaLedger. */
     PREDICTION_ASSETS: z.string().optional(),
     /** Keeper harga TESTNET: wallet sendiri (bukan agent) yang mendorong round ke feed tiruan. Kosong = nonaktif. */
@@ -72,23 +78,52 @@ const predictionAssets = (
   env.PREDICTION_ASSETS ? assetsSchema.parse(JSON.parse(env.PREDICTION_ASSETS)) : env.CHAIN_ID === 4663 ? MAINNET_ORACLE_ASSETS : []
 ) as { symbol: string; asset: `0x${string}` }[]
 
-const dailyReady = Boolean(deps && env.LLM_API_KEY && env.LLM_BASE_URL && predictionAssets.length > 0)
+// Satu klien LLM untuk semua pekerjaan (prediksi dan laporan). Tanpa LLM_API_KEY tidak ada yang dibuat (mock tidak boleh memposting).
+const llm =
+  env.LLM_API_KEY && env.LLM_BASE_URL
+    ? new OpenAiCompatibleLlm({
+        baseUrl: env.LLM_BASE_URL,
+        apiKey: env.LLM_API_KEY,
+        modelSmall: env.LLM_MODEL_SMALL,
+        modelLarge: env.LLM_MODEL_LARGE,
+        pricing: pricingFromEnv(process.env),
+      })
+    : null
+
+const dailyReady = Boolean(deps && llm && predictionAssets.length > 0)
 const daily: DailyDeps | null =
-  deps && dailyReady
+  deps && llm && dailyReady
     ? {
         cycle: deps,
-        llm: new OpenAiCompatibleLlm({
-          baseUrl: env.LLM_BASE_URL!,
-          apiKey: env.LLM_API_KEY!,
-          modelSmall: env.LLM_MODEL_SMALL,
-          modelLarge: env.LLM_MODEL_LARGE,
-          pricing: pricingFromEnv(process.env),
-        }),
+        llm,
         read: createFeedReader(env.RPC_URL),
+        history: createFeedHistory(env.RPC_URL),
         cfg: { hourUtc: env.DAILY_PREDICTION_HOUR_UTC, assets: predictionAssets, maxAttemptsPerDay: 3, minRetryMs: 15 * 60 * 1000 },
         state: newDailyState(),
       }
     : null
+
+// Ringkasan harian Stock Token dan laporan Pons V2: data indexer/oracle -> LLM -> RiskGuard -> antrian persetujuan. Tanpa commit on-chain,
+// jadi hanya butuh LLM (bukan kunci agent). Mode post tetap dry; post publik butuh izin pemilik.
+const summaryAssetsSchema = z.array(z.object({ symbol: z.string().min(1), asset: z.string().regex(/^0x[0-9a-fA-F]{40}$/), feed: z.string().regex(/^0x[0-9a-fA-F]{40}$/) }))
+const stockAssets = (
+  env.SUMMARY_ASSETS ? summaryAssetsSchema.parse(JSON.parse(env.SUMMARY_ASSETS)) : MAINNET_ORACLE_ASSETS.filter((a) => a.symbol !== 'ETH')
+) as { symbol: string; asset: `0x${string}`; feed: `0x${string}` }[]
+const reports: ReportDeps | null = llm
+  ? {
+      db,
+      llm,
+      mode: 'dry',
+      history: createFeedHistory(env.ORACLE_RPC_URL),
+      cfg: { summaryHourUtc: env.DAILY_SUMMARY_HOUR_UTC, ponsHourUtc: env.PONS_REPORT_HOUR_UTC, stockAssets, maxAttemptsPerDay: 3, minRetryMs: 15 * 60 * 1000 },
+      state: new Map(),
+    }
+  : null
+console.log(
+  reports
+    ? `worker: laporan harian AKTIF (ringkasan Stock Token ${env.DAILY_SUMMARY_HOUR_UTC}:00 UTC, laporan Pons ${env.PONS_REPORT_HOUR_UTC}:00 UTC)`
+    : 'worker: laporan harian NONAKTIF (butuh LLM_API_KEY dan LLM_BASE_URL)',
+)
 
 // Keeper harga testnet: menyalin harga Chainlink mainnet ke feed tiruan agar reveal prediksi bisa berjalan.
 const mirrorSchema = z.array(z.object({ symbol: z.string(), source: z.string().regex(/^0x[0-9a-fA-F]{40}$/), target: z.string().regex(/^0x[0-9a-fA-F]{40}$/) }))
@@ -150,6 +185,11 @@ async function tick(): Promise<void> {
   if (proBot) {
     const d = await dispatchProAlerts(db, proBot)
     if (d.alerts) console.log(`worker: alert Pro: ${d.alerts} alert, ${d.sent} terkirim, ${d.failed} gagal, ${d.skippedPublic} sudah publik`)
+  }
+  if (reports) {
+    const r = await runDailyReports(reports)
+    if (r.summary === 'queued' || r.summary === 'blocked') console.log(`worker: ringkasan Stock Token: ${r.summary}`)
+    if (r.pons === 'queued' || r.pons === 'blocked') console.log(`worker: laporan Pons: ${r.pons}`)
   }
   if (!deps) return
   if (daily) {

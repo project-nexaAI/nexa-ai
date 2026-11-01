@@ -83,3 +83,84 @@ export async function readOracleCandidates(
 }
 
 export const oracleAssetsFor = (network: NetworkName): readonly OracleAsset[] => (network === 'mainnet' ? MAINNET_ORACLE_ASSETS : [])
+
+// ------------------------------------------------------------- riwayat harga
+
+const roundAbi = parseAbi([
+  'function getRoundData(uint80 roundId) view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)',
+])
+
+export interface RoundInfo {
+  roundId: bigint
+  answer: bigint
+  updatedAt: bigint
+}
+
+export interface FeedHistory {
+  /** Round terbaru. */
+  latest(feed: Address): Promise<RoundInfo & { decimals: number }>
+  /** Round tertentu; null bila tidak ada (di luar riwayat atau lintas fase). */
+  round(feed: Address, roundId: bigint): Promise<RoundInfo | null>
+}
+
+export function createFeedHistory(rpcUrl: string): FeedHistory {
+  const pub = createPublicClient({ transport: http(rpcUrl) })
+  return {
+    async latest(feed) {
+      const [decimals, r] = await Promise.all([
+        pub.readContract({ address: feed, abi: feedAbi, functionName: 'decimals' }),
+        pub.readContract({ address: feed, abi: feedAbi, functionName: 'latestRoundData' }),
+      ])
+      return { roundId: r[0], answer: r[1], updatedAt: r[3], decimals }
+    },
+    async round(feed, roundId) {
+      try {
+        const r = await pub.readContract({ address: feed, abi: roundAbi, functionName: 'getRoundData', args: [roundId] })
+        return { roundId: r[0], answer: r[1], updatedAt: r[3] }
+      } catch {
+        return null
+      }
+    },
+  }
+}
+
+export interface PriceChange {
+  /** Perubahan harga dalam bps (bilangan bulat, dibulatkan ke nol). */
+  changeBps: number
+  /** Selang waktu sebenarnya antara dua round yang dibandingkan, dalam jam bulat. */
+  windowHours: number
+}
+
+/**
+ * Perubahan harga dari round terakhir yang diperbarui paling lambat `windowSeconds` sebelum round terbaru.
+ * Dihitung dari bigint (tanpa float). Null (tidak ditebak) bila riwayat tidak cukup, harga tidak positif,
+ * atau selang sebenarnya lebih dari 2x `windowSeconds` (mis. feed jarang diperbarui).
+ */
+export async function priceChange(h: FeedHistory, feed: Address, windowSeconds = 24 * 3600, maxSteps = 60): Promise<PriceChange | null> {
+  try {
+    const latest = await h.latest(feed)
+    if (latest.answer <= 0n) return null
+    const target = latest.updatedAt - BigInt(windowSeconds)
+    let id = latest.roundId
+    for (let i = 0; i < maxSteps; i++) {
+      id -= 1n
+      const r = await h.round(feed, id)
+      if (!r || r.answer <= 0n) return null
+      if (r.updatedAt <= target) {
+        const span = latest.updatedAt - r.updatedAt
+        if (span > BigInt(windowSeconds) * 2n) return null
+        return { changeBps: Number(((latest.answer - r.answer) * 10_000n) / r.answer), windowHours: Math.max(1, Math.round(Number(span) / 3600)) }
+      }
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+/** "35" -> "0.35"; "-120" -> "-1.20". Persen dari bps tanpa float. */
+export function bpsToPercent(bps: number): string {
+  const sign = bps < 0 ? '-' : ''
+  const abs = Math.abs(bps)
+  return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, '0')}`
+}

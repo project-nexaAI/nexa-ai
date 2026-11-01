@@ -1,10 +1,12 @@
 import { createDb } from '@nexa-ai/db'
-import { addCall, addKol, scoreDueKolCalls } from '../kol'
+import { readFileSync } from 'node:fs'
+import { addCall, addKol, importKolCsv, scoreDueKolCalls } from '../kol'
 import { MAINNET_ORACLE_ASSETS, createFeedReader } from '../oracle'
 
 const USAGE = `CLI KOL (NEXA vs KOL). Hanya KOL yang bersedia dinilai.
   pnpm --filter @nexa-ai/worker kol add-kol <handle> "<nama tampilan>"
   pnpm --filter @nexa-ai/worker kol add-call <handle> <NVDA|ETH> <up|down> <hari> <link-post-x> "<teks call>"
+  pnpm --filter @nexa-ai/worker kol import <file.csv>   (impor massal; kolom: handle,display_name,asset,direction,days,source_url,text)
   pnpm --filter @nexa-ai/worker kol score        (nilai call yang sudah jatuh tempo)
 Harga dari oracle Chainlink mainnet (ORACLE_RPC_URL, default RPC mainnet).`
 
@@ -31,6 +33,14 @@ try {
       if (!handle || !asset || (dir !== 'up' && dir !== 'down') || !days || !link || text.length === 0) throw new Error(USAGE)
       const c = await addCall(db, read, { handle, asset, direction: dir, horizonDays: Number(days), sourceUrl: link, text: text.join(' ') })
       console.log(`call #${c.id} dicatat; harga awal ${c.startPrice} (${c.priceDecimals} desimal); jatuh tempo ${c.maturesAt.toISOString()}`)
+      break
+    }
+    case 'import': {
+      if (!a[0]) throw new Error(USAGE)
+      const r = await importKolCsv(db, read, MAINNET_ORACLE_ASSETS, readFileSync(a[0], 'utf8'))
+      console.log(`KOL baru: ${r.kols}, call dicatat: ${r.calls}, baris gagal: ${r.errors.length}`)
+      for (const e of r.errors) console.log(`  baris ${e.line}: ${e.message}`)
+      if (r.errors.length > 0) process.exitCode = 1
       break
     }
     case 'score': {

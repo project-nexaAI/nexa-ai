@@ -180,6 +180,7 @@ export const postQueue = pgTable(
     scheduledAt: ts('scheduled_at'), // post publik ditunda 15 menit dari alert Pro
     postedAt: ts('posted_at'),
     externalId: text('external_id'),
+    replyTo: text('reply_to'), // id post X yang dibalas (hanya mention_reply)
     mode: text('mode', { enum: ['dry', 'live'] }).notNull().default('dry'),
     createdAt: ts('created_at').notNull().defaultNow(),
   },
@@ -344,4 +345,14 @@ export const telegramLinkCodes = pgTable('telegram_link_codes', {
   code: text('code').primaryKey(),
   address: text('address').notNull(),
   expiresAt: ts('expires_at').notNull(),
+})
+
+/** Konten sponsor (50 per laporan): catatan klien dan bukti pembayaran. Teks yang diposting ada di post_queue (kind sponsored). */
+export const sponsoredReports = pgTable('sponsored_reports', {
+  id: serial('id').primaryKey(),
+  client: text('client').notNull(),
+  token: text('token').notNull(),
+  paymentRef: text('payment_ref').notNull(), // tx hash, nomor invoice, dsb.
+  postId: integer('post_id').references(() => postQueue.id),
+  createdAt: ts('created_at').notNull().defaultNow(),
 })

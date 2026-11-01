@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, proAlerts, predictions } from '@nexa-ai/db'
+import { apiKeys, burns, kolAccounts, kolCalls, createDb, ponsTokens, postQueue, proAlerts, predictions, whaleTransfers } from '@nexa-ai/db'
 import {
+  signalsWhalesResponseSchema,
   burnResponseSchema,
   predictionResponseSchema,
   proofResponseSchema,
@@ -71,6 +72,7 @@ describe.skipIf(!dbUp)('API publik', () => {
     await db.delete(predictions)
     await db.delete(ponsTokens)
     await db.delete(burns)
+    await db.delete(whaleTransfers)
   })
   afterAll(async () => {
     await app.close()
@@ -231,6 +233,56 @@ describe.skipIf(!dbUp)('API publik', () => {
       expect(body.items[0]!.ledgerId).toBeNull()
       expect(body.items[1]!.ledgerId).toBe(5)
       expect(res.headers['cache-control']).toBe('private, no-store')
+    })
+
+    describe('GET /signals/whales', () => {
+      const NVDA = '0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC'
+      const withSymbols = buildApp({ db, explorerUrl: EXPLORER, paidFeaturesEnabled: true, now: () => NOW, symbols: { [NVDA.toLowerCase()]: 'NVDA' } })
+      const whales = (key?: string, query = '') => withSymbols.inject({ method: 'GET', url: `/signals/whales${query}`, headers: key ? { 'x-api-key': key } : {} })
+      const tx = (n: number) => `0x${n.toString(16).padStart(64, '0')}`
+      const row = (n: number, over: Partial<typeof whaleTransfers.$inferInsert> = {}) => ({
+        id: `${tx(n)}-3`,
+        token: NVDA,
+        from: '0x00000000000000000000000000000000000000d1',
+        to: '0x00000000000000000000000000000000000000d2',
+        amount: '1500500000000000000000',
+        decimals: 18,
+        at: day(n),
+        blockNumber: BigInt(n),
+        ...over,
+      })
+
+      it('sama dengan /signals: 503 saat flag mati, 401 tanpa kunci, 429 bila melewati batas laju', async () => {
+        await addKey(KEY)
+        expect((await app.inject({ method: 'GET', url: '/signals/whales', headers: { 'x-api-key': KEY } })).statusCode).toBe(503)
+        expect((await whales()).statusCode).toBe(401)
+        expect((await whales('salah')).statusCode).toBe(401)
+        const limited = buildApp({ db, explorerUrl: EXPLORER, paidFeaturesEnabled: true, signalsRateLimitPerMinute: 1, now: () => NOW })
+        const hit = () => limited.inject({ method: 'GET', url: '/signals/whales', headers: { 'x-api-key': KEY } })
+        expect((await hit()).statusCode).toBe(200)
+        expect((await hit()).statusCode).toBe(429)
+      })
+
+      it('200: terbaru dulu, nilai mentah + terformat, simbol bila dikenal, link Blockscout ke tx', async () => {
+        await addKey(KEY)
+        await db.insert(whaleTransfers).values([row(3), row(1, { token: '0x00000000000000000000000000000000000000aa', amount: '5' , decimals: 0 })])
+        const res = await whales(KEY)
+        expect(res.statusCode).toBe(200)
+        const body = signalsWhalesResponseSchema.parse(res.json())
+        // day(1) lebih baru daripada day(3): urutan terbaru dulu
+        expect(body.items.map((i) => i.txHash)).toEqual([tx(1), tx(3)])
+        const nv = body.items.find((i) => i.token === NVDA)!
+        expect(nv).toMatchObject({ symbol: 'NVDA', amount: { raw: '1500500000000000000000', decimals: 18, formatted: '1500.5' }, txHash: tx(3), txUrl: `${EXPLORER}/tx/${tx(3)}` })
+        expect(body.items.find((i) => i.token !== NVDA)!.symbol).toBeNull()
+        expect(res.headers['cache-control']).toBe('private, no-store')
+      })
+
+      it('limit divalidasi dan dipakai', async () => {
+        await addKey(KEY)
+        await db.insert(whaleTransfers).values([row(1), row(2), row(3)])
+        expect((await whales(KEY, '?limit=0')).statusCode).toBe(400)
+        expect(signalsWhalesResponseSchema.parse((await whales(KEY, '?limit=2')).json()).items).toHaveLength(2)
+      })
     })
 
     it('limit divalidasi', async () => {

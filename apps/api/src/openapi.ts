@@ -1,6 +1,7 @@
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import type { ZodTypeAny } from 'zod'
 import {
+  signalsWhalesResponseSchema,
   alertEventSchema,
   proPlanResponseSchema,
   proSubscribeRequestSchema,
@@ -162,6 +163,22 @@ export function buildOpenApi() {
             '403': err('not_a_holder'),
             '409': err('pembayaran sudah dipakai'),
             '422': err('token_too_new (< 1 jam) atau no_data; pembayaran tidak dihabiskan'),
+            '503': err('fitur berbayar belum aktif'),
+          },
+        },
+      },
+      '/signals/whales': {
+        get: {
+          summary: 'Signals API (berbayar): transfer Stock Token besar yang tercatat indexer, terbaru dulu. Butuh header x-api-key; mati sampai PAID_FEATURES_ENABLED=true.',
+          parameters: [
+            { name: 'x-api-key', in: 'header', required: true, schema: { type: 'string' } },
+            { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+          ],
+          responses: {
+            '200': { description: 'Transfer whale', content: { 'application/json': { schema: schema(signalsWhalesResponseSchema) } } },
+            '400': err('limit tidak valid'),
+            '401': err('kunci API tidak ada atau tidak valid'),
+            '429': err('batas laju terlampaui (header Retry-After)'),
             '503': err('fitur berbayar belum aktif'),
           },
         },
