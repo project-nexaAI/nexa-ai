@@ -46,7 +46,9 @@ ${JSON.stringify(
     symbol: c.symbol,
     oraclePrice: c.oraclePrice,
     dexVsOracle: c.dexVsOracleBps === undefined ? null : `${c.dexVsOracleBps} bps (${(c.dexVsOracleBps / 100).toFixed(2)}%)`,
-    change: c.change24h ? { percent: `${bpsToPercent(c.change24h.bps)}%`, bps: `${Math.abs(c.change24h.bps)} bps`, hours: c.change24h.windowHours } : null,
+    change: c.change24h
+      ? { direction: c.change24h.bps === 0 ? 'flat' : c.change24h.bps > 0 ? 'up' : 'down', percent: `${bpsToPercent(Math.abs(c.change24h.bps))}%`, bps: `${Math.abs(c.change24h.bps)} bps`, hours: c.change24h.windowHours }
+      : null,
     horizonDays,
   })),
 )}

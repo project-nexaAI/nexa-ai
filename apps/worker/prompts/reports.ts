@@ -47,7 +47,10 @@ export function buildSummaryPrompt(items: readonly StockSummaryItem[]): string {
   const data = items.map((i) => ({
     symbol: i.symbol,
     oraclePrice: i.price,
-    change: i.change ? { percent: `${bpsToPercent(i.change.bps)}%`, bps: `${Math.abs(i.change.bps)} bps`, hours: i.change.windowHours } : null,
+    // Arah sebagai kata dan persen/bps mutlak: mencegah kalimat ganda negatif seperti "down -3.80%".
+    change: i.change
+      ? { direction: i.change.bps === 0 ? 'flat' : i.change.bps > 0 ? 'up' : 'down', percent: `${bpsToPercent(Math.abs(i.change.bps))}%`, bps: `${Math.abs(i.change.bps)} bps`, hours: i.change.windowHours }
+      : null,
     whaleTransfers: i.whales ? { count: i.whales.count, totalTokens: i.whales.totalTokens } : null,
     dex: i.dex
       ? {

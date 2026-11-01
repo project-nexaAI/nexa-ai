@@ -80,13 +80,21 @@ async function runOnce(d: ReportDeps, kind: string, hourUtc: number, now: Date, 
 /** Selisih DEX vs oracle. Gagal, tidak ada pool yang cukup dalam, atau selisih tidak wajar (> 20%) = null: tidak dibahas. */
 async function dexFor(d: ReportDeps, a: OracleAsset, oracle: { answer: bigint; decimals: number }): Promise<{ price: string; gapBps: number } | null> {
   if (!d.dex) return null
+  // Kegagalan DEX tidak menggagalkan ringkasan, tetapi alasannya dicatat di log supaya tidak diam-diam (tanpa data rahasia).
   try {
     const q = await d.dex(a.asset)
-    if (!q) return null
+    if (!q) {
+      console.warn(`worker: DEX ${a.symbol}: tidak ada pool yang cukup dalam atau data tidak terbaca; ringkasan tanpa DEX`)
+      return null
+    }
     const gap = dexGapBps(q.priceE8, oracle.answer, oracle.decimals)
-    if (gap === null || Math.abs(gap) > MAX_PLAUSIBLE_GAP_BPS) return null
+    if (gap === null || Math.abs(gap) > MAX_PLAUSIBLE_GAP_BPS) {
+      console.warn(`worker: DEX ${a.symbol}: selisih ${gap} bps di luar batas wajar; dibuang`)
+      return null
+    }
     return { price: `$${formatUsd(q.priceE8, 8)}`, gapBps: gap }
-  } catch {
+  } catch (e) {
+    console.warn(`worker: DEX ${a.symbol} gagal: ${e instanceof Error ? e.message.slice(0, 160) : String(e)}`)
     return null
   }
 }
