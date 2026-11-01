@@ -27,6 +27,8 @@ export interface StockSummaryItem {
   price: string
   change: { bps: number; windowHours: number } | null
   whales: { count: number; totalTokens: string } | null
+  /** Harga DEX (pool Uniswap v4 terdalam) dan selisihnya terhadap oracle; tidak ada = tidak dibahas. Positif = DEX di atas oracle. */
+  dex?: { price: string; gapBps: number } | null
 }
 
 /** Fakta bernilai angka dari data ringkasan; angka di teks harus ada di sini (aturan pipeline 3). */
@@ -36,6 +38,7 @@ export function summaryFacts(items: readonly StockSummaryItem[]): string[] {
     facts.push(i.price)
     if (i.change) facts.push(`${bpsToPercent(i.change.bps)}%`, `${Math.abs(i.change.bps)} bps`, String(i.change.windowHours))
     if (i.whales) facts.push(String(i.whales.count), i.whales.totalTokens)
+    if (i.dex) facts.push(i.dex.price, `${bpsToPercent(Math.abs(i.dex.gapBps))}%`, `${Math.abs(i.dex.gapBps)} bps`)
   }
   return facts
 }
@@ -46,8 +49,17 @@ export function buildSummaryPrompt(items: readonly StockSummaryItem[]): string {
     oraclePrice: i.price,
     change: i.change ? { percent: `${bpsToPercent(i.change.bps)}%`, bps: `${Math.abs(i.change.bps)} bps`, hours: i.change.windowHours } : null,
     whaleTransfers: i.whales ? { count: i.whales.count, totalTokens: i.whales.totalTokens } : null,
+    dex: i.dex
+      ? {
+          price: i.dex.price,
+          gapVsOracle: { percent: `${bpsToPercent(Math.abs(i.dex.gapBps))}%`, bps: `${Math.abs(i.dex.gapBps)} bps`, direction: i.dex.gapBps === 0 ? 'in line with' : i.dex.gapBps > 0 ? 'above' : 'below' },
+        }
+      : null,
   }))
-  return `Write the daily summary of Stock Token moves on Robinhood Chain from DATA (Chainlink oracle price, the change over the stated number of hours, and large on-chain transfers). DEX prices are not available: do not discuss DEX prices or any gap to the oracle.
+  const dexLine = items.some((i) => i.dex)
+    ? 'Where "dex" is present, mention the DEX price and how far it sits above or below the oracle (use the direction word and the percent from DATA). Where it is null, do not discuss DEX prices.'
+    : 'DEX prices are not available: do not discuss DEX prices or any gap to the oracle.'
+  return `Write the daily summary of Stock Token moves on Robinhood Chain from DATA (Chainlink oracle price, the change over the stated number of hours, large on-chain transfers, and the DEX price gap when present). ${dexLine}
 
 DATA (tool results, the only source of numbers):
 ${JSON.stringify(data)}
