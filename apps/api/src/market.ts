@@ -1,5 +1,5 @@
 import type { MarketResponse } from '@nexa-ai/api-client'
-import { formatBps, formatUnits } from './format'
+import { formatBps } from './format'
 
 export interface SnapshotRow {
   asset: string
@@ -16,7 +16,13 @@ const MIN_WINDOW_MS = 3600_000
 /** Harga DEX dianggap sepasang dengan oracle bila diambil dalam selang ini. */
 const PAIR_MS = 30 * 60_000
 
-const amount = (raw: bigint, decimals: number) => ({ raw: raw.toString(), decimals, formatted: formatUnits(raw, decimals) })
+/** Harga untuk tampilan: dua desimal, dibulatkan ke bawah (nilai mentah tetap dikirim utuh). */
+function formatPrice(raw: bigint, decimals: number): string {
+  const cents = decimals >= 2 ? raw / 10n ** BigInt(decimals - 2) : raw * 10n ** BigInt(2 - decimals)
+  return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`
+}
+
+const amount = (raw: bigint, decimals: number) => ({ raw: raw.toString(), decimals, formatted: formatPrice(raw, decimals) })
 
 /** Selisih (bps, dibulatkan ke nol) harga a terhadap b; desimal dinormalkan. */
 function gapBps(a: bigint, aDec: number, b: bigint, bDec: number): number {
