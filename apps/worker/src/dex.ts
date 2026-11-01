@@ -46,7 +46,8 @@ export interface DexClient {
 
 /** Klien nyata. RPC membatasi satu `getLogs` (10 juta blok di RPC Robinhood), jadi pemindaian dipecah per jendela. */
 export function createDexClient(rpcUrl: string, poolManager: Address): DexClient {
-  const pub = createPublicClient({ transport: http(rpcUrl) })
+  // Timeout 30 dtk (bawaan viem 10 dtk): getLogs pada jendela 9 juta blok bisa lambat dari server hosting.
+  const pub = createPublicClient({ transport: http(rpcUrl, { timeout: 30_000, retryCount: 3 }) })
   return {
     head: () => pub.getBlockNumber(),
     async initializedPools(currency0, currency1, fromBlock, toBlock) {
