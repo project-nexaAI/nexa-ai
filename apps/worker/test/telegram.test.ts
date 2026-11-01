@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { createDb, postQueue, riskguardLog } from '@nexa-ai/db'
+import { createDb, postQueue, proAlerts, riskguardLog } from '@nexa-ai/db'
 import { enqueuePost, getPost } from '../src/queue'
 import { DryTelegram, TelegramBot, approveAndAlert, mirrorToBackup } from '../src/telegram'
 
@@ -15,6 +15,7 @@ try {
 
 describe.skipIf(!dbUp)('alert Pro (Telegram dry)', () => {
   beforeEach(async () => {
+    await db.delete(proAlerts)
     await db.delete(postQueue)
     await db.delete(riskguardLog)
   })

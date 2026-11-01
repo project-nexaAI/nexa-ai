@@ -17,6 +17,12 @@ const env = z
     TREASURY_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
     ASK_PRICE_USDG_MICROS: z.coerce.bigint().default(1_000_000n),
     ASK_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
+    /** NEXA Pro: penerima (default = penerima Ask NEXA), harga per periode (unit terkecil, 19000000 = $19), lama periode (hari). */
+    PRO_PAYMENT_RECIPIENT: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
+    PRO_PRICE_USDG_MICROS: z.coerce.bigint().positive().default(19_000_000n),
+    PRO_DAYS: z.coerce.number().int().min(1).default(30),
+    /** Username bot Telegram (tanpa @) untuk tautan alert Pro; kosong = tautan Telegram nonaktif. */
+    TELEGRAM_BOT_USERNAME: z.string().regex(/^[A-Za-z0-9_]{5,32}$/).optional().or(z.literal('')),
     /** Benefit holder $NEXA: token (ada setelah launch di Pons V2) dan ambang saldo (unit terkecil, 18 desimal). Kosong = nonaktif. */
     NEXA_TOKEN_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional().or(z.literal('')),
     HOLDER_THRESHOLD: z.coerce.bigint().positive().optional().or(z.literal('')),
@@ -42,6 +48,21 @@ const ask =
         minAmount: env.ASK_PRICE_USDG_MICROS,
       }
     : undefined
+const proRecipient = env.PRO_PAYMENT_RECIPIENT ?? askRecipient
+const pro =
+  proRecipient && CHAINS.mainnet.usdg
+    ? {
+        payment: {
+          client: createPublicClient({ transport: http(env.ASK_RPC_URL) }),
+          usdg: CHAINS.mainnet.usdg,
+          recipient: proRecipient as `0x${string}`,
+          minAmount: env.PRO_PRICE_USDG_MICROS,
+        },
+        days: env.PRO_DAYS,
+        chainId: CHAINS.mainnet.id,
+        ...(env.TELEGRAM_BOT_USERNAME ? { telegramBot: env.TELEGRAM_BOT_USERNAME } : {}),
+      }
+    : undefined
 // Domain SIWE = host dari asal web yang diizinkan CORS (WEB_ORIGIN, beberapa dipisah koma).
 const siweDomains = (env.WEB_ORIGIN ?? '')
   .split(',')
@@ -65,6 +86,7 @@ const app = buildApp({
   leaderboardMinScored: env.LEADERBOARD_MIN_SCORED,
   paidFeaturesEnabled: env.PAID_FEATURES_ENABLED === 'true',
   ask,
+  pro,
   auth: siweDomains.length ? { domains: siweDomains, sessionTtlSeconds: env.SESSION_TTL_HOURS * 3600, nonceTtlSeconds: 300, holder } : undefined,
   symbols: Object.fromEntries(Object.entries(symbols).map(([k, v]) => [k.toLowerCase(), v])),
 })

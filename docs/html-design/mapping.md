@@ -43,4 +43,5 @@ Memakai nav/footer dan token landing yang sama; gaya tambahan di `apps/web/src/s
 | `/leaderboard` | `app/leaderboard/page.tsx` | `GET /leaderboard` | Menandai bahwa call KOL tidak di-commit on-chain |
 | `/burn` | `app/burn/page.tsx` | `GET /burn` | Kosong sampai BurnVault ada |
 | `/ask` | `app/ask/page.tsx` + `AskForm` (client) | `POST /ask` | Menjawab "belum dibuka" selama fitur berbayar mati; alamat bayar dari `NEXT_PUBLIC_ASK_PAYMENT_ADDRESS` |
+| `/pro` | `app/pro/page.tsx` + `ProPanel` (client) | `GET /pro/plan`, `POST /pro/subscribe`, `POST /pro/telegram/link`, `GET /alerts/stream` (SSE), `GET /me` | Butuh login wallet (navbar); bayar USDG lewat wallet atau tempel tx hash; alert live lewat fetch streaming; mati (503) selama fitur berbayar mati |
 | Landing `#explore` | `components/landing/Explore.tsx` | — | Pintu masuk ke halaman di atas |

@@ -6,5 +6,6 @@
     "balance": { "raw": "2500000000000000000000000", "decimals": 18, "formatted": "2500000" },
     "threshold": { "raw": "1000000000000000000000000", "decimals": 18, "formatted": "1000000" }
   },
-  "benefits": { "earlyAlerts": true, "freeAsksPerMonth": 3, "freeAsksRemaining": 2, "month": "2026-12" }
+  "benefits": { "earlyAlerts": true, "freeAsksPerMonth": 3, "freeAsksRemaining": 2, "month": "2026-12" },
+  "pro": { "active": true, "expiresAt": "2027-01-05T12:00:00.000Z", "telegramLinked": false }
 }

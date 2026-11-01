@@ -1,6 +1,6 @@
 import { and, asc, eq, lte } from 'drizzle-orm'
 import type { createDb } from '@nexa-ai/db'
-import { postQueue, predictions, riskguardLog } from '@nexa-ai/db'
+import { postQueue, predictions, proAlerts, riskguardLog } from '@nexa-ai/db'
 import {
   evaluate,
   toLogEntry,
@@ -57,19 +57,35 @@ export async function enqueuePost(db: Db, p: EnqueueParams): Promise<EnqueueResu
   await db.insert(riskguardLog).values(entry)
 
   const status = !decision.allowed ? 'rejected' : decision.requiresApproval ? 'pending_approval' : 'approved'
-  const [row] = await db
-    .insert(postQueue)
-    .values({
-      kind: p.kind,
-      content: p.input.text,
-      status,
-      riskguard: decision,
-      predictionId: p.predictionId ?? null,
-      scheduledAt: new Date(now.getTime() + PUBLIC_POST_DELAY_MS),
-      mode: p.mode,
-    })
-    .returning({ id: postQueue.id })
-  return { id: row!.id, status, decision }
+  // Post yang lolos tanpa persetujuan manusia langsung menjadi alert Pro; post dan alert dibuat atomik.
+  const row = await db.transaction(async (tx) => {
+    const [post] = await tx
+      .insert(postQueue)
+      .values({
+        kind: p.kind,
+        content: p.input.text,
+        status,
+        riskguard: decision,
+        predictionId: p.predictionId ?? null,
+        scheduledAt: new Date(now.getTime() + PUBLIC_POST_DELAY_MS),
+        mode: p.mode,
+      })
+      .returning()
+    if (status === 'approved') await recordProAlert(tx as unknown as Db, post!)
+    return post!
+  })
+  return { id: row.id, status, decision }
+}
+
+/**
+ * Alert Pro: dibuat saat post disetujui (manusia atau otomatis), 15 menit sebelum post publik di X.
+ * Sumber stream SSE dan pengiriman Telegram ke pelanggan. Idempoten per post.
+ */
+export async function recordProAlert(db: Db, post: { id: number; kind: string; content: string; scheduledAt: Date | null }): Promise<void> {
+  await db
+    .insert(proAlerts)
+    .values({ postId: post.id, kind: post.kind, content: post.content, publicAt: post.scheduledAt })
+    .onConflictDoNothing()
 }
 
 export async function listPending(db: Db) {
@@ -82,12 +98,15 @@ export async function getPost(db: Db, id: number) {
 }
 
 async function transition(db: Db, id: number, to: 'approved' | 'rejected') {
-  const updated = await db
-    .update(postQueue)
-    .set({ status: to })
-    .where(and(eq(postQueue.id, id), eq(postQueue.status, 'pending_approval')))
-    .returning({ id: postQueue.id })
-  if (updated.length === 0) throw new PipelineError(`post ${id} tidak ada atau tidak sedang menunggu persetujuan`)
+  await db.transaction(async (tx) => {
+    const updated = await tx
+      .update(postQueue)
+      .set({ status: to })
+      .where(and(eq(postQueue.id, id), eq(postQueue.status, 'pending_approval')))
+      .returning()
+    if (updated.length === 0) throw new PipelineError(`post ${id} tidak ada atau tidak sedang menunggu persetujuan`)
+    if (to === 'approved') await recordProAlert(tx as unknown as Db, updated[0]!)
+  })
 }
 
 /** Hanya post yang sudah lolos RiskGuard yang bisa disetujui; yang diblokir otomatis tidak pernah pending. */

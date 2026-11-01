@@ -125,3 +125,7 @@ a.pg-row:hover{border-color:var(--line-2)}
   .wl-short{display:inline}
   .wallet-pop{right:-52px}
 }
+.pg-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.pg-feed{display:grid;gap:8px;list-style:none;padding:0;margin:0}
+.pg-feed li{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:6px;font-size:14.5px;line-height:1.55;color:var(--ink-2)}
+.pg-feed .meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}

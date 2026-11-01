@@ -9,6 +9,7 @@ const PAGES = [
   { href: '/leaderboard', label: 'NEXA vs KOL' },
   { href: '/burn', label: 'Burn tracker' },
   { href: '/ask', label: 'Ask NEXA' },
+  { href: '/pro', label: 'NEXA Pro' },
 ] as const
 const SECTIONS = [
   { hash: '#how', label: 'How it works' },

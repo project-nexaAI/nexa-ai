@@ -64,6 +64,13 @@
       "when": 1793463726752,
       "tag": "0008_safe_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793533468379,
+      "tag": "0009_fat_firelord",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { zeroAddress, type Address, type Hex } from 'viem'
-import { costLog, createDb, postQueue, predictions, riskguardLog } from '@nexa-ai/db'
+import { costLog, createDb, postQueue, proAlerts, predictions, riskguardLog } from '@nexa-ai/db'
 import { newDailyState, runDailyPrediction, type DailyConfig, type DailyDeps } from '../src/daily'
 import type { LedgerClient } from '../src/ledger'
 import { MockLlm } from '../src/llm'
@@ -50,6 +50,7 @@ const make = (llm: MockLlm, read: FeedReader = freshFeed, c: Partial<DailyConfig
 describe.skipIf(!dbUp)('prediksi harian', () => {
   beforeEach(async () => {
     commits = 0
+    await db.delete(proAlerts)
     await db.delete(postQueue)
     await db.delete(riskguardLog)
     await db.delete(predictions)

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { createDb, postQueue, predictions, riskguardLog } from '@nexa-ai/db'
+import { createDb, postQueue, proAlerts, predictions, riskguardLog } from '@nexa-ai/db'
 import {
   PUBLIC_POST_DELAY_MS,
   PipelineError,
@@ -37,6 +37,7 @@ async function insertPrediction(over: Partial<typeof predictions.$inferInsert> =
 describe.skipIf(!dbUp)('antrian persetujuan', () => {
   beforeAll(() => undefined)
   beforeEach(async () => {
+    await db.delete(proAlerts)
     await db.delete(postQueue)
     await db.delete(riskguardLog)
     await db.delete(predictions)
