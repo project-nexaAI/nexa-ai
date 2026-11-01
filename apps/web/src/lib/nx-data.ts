@@ -2,8 +2,16 @@ import { createApiClient, type ProofResponse } from '@nexa-ai/api-client'
 
 /** Data dari API yang dibutuhkan skrip gerak. Semua opsional: tanpa data, desain tampil seperti aslinya. */
 export interface NxData {
-  /** Commit terbaru untuk kartu "Example commit"; null = contoh ilustrasi dari desain. */
-  latest: { hash: string; committedAt: string; maturesAt: string } | null
+  /** Commit terbaru untuk kartu commit; null = contoh dari desain (berlabel Example). */
+  latest: {
+    hash: string
+    committedAt: string
+    maturesAt: string
+    horizonDays: number
+    status: 'committed' | 'posted' | 'revealed'
+    /** Aset dan arah hanya terisi setelah reveal; sebelumnya disegel (tidak boleh ditampilkan). */
+    revealed: { assetSymbol: string; direction: 'up' | 'down' } | null
+  } | null
   /** Hari ke-N dari 7 pada Prediction of the Day yang berjalan; null = contoh dari desain (hari 4). */
   currentDay: number | null
   horizonDays: number
@@ -27,7 +35,16 @@ export const EMPTY_NX_DATA: NxData = {
 export function toNxData(proof: ProofResponse): NxData {
   const p = proof.current?.prediction
   return {
-    latest: p ? { hash: p.hash, committedAt: p.committedAt, maturesAt: p.maturesAt } : null,
+    latest: p
+      ? {
+          hash: p.hash,
+          committedAt: p.committedAt,
+          maturesAt: p.maturesAt,
+          horizonDays: p.horizonDays,
+          status: p.status,
+          revealed: p.revealed ? { assetSymbol: p.revealed.assetSymbol, direction: p.revealed.direction } : null,
+        }
+      : null,
     currentDay: proof.current?.day ?? null,
     horizonDays: p?.horizonDays ?? 7,
     winRate: proof.stats.winRate,

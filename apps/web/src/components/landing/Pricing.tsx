@@ -16,7 +16,7 @@ export function Pricing() {
         </div>
         {" "}
         <p className="lede" data-reveal="">
-          Paid products open from week 10, after NEXA has posted committed calls for 30 days.
+          Pro and Ask NEXA are live. Signals API keys and sponsored reports are arranged on request.
         </p>
       </div>
       {" "}

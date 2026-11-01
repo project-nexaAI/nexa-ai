@@ -1,7 +1,18 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { X_URL } from '@/lib/site'
+import type { NxData } from '@/lib/nx-data'
 
-export function Proof() {
+const STEPS = ['Committed', 'Posted on X', 'Revealed', 'Scored'] as const
+/** Langkah yang sudah selesai (done) dan yang sedang berjalan (now) menurut status commit. */
+function stepClass(i: number, status: 'committed' | 'posted' | 'revealed' | undefined): string {
+  if (!status) return i < 2 ? 'done' : i === 2 ? 'now' : '' // contoh desain
+  const done = status === 'committed' ? 1 : status === 'posted' ? 2 : 4
+  return i < done ? 'done' : i === done ? 'now' : ''
+}
+
+/** `latest` = commit nyata terbaru dari /proof; null = contoh dari desain, berlabel Example. */
+export function Proof({ latest }: { latest: NxData['latest'] }) {
+  const rev = latest?.revealed ?? null
   return (
     <section className="sec" id="proof">
       <div className="head">
@@ -30,7 +41,7 @@ export function Proof() {
         <div className="card ledger tilt spot" data-reveal="">
           <div className="lg-top">
             <span className="tag">
-              Example commit
+              {latest ? 'Latest commit' : 'Example commit'}
             </span>
             <span className="mono net">
               <i />
@@ -39,7 +50,7 @@ export function Proof() {
           </div>
           {" "}
           <h3>
-            What a call looks like in NexaLedger
+            {latest ? 'The latest call, recorded in NexaLedger' : 'What a call looks like in NexaLedger'}
           </h3>
           {" "}
           <div className="receipt">
@@ -47,7 +58,7 @@ export function Proof() {
               <span className="k">
                 Commit hash
               </span>
-              <button className="copy" type="button" id="copyHash" aria-label="Copy example hash">
+              <button className="copy" type="button" id="copyHash" aria-label={latest ? 'Copy commit hash' : 'Copy example hash'}>
                 Copy
               </button>
             </div>
@@ -59,21 +70,29 @@ export function Proof() {
                 <span className="k">
                   Asset
                 </span>
-                <span className="v">
-                  <span className="tk">
-                    NV
+                {latest && !rev ? (
+                  <span className="v">Sealed until reveal</span>
+                ) : (
+                  <span className="v">
+                    <span className="tk">
+                      {rev ? rev.assetSymbol.slice(0, 2).toUpperCase() : 'NV'}
+                    </span>
+                    {rev ? rev.assetSymbol : 'NVDA Stock Token'}
                   </span>
-                  NVDA Stock Token
-                </span>
+                )}
               </div>
               {" "}
               <div>
                 <span className="k">
                   Direction
                 </span>
-                <span className="v up">
-                  ↑ Up
-                </span>
+                {latest && !rev ? (
+                  <span className="v">Sealed until reveal</span>
+                ) : (
+                  <span className={`v ${rev?.direction === 'down' ? 'dn' : 'up'}`}>
+                    {rev?.direction === 'down' ? '↓ Down' : '↑ Up'}
+                  </span>
+                )}
               </div>
               {" "}
               <div>
@@ -81,7 +100,7 @@ export function Proof() {
                   Horizon
                 </span>
                 <span className="v">
-                  7 days
+                  {latest ? `${latest.horizonDays} days` : '7 days'}
                 </span>
               </div>
               {" "}
@@ -111,18 +130,11 @@ export function Proof() {
             </div>
             {" "}
             <ol className="trail">
-              <li className="done">
-                Committed
-              </li>
-              <li className="done">
-                Posted on X
-              </li>
-              <li className="now">
-                Revealed
-              </li>
-              <li>
-                Scored
-              </li>
+              {STEPS.map((label, i) => (
+                <li key={label} className={stepClass(i, latest?.status)}>
+                  {label}
+                </li>
+              ))}
             </ol>
           </div>
         </div>
