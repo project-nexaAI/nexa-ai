@@ -2,20 +2,9 @@ import { NavMagnet } from '@/components/wallet/NavMagnet'
 import { WalletButton } from '@/components/wallet/WalletButton'
 import { X_URL } from '@/lib/site'
 
-/** Halaman dashboard (rute) dan bagian landing (jangkar). `base` = "/" di halaman dalam supaya jangkar menuju landing. */
-const PAGES = [
-  { href: '/proof', label: 'Proof' },
-  { href: '/rug-radar', label: 'Rug radar' },
-  { href: '/leaderboard', label: 'NEXA vs KOL' },
-  { href: '/burn', label: 'Burn tracker' },
-  { href: '/ask', label: 'Ask NEXA' },
-  { href: '/pro', label: 'NEXA Pro' },
-] as const
-const SECTIONS = [
-  { hash: '#how', label: 'How it works' },
-  { hash: '#pricing', label: 'Pricing' },
-  { hash: '#token', label: '$NEXA' },
-] as const
+import { NAV_DIRECT, NAV_GROUPS, itemHref } from '@/lib/nav'
+
+/** Menu dikelompokkan (lib/nav.ts). `base` = "/" di halaman dalam supaya jangkar menuju landing. */
 
 export function Nav({ base = '' }: { base?: string }) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
@@ -30,14 +19,26 @@ export function Nav({ base = '' }: { base?: string }) {
             <span>NEXA</span>
           </a>
           <nav className="links" aria-label="Main">
-            {PAGES.map((p) => (
-              <a key={p.href} href={p.href}>
-                {p.label}
-              </a>
+            {NAV_GROUPS.map((g) => (
+              <div key={g.label} className="dd">
+                <button type="button" className="dd-btn" aria-haspopup="true">
+                  {g.label}
+                  <svg viewBox="0 0 10 6" aria-hidden="true">
+                    <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <div className="dd-menu">
+                  {g.items.map((i) => (
+                    <a key={i.label} href={itemHref(i, base)}>
+                      {i.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
             ))}
-            {SECTIONS.map((s) => (
-              <a key={s.hash} href={`${base}${s.hash}`}>
-                {s.label}
+            {NAV_DIRECT.map((i) => (
+              <a key={i.label} href={itemHref(i, base)}>
+                {i.label}
               </a>
             ))}
           </nav>
@@ -58,16 +59,23 @@ export function Nav({ base = '' }: { base?: string }) {
       <NavMagnet />
       <div className="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="Menu" hidden>
         <nav>
-          {PAGES.map((p) => (
-            <a key={p.href} href={p.href}>
-              {p.label}
-            </a>
+          {NAV_GROUPS.map((g) => (
+            <div key={g.label} className="mgroup">
+              <span className="mono">{g.label}</span>
+              {g.items.map((i) => (
+                <a key={i.label} href={itemHref(i, base)}>
+                  {i.label}
+                </a>
+              ))}
+            </div>
           ))}
-          {SECTIONS.map((s) => (
-            <a key={s.hash} href={`${base}${s.hash}`}>
-              {s.label}
-            </a>
-          ))}
+          <div className="mgroup">
+            {NAV_DIRECT.map((i) => (
+              <a key={i.label} href={itemHref(i, base)}>
+                {i.label}
+              </a>
+            ))}
+          </div>
         </nav>
         <a href={X_URL} target="_blank" rel="noopener" className="btn btn-org btn-x">
           {'Follow NEXA on X '}
