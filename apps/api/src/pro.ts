@@ -13,6 +13,8 @@ export interface ProConfig {
   days: number
   /** Chain tempat USDG berada (mainnet 4663), untuk membangun transfer di wallet. */
   chainId: number
+  /** Data jaringan untuk menambahkannya ke wallet (wallet_addEthereumChain). */
+  chain?: { name: string; rpcUrl: string; explorerUrl: string }
   /** Username bot Telegram tanpa @. Kosong = tautan Telegram nonaktif. */
   telegramBot?: string
   /** Selang polling stream alert ke database (ms). */

@@ -3,6 +3,7 @@ import { createDb } from '@nexa-ai/db'
 import { createPublicClient, http } from 'viem'
 import { CHAINS } from '@nexa-ai/shared'
 import { buildApp } from './app'
+import { resolvePaymentNetwork } from './payment-network'
 
 const env = z
   .object({
@@ -17,6 +18,10 @@ const env = z
     TREASURY_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
     ASK_PRICE_USDG_MICROS: z.coerce.bigint().default(1_000_000n),
     ASK_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
+    /** Jaringan pembayaran. Default mainnet (USDG resmi). 46630 hanya untuk uji dengan PAYMENT_USDG_ADDRESS = token uji. */
+    PAYMENT_CHAIN_ID: z.coerce.number().int().default(CHAINS.mainnet.id),
+    PAYMENT_USDG_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional().or(z.literal('')),
+    PAYMENT_RPC_URL: z.string().url().optional().or(z.literal('')),
     /** NEXA Pro: penerima (default = penerima Ask NEXA), harga per periode (unit terkecil, 19000000 = $19), lama periode (hari). */
     PRO_PAYMENT_RECIPIENT: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
     PRO_PRICE_USDG_MICROS: z.coerce.bigint().positive().default(19_000_000n),
@@ -38,28 +43,35 @@ const env = z
 const symbols = z.record(z.string()).parse(JSON.parse(env.ASSET_SYMBOLS))
 const { db } = createDb(env.DATABASE_URL)
 const askRecipient = env.ASK_PAYMENT_RECIPIENT ?? env.TREASURY_ADDRESS
-// USDG yang terverifikasi hanya ada di mainnet; tanpa penerima atau USDG, /ask menjawab 503.
+// USDG resmi hanya ada di mainnet; testnet memakai token uji dari env. Tanpa penerima atau USDG, /ask menjawab 503.
+const network = resolvePaymentNetwork({
+  PAYMENT_CHAIN_ID: env.PAYMENT_CHAIN_ID,
+  PAYMENT_USDG_ADDRESS: env.PAYMENT_USDG_ADDRESS || undefined,
+  PAYMENT_RPC_URL: env.PAYMENT_RPC_URL || undefined,
+  ASK_RPC_URL: env.ASK_RPC_URL,
+})
 const ask =
-  askRecipient && CHAINS.mainnet.usdg
+  askRecipient && network
     ? {
-        client: createPublicClient({ transport: http(env.ASK_RPC_URL) }),
-        usdg: CHAINS.mainnet.usdg,
+        client: createPublicClient({ transport: http(network.rpcUrl) }),
+        usdg: network.usdg,
         recipient: askRecipient as `0x${string}`,
         minAmount: env.ASK_PRICE_USDG_MICROS,
       }
     : undefined
 const proRecipient = env.PRO_PAYMENT_RECIPIENT ?? askRecipient
 const pro =
-  proRecipient && CHAINS.mainnet.usdg
+  proRecipient && network
     ? {
         payment: {
-          client: createPublicClient({ transport: http(env.ASK_RPC_URL) }),
-          usdg: CHAINS.mainnet.usdg,
+          client: createPublicClient({ transport: http(network.rpcUrl) }),
+          usdg: network.usdg,
           recipient: proRecipient as `0x${string}`,
           minAmount: env.PRO_PRICE_USDG_MICROS,
         },
         days: env.PRO_DAYS,
-        chainId: CHAINS.mainnet.id,
+        chainId: network.chainId,
+        chain: network.chain,
         ...(env.TELEGRAM_BOT_USERNAME ? { telegramBot: env.TELEGRAM_BOT_USERNAME } : {}),
       }
     : undefined
