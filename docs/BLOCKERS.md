@@ -64,5 +64,6 @@ Salin alamat `TestUSDG` dari keluaran, lalu ketik "tUSDG sudah deploy" beserta a
 1. Di console.x.com (akun yang mendaftarkan App harus `@NexaAgentX`): buat App bertipe Automated, izin **Read and write**.
 2. Di tab Keys and tokens, buat **API Key and Secret** (Consumer Keys) dan **Access Token and Secret** untuk `@NexaAgentX` (pastikan izin tokennya Read and write; buat ulang token bila izin diubah setelah dibuat).
 3. Isi di service `worker` Railway: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`. Jangan tempel nilainya di chat atau repo.
+3b. Cek kunci tanpa memposting (satu permintaan baca, sekitar $0,005): isi keempat variabel itu di shell lokal Anda sendiri (bukan di chat), lalu `# Jalankan di: ROOT` → `pnpm --filter @nexa-ai/worker x:verify`. Hasil yang benar: `Kunci valid. Akun: @NexaAgentX`. Opsional `X_EXPECT_USERNAME=NexaAgentX` untuk menolak token milik akun lain.
 4. Kabari saya setelah terisi. Saya mengatur `X_POST_MODE=live`, `X_LIVE_POST_CAP=2` (testnet), `POST_INTERVAL_MINUTES=30`, dan `X_POST_KINDS` hanya jenis data, setelah kamu mengizinkan secara eksplisit.
 5. Mainnet: `X_LIVE_POST_CAP=4`. Setelah uji selesai, kembalikan ke batas terakhir sampai hari launch; saat launch kamu mengizinkan `unlimited`.

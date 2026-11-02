@@ -53,6 +53,29 @@ export function oauthHeader(method: string, url: string, c: XCredentials, nonce 
   return 'OAuth ' + Object.keys(header).sort().map((k) => `${enc(k)}="${enc(header[k as keyof typeof header]!)}"`).join(', ')
 }
 
+const ME_URL = 'https://api.x.com/2/users/me'
+const meSchema = z.object({ data: z.object({ id: z.string(), username: z.string() }) })
+
+/**
+ * Cek kunci tanpa memposting: GET /2/users/me dengan user context. Mengembalikan akun pemilik token.
+ * Satu permintaan baca (sekitar $0,005 per brief). Galat dari X dibawa apa adanya; kunci tidak pernah ikut.
+ */
+export async function verifyCredentials(creds: XCredentials, fetchFn: typeof fetch = fetch): Promise<{ id: string; username: string }> {
+  let res: Response
+  try {
+    res = await fetchFn(ME_URL, { method: 'GET', headers: { authorization: oauthHeader('GET', ME_URL, creds) } })
+  } catch {
+    throw new XApiError('X tidak terjangkau', 0, true)
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    throw new XApiError(`X menolak kunci (${res.status}): ${detail.slice(0, 300)}`, res.status, res.status === 429 || res.status >= 500)
+  }
+  const parsed = meSchema.safeParse(await res.json().catch(() => null))
+  if (!parsed.success) throw new XApiError('jawaban X tidak dikenali', res.status, false)
+  return parsed.data.data
+}
+
 export function createXClient(creds: XCredentials, fetchFn: typeof fetch = fetch): XClient {
   return {
     async post(text, opts = {}) {

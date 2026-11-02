@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { XApiError, createXClient, oauthHeader, type XCredentials } from '../src/x'
+import { XApiError, createXClient, oauthHeader, verifyCredentials, type XCredentials } from '../src/x'
 
 const CREDS: XCredentials = { apiKey: 'ck', apiSecret: 'cs', accessToken: 'at', accessSecret: 'as' }
 
@@ -73,5 +73,40 @@ describe('createXClient.post', () => {
   it('jawaban sukses yang tidak dikenali ditolak', async () => {
     const fetchFn = (async () => reply(200, { aneh: true })) as unknown as typeof fetch
     await expect(createXClient(CREDS, fetchFn).post('x')).rejects.toMatchObject({ retryable: false })
+  })
+})
+
+describe('verifyCredentials', () => {
+  it('GET /2/users/me dengan header OAuth dan mengembalikan akun', async () => {
+    let seen: { url: string; init: RequestInit } | null = null
+    const fetchFn = (async (url: string, init: RequestInit) => {
+      seen = { url, init }
+      return reply(200, { data: { id: '77', username: 'NexaAgentX' } })
+    }) as unknown as typeof fetch
+    expect(await verifyCredentials(CREDS, fetchFn)).toEqual({ id: '77', username: 'NexaAgentX' })
+    expect(seen!.url).toBe('https://api.x.com/2/users/me')
+    expect(seen!.init.method).toBe('GET')
+    expect((seen!.init.headers as Record<string, string>).authorization).toMatch(/^OAuth /)
+  })
+
+  it('401 = kunci ditolak (permanen); isi galat dibawa tanpa kunci', async () => {
+    const fetchFn = (async () => reply(401, { title: 'Unauthorized' })) as unknown as typeof fetch
+    const err = await verifyCredentials(CREDS, fetchFn).catch((e) => e)
+    expect(err).toBeInstanceOf(XApiError)
+    expect(err).toMatchObject({ status: 401, retryable: false })
+    expect(err.message).toContain('Unauthorized')
+    expect(err.message).not.toContain('cs')
+  })
+
+  it('429, 5xx, dan jaringan putus = sementara', async () => {
+    for (const make of [() => reply(429, {}), () => reply(502, {}), () => Promise.reject(new Error('putus'))]) {
+      const fetchFn = (async () => make()) as unknown as typeof fetch
+      await expect(verifyCredentials(CREDS, fetchFn)).rejects.toMatchObject({ retryable: true })
+    }
+  })
+
+  it('jawaban sukses yang tidak dikenali ditolak', async () => {
+    const fetchFn = (async () => reply(200, { aneh: true })) as unknown as typeof fetch
+    await expect(verifyCredentials(CREDS, fetchFn)).rejects.toMatchObject({ retryable: false })
   })
 })

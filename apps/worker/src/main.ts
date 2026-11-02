@@ -18,6 +18,7 @@ import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader } from './or
 import { createDexClient, makeDexSource } from './dex'
 import { recordMarketSnapshots, type MarketDeps } from './market'
 import { runDailyReports, type ReportDeps } from './reports'
+import { DEFAULT_PULSE_WINDOWS, newPulseState, runPulse, type PulseDeps } from './pulse'
 
 const env = z
   .object({
@@ -42,6 +43,9 @@ const env = z
     /** all = semua post menunggu persetujuan manusia (30 hari pertama, brief); risky = hanya yang berisiko (sponsored, balasan, laporan risiko, yang diblokir). */
     APPROVAL_MODE: z.enum(['all', 'risky']).default('all'),
     LOOP_SECONDS: z.coerce.number().int().min(10).default(60),
+    /** Pulse: satu post dari peristiwa nyata (graduation/launch Pons, harga Stock Token) paling cepat tiap PULSE_INTERVAL_MINUTES. Default mati; jenis antrian "pulse" harus ada di X_POST_KINDS agar terbit ke X. */
+    PULSE_ENABLED: z.enum(['true', 'false']).default('false'),
+    PULSE_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(30),
     /** Prediction of the Day: hanya berjalan bila LLM_API_KEY ada (mock LLM tidak boleh meng-commit apa pun on-chain). */
     /** Kanal cadangan publik; tanpa keduanya tidak ada Telegram dari worker. */
     TELEGRAM_BOT_TOKEN: z.string().optional(),
@@ -171,6 +175,22 @@ console.log(
     : 'worker: laporan harian NONAKTIF (butuh LLM_API_KEY dan LLM_BASE_URL)',
 )
 
+const pulse: PulseDeps | null =
+  reports && env.PULSE_ENABLED === 'true'
+    ? {
+        report: reports,
+        cfg: {
+          intervalMs: env.PULSE_INTERVAL_MINUTES * 60_000,
+          ...DEFAULT_PULSE_WINDOWS,
+          minRetryMs: 5 * 60_000,
+          maxFailuresPerTopic: 3,
+          liveCap: env.X_LIVE_POST_CAP === 'unlimited' ? Number.POSITIVE_INFINITY : env.X_LIVE_POST_CAP,
+        },
+        state: newPulseState(),
+      }
+    : null
+console.log(pulse ? `worker: pulse AKTIF (satu post tiap ${env.PULSE_INTERVAL_MINUTES} menit bila ada topik baru)` : 'worker: pulse NONAKTIF')
+
 // Snapshot harga oracle dan DEX untuk kartu "Stock Token movers" di web (tanpa LLM). Mainnet read-only; tanpa kunci.
 const market: MarketDeps = {
   db,
@@ -251,6 +271,10 @@ async function tick(): Promise<void> {
     const r = await runDailyReports(reports)
     if (r.summary === 'queued' || r.summary === 'blocked') console.log(`worker: ringkasan Stock Token: ${r.summary}`)
     if (r.pons === 'queued' || r.pons === 'blocked') console.log(`worker: laporan Pons: ${r.pons}`)
+  }
+  if (pulse) {
+    const step = await runPulse(pulse)
+    if (step === 'queued' || step === 'blocked' || step === 'error') console.log(`worker: pulse: ${step}`)
   }
   if (!deps) return
   if (daily) {
