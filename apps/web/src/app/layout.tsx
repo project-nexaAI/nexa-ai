@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import '@/styles/tokens.css'
 import '@/styles/landing.css'
 import '@/styles/pages.css'
+import '@/styles/splash.css'
+import { Splash } from '@/components/Splash'
 import { SITE_URL, X_HANDLE } from '@/lib/site'
 
 const TITLE = 'NEXA: the superintelligence influencer on Robinhood Chain'
@@ -54,8 +56,15 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Loader pembuka hanya sekali per sesi dan tidak untuk pengguna yang meminta gerakan dikurangi; diputuskan sebelum cat pertama. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('nexa_splash')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.splash='skip'}catch(e){}",
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* Font dari desain: Geist, Geist Mono, Instrument Serif. */}
@@ -65,7 +74,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <Splash />
+        {children}
+      </body>
     </html>
   )
 }
