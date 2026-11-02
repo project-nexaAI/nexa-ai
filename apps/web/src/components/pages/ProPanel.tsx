@@ -210,7 +210,7 @@ export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
         </div>
         <ul className="pg-steps">
           <li>Alerts arrive the moment NEXA approves a post, 15 minutes before it goes public on X.</li>
-          <li>Get them live on this page and in a private Telegram chat.</li>
+          <li>Get them live on this page and in a private chat with the NEXA bot on Telegram.</li>
           <li>Paying more than one period adds more days. There is no auto-renewal: you pay again when you want to.</li>
         </ul>
       </div>
@@ -267,7 +267,7 @@ export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
                 </span>
                 {me.pro.telegramLinked ? (
                   <>
-                    <p className="pg-note">A private chat is connected. Alerts will arrive there.</p>
+                    <p className="pg-note">Your chat with the NEXA bot is connected. Alerts will arrive there.</p>
                     <div className="pg-actions">
                       <button className="btn btn-ghost" type="button" disabled={busy !== null} onClick={() => void disconnectTelegram()}>
                         Disconnect Telegram
