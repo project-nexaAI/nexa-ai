@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { eq } from 'drizzle-orm'
 import { createDb, postQueue, proAlerts, predictions, riskguardLog } from '@nexa-ai/db'
 import {
   PUBLIC_POST_DELAY_MS,
@@ -102,9 +103,20 @@ describe.skipIf(!dbUp)('antrian persetujuan', () => {
 
   it('approve lalu dueForPublish hanya setelah jadwal lewat', async () => {
     const r = await enqueuePost(db, summary('Selisih DEX vs oracle NVDA 0.4%.'))
-    await approvePost(db, r.id)
+    await approvePost(db, r.id, T0)
     expect(await dueForPublish(db, new Date(T0.getTime() + PUBLIC_POST_DELAY_MS - 1))).toHaveLength(0)
     expect(await dueForPublish(db, new Date(T0.getTime() + PUBLIC_POST_DELAY_MS))).toHaveLength(1)
+  })
+
+  it('persetujuan terlambat: jadwal publik 15 menit sejak DISETUJUI, dan alert Pro memuat jadwal itu', async () => {
+    const r = await enqueuePost(db, summary('Selisih DEX vs oracle NVDA 0.4%.'))
+    const approvedAt = new Date(T0.getTime() + 2 * 3_600_000) // disetujui 2 jam setelah dibuat
+    await approvePost(db, r.id, approvedAt)
+    const due = approvedAt.getTime() + PUBLIC_POST_DELAY_MS
+    expect(await dueForPublish(db, new Date(due - 1))).toHaveLength(0)
+    expect(await dueForPublish(db, new Date(due))).toHaveLength(1)
+    const [alert] = await db.select().from(proAlerts).where(eq(proAlerts.postId, r.id))
+    expect(alert?.publicAt?.getTime()).toBe(due)
   })
 
   it('reject menghapus dari daftar pending; tidak bisa approve dua kali', async () => {

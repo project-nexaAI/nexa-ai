@@ -1,9 +1,9 @@
 import { and, eq, gte } from 'drizzle-orm'
 import { z } from 'zod'
 import { postQueue } from '@nexa-ai/db'
-import { REPORT_SYSTEM, buildPonsPrompt, buildSummaryPrompt, ponsFacts, summaryFacts, type PonsReportData, type StockSummaryItem } from '../prompts/reports'
+import { REPORT_SYSTEM, buildGraduationPrompt, buildLaunchPrompt, buildPonsPrompt, buildSummaryPrompt, graduationFacts, launchFacts, ponsFacts, summaryFacts, type PonsReportData, type StockSummaryItem } from '../prompts/reports'
 import { recordLlmCosts } from './cycle'
-import { DAY_MS, loadPonsHighlights, loadWhaleSummary } from './facts'
+import { DAY_MS, loadPonsHighlights, loadWhaleSummary, type TokenFacts } from './facts'
 import { MAX_PLAUSIBLE_GAP_BPS, dexGapBps, type DexSource } from './dex'
 import { generateStructured, type LlmClient } from './llm'
 import { DEFAULT_MAX_STALE_SECONDS, formatUsd, priceChange, type FeedHistory, type OracleAsset } from './oracle'
@@ -133,6 +133,16 @@ export async function buildSummary(d: ReportDeps, now: Date): Promise<Built | nu
 export async function buildPonsFrom(d: ReportDeps, data: PonsReportData): Promise<Built> {
   const tokens = [...(data.top ? [data.top.token] : []), ...data.graduated].map((t) => ({ address: t.address, ageSeconds: t.ageSeconds }))
   return { text: await writeText(d, buildPonsPrompt(data)), facts: ponsFacts(data), tokens }
+}
+
+/** Post pulse satu token: graduation. Hanya membahas token itu. */
+export async function buildGraduationFrom(d: ReportDeps, t: TokenFacts): Promise<Built> {
+  return { text: await writeText(d, buildGraduationPrompt(t)), facts: graduationFacts(t), tokens: [{ address: t.address, ageSeconds: t.ageSeconds }] }
+}
+
+/** Post pulse satu token: launch paling ramai. Hanya membahas token itu. */
+export async function buildLaunchFrom(d: ReportDeps, t: TokenFacts, trades24h: number): Promise<Built> {
+  return { text: await writeText(d, buildLaunchPrompt(t, trades24h)), facts: launchFacts(t, trades24h), tokens: [{ address: t.address, ageSeconds: t.ageSeconds }] }
 }
 
 /** Laporan Pons V2: launch paling ramai 24 jam terakhir (+ red flag) dan graduation. Token < 1 jam tidak pernah dibahas. */

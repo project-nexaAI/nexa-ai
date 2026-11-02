@@ -1,7 +1,7 @@
 import { and, count, desc, eq, gte, inArray, ne } from 'drizzle-orm'
 import { postQueue } from '@nexa-ai/db'
 import { DAY_MS, loadPonsHighlights } from './facts'
-import { buildPonsFrom, buildSummary, type Built, type ReportDeps } from './reports'
+import { buildGraduationFrom, buildLaunchFrom, buildSummary, type Built, type ReportDeps } from './reports'
 import { enqueuePost } from './queue'
 
 /** Jenis antrian untuk post pulse. Masuk X hanya bila ada di X_POST_KINDS. */
@@ -93,7 +93,7 @@ export async function runPulse(d: PulseDeps, now = new Date()): Promise<PulseSte
       key: `grad:${g.address}`,
       symbol: g.symbol,
       windowMs: d.cfg.tokenRepeatMs,
-      build: () => buildPonsFrom(d.report, { top: null, graduated: [g] }),
+      build: () => buildGraduationFrom(d.report, g),
     })
   }
   const top = highlights.top
@@ -102,7 +102,7 @@ export async function runPulse(d: PulseDeps, now = new Date()): Promise<PulseSte
       key: `launch:${top.address}`,
       symbol: top.symbol,
       windowMs: d.cfg.tokenRepeatMs,
-      build: () => buildPonsFrom(d.report, { top: { token: top, trades24h: top.trades24h }, graduated: [] }),
+      build: () => buildLaunchFrom(d.report, top, top.trades24h),
     })
   }
   for (const a of d.report.cfg.stockAssets) {

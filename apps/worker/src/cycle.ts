@@ -25,6 +25,9 @@ export interface CycleDeps {
   publish?: PublishPolicy
 }
 
+/** Yang dibutuhkan penerbit. Tidak butuh ledger: post data (pulse, laporan) bisa terbit tanpa commit/reveal aktif. */
+export type PublishDeps = Pick<CycleDeps, 'db' | 'backup' | 'publish'>
+
 export interface PublishPolicy {
   x: XClient
   /** Batas jumlah post live sepanjang masa di database ini; 0 = tidak ada post live. Setelah tercapai, penerbit berhenti sendiri. */
@@ -160,7 +163,7 @@ const X_POST_COST_USD_MICROS = 15_000n
  * jumlah post live belum mencapai batas (`liveCap`), jeda minimum antar post terpenuhi, dan jenis post diizinkan.
  * Post "diklaim" (status posted) SEBELUM dikirim ke X, supaya restart atau proses ganda tidak pernah mengirim dua kali.
  */
-export async function publishDue(deps: CycleDeps, now = new Date()): Promise<number[]> {
+export async function publishDue(deps: PublishDeps, now = new Date()): Promise<number[]> {
   const due = await dueForPublish(deps.db, now)
   const published: number[] = []
   for (const post of due) {

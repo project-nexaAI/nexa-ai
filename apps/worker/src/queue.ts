@@ -106,11 +106,13 @@ export async function getPost(db: Db, id: number) {
   return row
 }
 
-async function transition(db: Db, id: number, to: 'approved' | 'rejected') {
+async function transition(db: Db, id: number, to: 'approved' | 'rejected', now = new Date()) {
   await db.transaction(async (tx) => {
     const updated = await tx
       .update(postQueue)
-      .set({ status: to })
+      // Disetujui manusia: alert Pro keluar sekarang, X menyusul 15 menit kemudian (aturan pipeline 5). Jadwal dihitung dari
+      // persetujuan, bukan dari pembuatan post, supaya keunggulan Pro tidak hilang bila persetujuan datang terlambat.
+      .set(to === 'approved' ? { status: to, scheduledAt: new Date(now.getTime() + PUBLIC_POST_DELAY_MS) } : { status: to })
       .where(and(eq(postQueue.id, id), eq(postQueue.status, 'pending_approval')))
       .returning()
     if (updated.length === 0) throw new PipelineError(`post ${id} tidak ada atau tidak sedang menunggu persetujuan`)
@@ -119,7 +121,7 @@ async function transition(db: Db, id: number, to: 'approved' | 'rejected') {
 }
 
 /** Hanya post yang sudah lolos RiskGuard yang bisa disetujui; yang diblokir otomatis tidak pernah pending. */
-export const approvePost = (db: Db, id: number) => transition(db, id, 'approved')
+export const approvePost = (db: Db, id: number, now = new Date()) => transition(db, id, 'approved', now)
 export const rejectPost = (db: Db, id: number) => transition(db, id, 'rejected')
 
 /** Post siap terbit: disetujui dan sudah lewat jadwal tunda 15 menit. */
