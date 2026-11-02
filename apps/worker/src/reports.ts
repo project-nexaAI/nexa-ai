@@ -1,7 +1,7 @@
 import { and, eq, gte } from 'drizzle-orm'
 import { z } from 'zod'
 import { postQueue } from '@nexa-ai/db'
-import { REPORT_SYSTEM, buildPonsPrompt, buildSummaryPrompt, ponsFacts, summaryFacts, type StockSummaryItem } from '../prompts/reports'
+import { REPORT_SYSTEM, buildPonsPrompt, buildSummaryPrompt, ponsFacts, summaryFacts, type PonsReportData, type StockSummaryItem } from '../prompts/reports'
 import { recordLlmCosts } from './cycle'
 import { DAY_MS, loadPonsHighlights, loadWhaleSummary } from './facts'
 import { MAX_PLAUSIBLE_GAP_BPS, dexGapBps, type DexSource } from './dex'
@@ -36,7 +36,7 @@ export interface ReportDeps {
 
 export type ReportStep = 'not_yet' | 'done' | 'limit' | 'retry_later' | 'no_data' | 'blocked' | 'queued' | 'error'
 
-interface Built {
+export interface Built {
   text: string
   facts: string[]
   tokens: { address: string; ageSeconds: number }[]
@@ -103,7 +103,7 @@ async function dexFor(d: ReportDeps, a: OracleAsset, oracle: { answer: bigint; d
 }
 
 /** Ringkasan Stock Token: harga oracle, perubahan dalam jendela ~24 jam, dan transfer whale dari indexer. DEX vs oracle belum tersedia. */
-async function buildSummary(d: ReportDeps, now: Date): Promise<Built | null> {
+export async function buildSummary(d: ReportDeps, now: Date): Promise<Built | null> {
   const items: StockSummaryItem[] = []
   const nowSec = BigInt(Math.floor(now.getTime() / 1000))
   for (const a of d.cfg.stockAssets) {
@@ -129,13 +129,17 @@ async function buildSummary(d: ReportDeps, now: Date): Promise<Built | null> {
   return { text: await writeText(d, buildSummaryPrompt(items)), facts: summaryFacts(items), tokens: [] }
 }
 
+/** Teks dan fakta dari data Pons yang sudah dimuat. Dipakai laporan harian dan pulse. */
+export async function buildPonsFrom(d: ReportDeps, data: PonsReportData): Promise<Built> {
+  const tokens = [...(data.top ? [data.top.token] : []), ...data.graduated].map((t) => ({ address: t.address, ageSeconds: t.ageSeconds }))
+  return { text: await writeText(d, buildPonsPrompt(data)), facts: ponsFacts(data), tokens }
+}
+
 /** Laporan Pons V2: launch paling ramai 24 jam terakhir (+ red flag) dan graduation. Token < 1 jam tidak pernah dibahas. */
 async function buildPons(d: ReportDeps, now: Date): Promise<Built | null> {
   const h = await loadPonsHighlights(d.db, now)
   if (!h.top && h.graduated.length === 0) return null
-  const data = { top: h.top ? { token: h.top, trades24h: h.top.trades24h } : null, graduated: h.graduated }
-  const tokens = [...(h.top ? [h.top] : []), ...h.graduated].map((t) => ({ address: t.address, ageSeconds: t.ageSeconds }))
-  return { text: await writeText(d, buildPonsPrompt(data)), facts: ponsFacts(data), tokens }
+  return buildPonsFrom(d, { top: h.top ? { token: h.top, trades24h: h.top.trades24h } : null, graduated: h.graduated })
 }
 
 export async function runDailyReports(d: ReportDeps, now = new Date()): Promise<{ summary: ReportStep; pons: ReportStep }> {
