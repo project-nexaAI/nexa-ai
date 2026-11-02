@@ -67,3 +67,20 @@ Salin alamat `TestUSDG` dari keluaran, lalu ketik "tUSDG sudah deploy" beserta a
 3b. Cek kunci tanpa memposting (satu permintaan baca, sekitar $0,005): isi keempat variabel itu di shell lokal Anda sendiri (bukan di chat), lalu `# Jalankan di: ROOT` → `pnpm --filter @nexa-ai/worker x:verify`. Hasil yang benar: `Kunci valid. Akun: @NexaAgentX`. Opsional `X_EXPECT_USERNAME=NexaAgentX` untuk menolak token milik akun lain.
 4. Kabari saya setelah terisi. Saya mengatur `X_POST_MODE=live`, `X_LIVE_POST_CAP=2` (testnet), `POST_INTERVAL_MINUTES=30`, dan `X_POST_KINDS` hanya jenis data, setelah kamu mengizinkan secara eksplisit.
 5. Mainnet: `X_LIVE_POST_CAP=4`. Setelah uji selesai, kembalikan ke batas terakhir sampai hari launch; saat launch kamu mengizinkan `unlimited`.
+
+## Dipertimbangkan (belum diputuskan)
+
+- **Pulse melewati topik Stock Token saat bursa AS tutup (2026-11-02):** pasar yang dituju adalah AS, jadi jam UTC tetap dipakai (tanpa WIB). Harga saham (NVDA) hanya bergerak saat bursa AS buka (sekitar 13:30 sampai 20:00 UTC, hari kerja); di luar itu oracle Chainlink menahan harga terakhir, sehingga post pulse tentang NVDA di malam hari atau akhir pekan memuat harga lama dan perubahan 24 jam tampak datar. Opsi: pulse hanya membahas topik Pons saat bursa tutup. Diputuskan pemilik untuk **dibiarkan dulu**; tinjau kembali sebelum mainnet live atau sebelum ritme 30 menit penuh dinyalakan.
+- **Papan peringkat NEXA vs KOL (2026-11-02):** head dev setuju diisi dulu "dengan data yang sesuai". Syarat data: hanya KOL yang bersedia dinilai (opt-in), setiap call punya link post X asli, dicatat segera setelah KOL memposting (harga awal diambil dari oracle saat dicatat, jadi call lama tidak boleh ditambahkan mundur), dan tidak ada data karangan di situs publik. Menunggu daftar KOL yang setuju beserta call barunya; templat CSV dan daftar persetujuan dapat disiapkan bila diminta.
+
+## Keputusan head dev: call KOL yang bisa dinilai (2026-11-03)
+
+Pencarian manual 2026-11-02/03 (sekitar 10 post dari @CryptoMichNL, @MaxCrypto, @TedPillows, @AshCrypto, @MerlijnTheTrader, dll.): **0 post memenuhi syarat** (ETH atau NVDA, arah tegas, horizon 1 sampai 90 hari, post segar, link asli). Sebagian besar berupa komentar dan pengamatan pasar, bukan tebakan terukur. Tiga akun terdaftar tanpa call di database testnet: @CryptoMichNL, @RaoulGMI, @milesdeutscher.
+
+Pilihan yang perlu diputuskan:
+1. **Jendela standar:** call tanpa horizon eksplisit diberi jendela tetap (mis. 30 hari) yang diberi tanda "horizon ditetapkan NEXA". Call dengan arah dan target jelas (mis. "$3.000 is coming next") bisa masuk. Menyimpang dari brief dan mengubah arti "menang".
+2. **Hanya KOL yang mau dinilai (sesuai brief):** KOL setuju dan menyesuaikan post agar terukur; data terkumpul lebih lambat tetapi bersih.
+3. **Kosongkan dulu** dan fokus ke Proof of Intelligence NEXA sendiri; isi NEXA vs KOL setelah ada KOL yang ikut.
+4. **Tambah aset yang didukung** (butuh feed oracle baru di NexaLedger; perubahan kontrak, di luar brief).
+
+Sampai ada keputusan, aturan yang berlaku: horizon harus dari post KOL sendiri, dicatat segera (maks. beberapa jam), dengan link post asli.
