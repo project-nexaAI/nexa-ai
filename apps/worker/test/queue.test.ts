@@ -4,6 +4,7 @@ import {
   PUBLIC_POST_DELAY_MS,
   PipelineError,
   approvePost,
+  configureRiskGuard,
   dueForPublish,
   enqueuePost,
   getPost,
@@ -55,6 +56,25 @@ describe.skipIf(!dbUp)('antrian persetujuan', () => {
     const post = await getPost(db, r.id)
     expect(post?.scheduledAt?.getTime()).toBe(T0.getTime() + PUBLIC_POST_DELAY_MS)
     expect(post?.mode).toBe('dry')
+  })
+
+  it('APPROVAL_MODE=risky: post aman langsung approved (dan jadi alert Pro), balasan mention tetap menunggu manusia, yang diblokir tetap ditolak', async () => {
+    configureRiskGuard({ approvalMode: 'risky' })
+    try {
+      const ok = await enqueuePost(db, summary('Selisih DEX vs oracle NVDA 0.4%.'))
+      expect(ok.status).toBe('approved')
+      expect((await db.select().from(proAlerts)).map((a) => a.postId)).toEqual([ok.id])
+      const reply = await enqueuePost(db, {
+        kind: 'mention_reply',
+        mode: 'dry',
+        now: T0,
+        input: { type: 'mention_reply', text: 'Not enough data on this contract. NEXA does not guess.', dataComplete: false },
+      })
+      expect(reply.status).toBe('pending_approval')
+      expect((await enqueuePost(db, summary('Sekarang waktunya beli NVDA'))).status).toBe('rejected')
+    } finally {
+      configureRiskGuard({})
+    }
   })
 
   it('post yang diblokir RiskGuard langsung rejected dan tidak bisa disetujui', async () => {

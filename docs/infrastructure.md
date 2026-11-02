@@ -61,3 +61,5 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 
 - API publik testnet: https://api-production-bf46.up.railway.app (domain Railway dibuat 2026-10-31). `/healthz`, `/proof`, `/burn`, `/rug-radar` = 200 (data kosong); `/signals` = 404 sampai PR main -> testnet digabung. Variabel `WEB_ORIGIN` (CORS) belum diisi di service api.
 - 2026-10-31: service `indexer` dibuat di Railway (repo project-nexaAI/nexa-ai, branch testnet; build `pnpm install --frozen-lockfile`, start `pnpm --filter @nexa-ai/indexer start`). Variabel: DATABASE_URL (Session pooler Supabase, tidak ditampilkan), CHAIN_ENV=mainnet, HIGH_CREATOR_TAX_BPS=500, INDEXER_POLL_SECONDS=5; RPC_URL memakai bawaan mainnet. Membaca mainnet (read-only), menulis ke DB testnet. `api` kini punya WEB_ORIGIN = URL branch testnet Vercel. Migrasi 0004 sudah diterapkan ke Supabase testnet. Status deploy: antre (trial).
+
+**Variabel worker untuk posting X (nama saja, nilai diisi pemilik di dashboard):** `X_POST_MODE`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `X_LIVE_POST_CAP`, `POST_INTERVAL_MINUTES`, `X_POST_KINDS`, `APPROVAL_MODE`.

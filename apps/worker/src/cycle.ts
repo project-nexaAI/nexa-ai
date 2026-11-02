@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, lte } from 'drizzle-orm'
 import type { Address, Hex } from 'viem'
 import { costLog, postQueue, predictions } from '@nexa-ai/db'
 import { computePredictionHash, DIRECTION, type Direction } from '@nexa-ai/shared'
@@ -8,6 +8,7 @@ import { decryptJson, encryptJson, randomSalt } from './crypto'
 import type { LedgerClient } from './ledger'
 import { generateStructured, type LlmClient, type Usage } from './llm'
 import { mirrorToBackup, type Notifier } from './telegram'
+import { XApiError, type XClient } from './x'
 import { PipelineError, dueForPublish, enqueuePost, type Db, type EnqueueResult, type PostMode } from './queue'
 
 export const PREDICTION_HORIZON_SECONDS = 7 * 24 * 3600
@@ -20,6 +21,18 @@ export interface CycleDeps {
   mode: PostMode
   /** Kanal cadangan publik (Telegram); dipakai bersamaan dengan post publik. Opsional. */
   backup?: Notifier
+  /** Kebijakan penerbitan ke X. Tanpa ini post bermode live tidak pernah terbit (dry tetap jalan). */
+  publish?: PublishPolicy
+}
+
+export interface PublishPolicy {
+  x: XClient
+  /** Batas jumlah post live sepanjang masa di database ini; 0 = tidak ada post live. Setelah tercapai, penerbit berhenti sendiri. */
+  liveCap: number
+  /** Jeda minimum antar post live (ms), mis. 30 menit. */
+  minGapMs: number
+  /** Jenis post (kind) yang boleh keluar ke X; kosong/tidak diisi = semua. */
+  kinds?: string[]
 }
 
 interface Preimage {
@@ -142,20 +155,58 @@ export async function queuePredictionPost(deps: CycleDeps, id: number): Promise<
 const X_POST_COST_USD_MICROS = 15_000n
 
 /**
- * Menerbitkan post yang sudah disetujui dan lewat jadwal. Mode dry: hanya log + tandai posted.
- * Mode live belum diimplementasikan: X live butuh izin eksplisit pemilik proyek.
+ * Menerbitkan post yang sudah disetujui dan lewat jadwal.
+ * Mode dry: hanya log + tandai posted. Mode live: hanya bila kebijakan penerbitan ada dan semua pengaman lolos:
+ * jumlah post live belum mencapai batas (`liveCap`), jeda minimum antar post terpenuhi, dan jenis post diizinkan.
+ * Post "diklaim" (status posted) SEBELUM dikirim ke X, supaya restart atau proses ganda tidak pernah mengirim dua kali.
  */
 export async function publishDue(deps: CycleDeps, now = new Date()): Promise<number[]> {
   const due = await dueForPublish(deps.db, now)
   const published: number[] = []
   for (const post of due) {
-    if (post.mode !== 'dry') throw new PipelineError('mode live belum diaktifkan (menunggu izin pemilik proyek)')
-    console.log(`[x:dry] post #${post.id} (${post.kind}): ${post.content}`)
-    await deps.db
-      .update(postQueue)
-      .set({ status: 'posted', postedAt: now, externalId: `dry-${post.id}` })
-      .where(and(eq(postQueue.id, post.id), eq(postQueue.status, 'approved')))
-    await deps.db.insert(costLog).values({ category: 'x_api', ref: 'post:dry', usdMicros: 0n })
+    if (post.mode === 'live') {
+      const policy = deps.publish
+      if (!policy) continue // tanpa kredensial X: post live menunggu, tidak membuat siklus gagal
+      if (policy.kinds && policy.kinds.length > 0 && !policy.kinds.includes(post.kind)) continue
+      const livePosted = await deps.db.select({ n: count() }).from(postQueue).where(and(eq(postQueue.mode, 'live'), eq(postQueue.status, 'posted')))
+      if (Number(livePosted[0]?.n ?? 0) >= policy.liveCap) break // batas tercapai: penerbit berhenti sampai batas dinaikkan
+      const [last] = await deps.db
+        .select({ at: postQueue.postedAt })
+        .from(postQueue)
+        .where(and(eq(postQueue.mode, 'live'), eq(postQueue.status, 'posted')))
+        .orderBy(desc(postQueue.postedAt))
+        .limit(1)
+      if (last?.at && now.getTime() - last.at.getTime() < policy.minGapMs) break
+
+      const claimed = await deps.db
+        .update(postQueue)
+        .set({ status: 'posted', postedAt: now, externalId: 'claimed' })
+        .where(and(eq(postQueue.id, post.id), eq(postQueue.status, 'approved')))
+        .returning({ id: postQueue.id })
+      if (claimed.length === 0) continue
+      try {
+        const sent = await policy.x.post(post.content, post.replyTo ? { replyTo: post.replyTo } : {})
+        await deps.db.update(postQueue).set({ externalId: sent.id }).where(eq(postQueue.id, post.id))
+        await deps.db.insert(costLog).values({ category: 'x_api', ref: 'post', usdMicros: X_POST_COST_USD_MICROS })
+        console.log(`[x:live] post #${post.id} (${post.kind}) terbit: ${sent.id}`)
+      } catch (err) {
+        const retryable = err instanceof XApiError && err.retryable
+        // Sementara: kembalikan ke antrian dan coba lagi siklus berikutnya. Permanen: tolak supaya tidak diulang terus.
+        await deps.db
+          .update(postQueue)
+          .set(retryable ? { status: 'approved', postedAt: null, externalId: null } : { status: 'rejected', externalId: null })
+          .where(eq(postQueue.id, post.id))
+        console.error(`[x:live] post #${post.id} gagal${retryable ? ' (akan dicoba lagi)' : ' (ditolak, tidak diulang)'}: ${err instanceof Error ? err.message : String(err)}`)
+        break
+      }
+    } else {
+      console.log(`[x:dry] post #${post.id} (${post.kind}): ${post.content}`)
+      await deps.db
+        .update(postQueue)
+        .set({ status: 'posted', postedAt: now, externalId: `dry-${post.id}` })
+        .where(and(eq(postQueue.id, post.id), eq(postQueue.status, 'approved')))
+      await deps.db.insert(costLog).values({ category: 'x_api', ref: 'post:dry', usdMicros: 0n })
+    }
     if (post.predictionId !== null) {
       await deps.db
         .update(predictions)
