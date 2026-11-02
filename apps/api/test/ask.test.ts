@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { encodeAbiParameters, encodeEventTopics, getAddress, parseAbi } from 'viem'
 import { askPayments, createDb, ponsTokens, ponsTrades } from '@nexa-ai/db'
-import { askResponseSchema } from '@nexa-ai/api-client'
+import { askPlanResponseSchema, askResponseSchema } from '@nexa-ai/api-client'
 import { buildApp } from '../src/app'
 import type { AskConfig } from '../src/ask'
 
@@ -108,6 +108,35 @@ describe.skipIf(!dbUp)('POST /ask (berbayar)', () => {
   it('mati (503) selama fitur berbayar mati atau Ask belum dikonfigurasi', async () => {
     expect((await call(mk(false), body(h(10)))).statusCode).toBe(503)
     expect((await call(mk(true, false), body(h(10)))).statusCode).toBe(503)
+  })
+
+  it('GET /ask/plan: harga, penerima, token, chain; 503 bila mati atau chain belum dikonfigurasi', async () => {
+    const withChain = buildApp({
+      db,
+      explorerUrl: 'https://explorer.example.test',
+      paidFeaturesEnabled: true,
+      now: () => NOW,
+      ask: {
+        client: fakeClient(receipts),
+        usdg: USDG,
+        recipient: TREASURY,
+        minAmount: 1_000_000n,
+        chainId: 46630,
+        chain: { name: 'Robinhood Chain Testnet', rpcUrl: 'https://rpc.example.test', explorerUrl: 'https://explorer.example.test' },
+      },
+    })
+    const r = await withChain.inject({ method: 'GET', url: '/ask/plan' })
+    expect(r.statusCode).toBe(200)
+    expect(askPlanResponseSchema.parse(r.json())).toEqual({
+      price: { raw: '1000000', decimals: 6, formatted: '1' },
+      recipient: TREASURY,
+      usdgAddress: USDG,
+      chainId: 46630,
+      chain: { name: 'Robinhood Chain Testnet', rpcUrl: 'https://rpc.example.test', explorerUrl: 'https://explorer.example.test' },
+    })
+    expect((await mk(false).inject({ method: 'GET', url: '/ask/plan' })).statusCode).toBe(503)
+    expect((await mk(true, false).inject({ method: 'GET', url: '/ask/plan' })).statusCode).toBe(503)
+    expect((await mk().inject({ method: 'GET', url: '/ask/plan' })).statusCode).toBe(503) // tanpa chainId
   })
 
   it('400 untuk body tidak valid', async () => {

@@ -1,16 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { encodeFunctionData, getAddress, parseAbi } from 'viem'
 import { createApiClient, type AlertEvent, type MeResponse, type ProPlanResponse, type TelegramLinkResponse } from '@nexa-ai/api-client'
+import { PAYMENT_FAILED, sendUsdgPayment, sleep, walletMessage } from '@/lib/wallet-pay'
 import { SESSION_EVENT, announceMeChanged, clearToken, getToken } from '@/lib/session'
-
-type Eip1193 = { request(a: { method: string; params?: unknown[] }): Promise<unknown> }
-const erc20 = parseAbi(['function transfer(address to, uint256 value) returns (bool)'])
 
 const statusOf = (err: unknown) => /HTTP (\d+)/.exec(err instanceof Error ? err.message : '')?.[1] ?? ''
 const utc = (iso: string) => `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const SUBSCRIBE_MESSAGES: Record<string, string> = {
   '400': 'That does not look like a transaction hash.',
@@ -20,23 +16,6 @@ const SUBSCRIBE_MESSAGES: Record<string, string> = {
   '409': 'That payment was already used.',
   '503': 'NEXA Pro is not open yet. Paid features are switched on after the legal review.',
   '404': 'NEXA Pro is not available yet.',
-}
-
-/** MetaMask menjawab 4902 untuk chain yang belum ditambahkan; sebagian versi membungkusnya (-32603 + data.originalError). */
-function isUnknownChain(err: unknown): boolean {
-  const e = err as { code?: number; data?: { originalError?: { code?: number } } } | null
-  return e?.code === 4902 || e?.data?.originalError?.code === 4902 || (e?.code === -32603 && /unrecognized chain|not been added/i.test(String((err as Error).message)))
-}
-
-function walletMessage(err: unknown): string | null {
-  const msg = err instanceof Error ? err.message : ''
-  const code = (err as { code?: number } | null)?.code
-  if (/insufficient funds|exceeds balance/i.test(msg)) return 'Your wallet does not have enough USDG or ETH (for gas) on this network.'
-  if (msg === 'no-wallet') return 'No browser wallet found. Install a wallet such as MetaMask, then reload.'
-  if (msg === 'wrong-account') return 'Your wallet is on a different account than the one you signed in with. Switch accounts, then try again.'
-  if (code === 4001 || /rejected|denied/i.test(msg)) return 'The wallet request was closed. Nothing was sent.'
-  if (isUnknownChain(err)) return 'Your wallet does not know this network yet. Add it in your wallet, then try again.'
-  return null
 }
 
 export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
@@ -150,45 +129,16 @@ export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
     setBusy('pay')
     setNote(null)
     try {
-      const eth = (window as unknown as { ethereum?: Eip1193 }).ethereum
-      if (!eth) throw new Error('no-wallet')
-      const [from] = (await eth.request({ method: 'eth_requestAccounts' })) as string[]
-      if (getAddress(from!) !== me.address) throw new Error('wrong-account')
-      const chainHex = `0x${plan.chainId.toString(16)}`
-      try {
-        await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: chainHex }] })
-      } catch (err) {
-        // Wallet belum mengenal jaringan ini: minta wallet menambahkannya (MetaMask menampilkan konfirmasi), lalu lanjut.
-        if (!plan.chain || !isUnknownChain(err)) throw err
-        await eth.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: chainHex,
-              chainName: plan.chain.name,
-              nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-              rpcUrls: [plan.chain.rpcUrl],
-              blockExplorerUrls: [plan.chain.explorerUrl],
-            },
-          ],
-        })
+      const paid = await sendUsdgPayment(plan, me.address, () => setNote({ kind: 'ok', text: 'Payment sent. Waiting for it to confirm…' }))
+      if (paid.confirmed) {
+        await activate(paid.hash)
+        return
       }
-      const data = encodeFunctionData({ abi: erc20, functionName: 'transfer', args: [getAddress(plan.recipient), BigInt(plan.price.raw)] })
-      const hash = (await eth.request({ method: 'eth_sendTransaction', params: [{ from, to: plan.usdgAddress, data }] })) as string
-      setNote({ kind: 'ok', text: 'Payment sent. Waiting for it to confirm…' })
-      for (let i = 0; i < 60; i++) {
-        const receipt = (await eth.request({ method: 'eth_getTransactionReceipt', params: [hash] })) as { status?: string } | null
-        if (receipt) {
-          if (receipt.status !== '0x1') throw new Error('The payment transaction failed on-chain. Nothing was charged for Pro.')
-          await activate(hash)
-          return
-        }
-        await sleep(2000)
-      }
+      const hash = paid.hash
       setTxHash(hash)
       setNote({ kind: 'ok', text: 'The payment is still confirming. Press "Activate with a transaction hash" in a minute.' })
     } catch (err) {
-      setNote({ kind: 'err', text: walletMessage(err) ?? (err instanceof Error && err.message.startsWith('The payment') ? err.message : 'Something went wrong. Try again in a moment.') })
+      setNote({ kind: 'err', text: walletMessage(err) ?? (err instanceof Error && err.message === PAYMENT_FAILED ? err.message : 'Something went wrong. Try again in a moment.') })
     } finally {
       setBusy(null)
     }

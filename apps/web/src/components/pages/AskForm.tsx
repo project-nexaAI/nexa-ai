@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createApiClient, type AskResponse } from '@nexa-ai/api-client'
+import { useEffect, useMemo, useState } from 'react'
+import { createApiClient, type AskPlanResponse, type AskResponse } from '@nexa-ai/api-client'
 import { bpsText, fmtAge } from '@/lib/format'
 import { getToken } from '@/lib/session'
+import { PAYMENT_FAILED, sendUsdgPayment, walletMessage } from '@/lib/wallet-pay'
 
 const CREDIT_MESSAGES: Record<string, string> = {
   '401': 'Connect your wallet in the top bar first to use a free holder credit.',
@@ -20,27 +21,82 @@ const MESSAGES: Record<string, string> = {
   '404': 'Ask NEXA is not available yet.',
 }
 
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/
+
 export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
+  const client = useMemo(() => createApiClient({ baseUrl: apiUrl }), [apiUrl])
   const [address, setAddress] = useState('')
   const [txHash, setTxHash] = useState('')
   const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AskResponse | null>(null)
+  /** Rencana pembayaran; null = pembayaran dari wallet belum tersedia, form manual (tempel hash) tetap bisa dipakai. */
+  const [plan, setPlan] = useState<AskPlanResponse | null>(null)
+  /** Pembayaran yang sudah terkirim tetapi laporannya belum jadi (mis. token < 1 jam): dipakai lagi, tidak bayar dua kali. */
+  const [paidHash, setPaidHash] = useState<string | null>(null)
 
   const [signedIn, setSignedIn] = useState(false)
   useEffect(() => setSignedIn(Boolean(getToken())), [])
+  useEffect(() => {
+    let alive = true
+    client
+      .getAskPlan()
+      .then((p) => alive && setPlan(p))
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [client])
+
+  async function requestReport(body: { address: string; txHash?: string }, token?: string, credit = false) {
+    try {
+      setResult(await client.ask(body, token))
+      setPaidHash(null)
+    } catch (err) {
+      const code = /HTTP (\d+)/.exec(err instanceof Error ? err.message : '')?.[1] ?? ''
+      let text = (credit ? CREDIT_MESSAGES[code] : undefined) ?? MESSAGES[code] ?? 'Something went wrong. Try again in a moment.'
+      // Bayar sudah terkirim tetapi laporan gagal sebelum pembayaran dipakai: arahkan untuk mencoba lagi tanpa membayar ulang.
+      if (code === '422' && body.txHash) text += ' Press the button again to retry with the same payment.'
+      setError(text)
+    }
+  }
 
   async function run(useCredit: boolean) {
     setBusy(true)
     setError(null)
     setResult(null)
+    setStatus(null)
+    await requestReport(useCredit ? { address: address.trim() } : { address: address.trim(), txHash: txHash.trim() }, useCredit ? (getToken() ?? undefined) : undefined, useCredit)
+    setBusy(false)
+  }
+
+  /** Satu klik: bayar dari wallet, tunggu konfirmasi, lalu minta laporan. Pembayaran yang sudah ada dipakai lagi. */
+  async function payAndAsk() {
+    if (!plan) return
+    setBusy(true)
+    setError(null)
+    setResult(null)
     try {
-      const client = createApiClient({ baseUrl: apiUrl })
-      setResult(await client.ask(useCredit ? { address: address.trim() } : { address: address.trim(), txHash: txHash.trim() }, useCredit ? (getToken() ?? undefined) : undefined))
+      let hash = paidHash
+      if (!hash) {
+        setStatus('Confirm the payment in your wallet…')
+        const paid = await sendUsdgPayment(plan, undefined, () => setStatus('Payment sent. Waiting for it to confirm…'))
+        hash = paid.hash
+        if (!paid.confirmed) {
+          setPaidHash(hash)
+          setError('The payment is still confirming. Press the button again in a minute; the same payment will be used.')
+          return
+        }
+        setPaidHash(hash)
+      }
+      setStatus('Payment confirmed. Building the report…')
+      await requestReport({ address: address.trim(), txHash: hash })
     } catch (err) {
-      const code = /HTTP (\d+)/.exec(err instanceof Error ? err.message : '')?.[1] ?? ''
-      setError((useCredit ? CREDIT_MESSAGES[code] : undefined) ?? MESSAGES[code] ?? 'Something went wrong. Try again in a moment.')
+      if (err instanceof Error && err.message === PAYMENT_FAILED) setPaidHash(null)
+      setError(walletMessage(err) ?? (err instanceof Error && err.message === PAYMENT_FAILED ? err.message : 'Something went wrong. Try again in a moment.'))
     } finally {
+      setStatus(null)
       setBusy(false)
     }
   }
@@ -51,23 +107,44 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
         className="pg-form"
         onSubmit={(e) => {
           e.preventDefault()
-          void run(false)
+          void (plan ? payAndAsk() : run(false))
         }}
       >
         <label>
           <span className="k">Token address</span>
           <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="0x…" required pattern="0x[0-9a-fA-F]{40}" spellCheck={false} autoComplete="off" />
         </label>
-        <label>
-          <span className="k">Payment transaction hash</span>
-          <input value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x…" required pattern="0x[0-9a-fA-F]{64}" spellCheck={false} autoComplete="off" />
-        </label>
-        <button className="btn btn-org" type="submit" disabled={busy}>
-          {busy ? 'Checking payment…' : 'Get the report '}
-          <span className="ar">→</span>
-        </button>
+        {plan ? (
+          <>
+            <button className="btn btn-org" type="submit" disabled={busy || !ADDRESS.test(address.trim())}>
+              {busy ? (status ?? 'Working…') : paidHash ? 'Get the report (already paid) ' : `Pay ${plan.price.formatted} USDG and get the report `}
+              <span className="ar">→</span>
+            </button>
+            <details className="pg-note" style={{ maxWidth: 640 }}>
+              <summary>Already paid? Use a transaction hash instead</summary>
+              <label style={{ display: 'block', marginTop: 10 }}>
+                <span className="k">Payment transaction hash</span>
+                <input value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x…" pattern="0x[0-9a-fA-F]{64}" spellCheck={false} autoComplete="off" />
+              </label>
+              <button className="btn btn-ghost" type="button" style={{ marginTop: 10 }} disabled={busy || !ADDRESS.test(address.trim()) || !/^0x[0-9a-fA-F]{64}$/.test(txHash.trim())} onClick={() => void run(false)}>
+                Get the report with this hash
+              </button>
+            </details>
+          </>
+        ) : (
+          <>
+            <label>
+              <span className="k">Payment transaction hash</span>
+              <input value={txHash} onChange={(e) => setTxHash(e.target.value)} placeholder="0x…" required pattern="0x[0-9a-fA-F]{64}" spellCheck={false} autoComplete="off" />
+            </label>
+            <button className="btn btn-org" type="submit" disabled={busy}>
+              {busy ? 'Checking payment…' : 'Get the report '}
+              <span className="ar">→</span>
+            </button>
+          </>
+        )}
         {signedIn ? (
-          <button className="btn btn-ghost" type="button" disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address.trim())} onClick={() => void run(true)}>
+          <button className="btn btn-ghost" type="button" disabled={busy || !ADDRESS.test(address.trim())} onClick={() => void run(true)}>
             Use a free holder credit
           </button>
         ) : null}

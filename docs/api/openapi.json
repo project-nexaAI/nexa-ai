@@ -1911,6 +1911,112 @@
         }
       }
     },
+    "/ask/plan": {
+      "get": {
+        "summary": "Ask NEXA: harga, penerima USDG, token, dan chain pembayaran, agar web bisa membayar langsung dari wallet. Mati sampai PAID_FEATURES_ENABLED=true.",
+        "responses": {
+          "200": {
+            "description": "Rencana Ask NEXA",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "public, max-age=15"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "price": {
+                      "type": "object",
+                      "properties": {
+                        "raw": {
+                          "type": "string",
+                          "pattern": "^\\d+$"
+                        },
+                        "decimals": {
+                          "type": "integer"
+                        },
+                        "formatted": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "raw",
+                        "decimals",
+                        "formatted"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "recipient": {
+                      "type": "string"
+                    },
+                    "usdgAddress": {
+                      "type": "string"
+                    },
+                    "chainId": {
+                      "type": "integer",
+                      "exclusiveMinimum": true,
+                      "minimum": 0
+                    },
+                    "chain": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "rpcUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "explorerUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "rpcUrl",
+                        "explorerUrl"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "price",
+                    "recipient",
+                    "usdgAddress",
+                    "chainId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "fitur berbayar belum aktif",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ask": {
       "post": {
         "summary": "Ask NEXA ($1 USDG, atau kredit gratis bulanan holder $NEXA dengan sesi login tanpa txHash): ringkasan risiko satu token dari data indexer. Pembayaran diverifikasi on-chain; mati sampai PAID_FEATURES_ENABLED=true.",

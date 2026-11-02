@@ -241,6 +241,10 @@ export const proPlanResponseSchema = z.object({
 })
 export type ProPlanResponse = z.infer<typeof proPlanResponseSchema>
 
+/** Ask NEXA: harga, penerima, dan chain pembayaran. Bentuk sama dengan rencana Pro tanpa lama periode dan Telegram. */
+export const askPlanResponseSchema = proPlanResponseSchema.omit({ durationDays: true, telegramBot: true })
+export type AskPlanResponse = z.infer<typeof askPlanResponseSchema>
+
 export const proSubscribeRequestSchema = z.object({ txHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/) })
 export type ProSubscribeRequest = z.infer<typeof proSubscribeRequestSchema>
 

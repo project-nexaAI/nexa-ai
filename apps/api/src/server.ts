@@ -57,6 +57,8 @@ const ask =
         usdg: network.usdg,
         recipient: askRecipient as `0x${string}`,
         minAmount: env.ASK_PRICE_USDG_MICROS,
+        chainId: network.chainId,
+        chain: network.chain,
       }
     : undefined
 const proRecipient = env.PRO_PAYMENT_RECIPIENT ?? askRecipient
