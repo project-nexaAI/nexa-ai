@@ -217,8 +217,10 @@ export function Feed({ market, radar }: { market: MarketResponse | null; radar: 
           {" "}
           <a href={X_URL} target="_blank" rel="noopener" className="btn btn-light magnet">
             {"Follow on X "}
-            <span className="ar">
-              →
+            <span className="ar ar-ico" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <use href="#nx-x" />
+              </svg>
             </span>
           </a>
         </article>

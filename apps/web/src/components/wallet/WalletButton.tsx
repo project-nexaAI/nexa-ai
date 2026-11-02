@@ -124,8 +124,10 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
             <span className="wl-short">Connect</span>
           </>
         )}
-        <span className="ar" aria-hidden="true">
-          {me ? '▾' : '→'}
+        <span className="ar ar-ico ar-wallet" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <use href="#nx-wallet" />
+          </svg>
         </span>
       </button>
 
