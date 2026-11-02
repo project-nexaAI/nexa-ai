@@ -1,34 +1,41 @@
 /*
- * Loader pembuka (hanya sekali per sesi). Ini elemen yang DITAMBAHKAN (bukan dari desain HTML asli): cincin oranye berputar,
- * lalu logo dari desainer tersapu dari kiri ke kanan (putih dulu, oranye terakhir), berpendar, dan layar terbuka.
- * Keluarnya murni CSS (animation-fill both + visibility hidden), jadi layar tidak pernah menutup situs walau JS gagal.
- * Dilewati bila sesi sudah melihatnya atau pengguna meminta gerakan dikurangi (html[data-splash="skip"]).
+ * Loader pembuka. Ini elemen yang DITAMBAHKAN (bukan dari desain HTML asli): cincin oranye berputar dua kali, lalu logo dari
+ * desainer tersapu dari kiri ke kanan (putih dulu, oranye terakhir), berpendar, dan layar terbuka perlahan (total sekitar 3,4 detik).
+ * Keluarnya murni CSS (animation-fill + visibility hidden), jadi layar tidak pernah menutup situs walau JS gagal.
+ * Tampil saat pertama dibuka dan saat refresh; dilewati saat berpindah halaman di dalam situs atau bila pengguna meminta gerakan
+ * dikurangi (html[data-splash="skip"], diputuskan oleh skrip di <head>).
  */
 .nx-splash{position:fixed;inset:0;z-index:9999;background:var(--bg,#0A0A0A);display:grid;place-items:center;cursor:pointer;
-  animation:nx-exit .4s cubic-bezier(.4,0,.2,1) 2s both}
+  animation:nx-exit .6s cubic-bezier(.4,0,.2,1) 2.85s both}
 .nx-stage{width:min(34vmin,260px);aspect-ratio:1;position:relative}
 
+/* Jalur redup supaya putaran terbaca jelas */
+.nx-track{position:absolute;inset:-14%;border-radius:50%;border:2px solid rgba(255,255,255,.07);
+  animation:nx-track-in .3s ease-out 0s both,nx-ring-out .4s cubic-bezier(.4,0,.2,1) 1.2s both}
 .nx-ring{position:absolute;inset:-14%;border-radius:50%;
-  background:conic-gradient(from 0deg,transparent 0 55%,rgba(255,90,31,.15) 70%,var(--org,#FF5A1F) 100%);
-  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-          mask:radial-gradient(farthest-side,transparent calc(100% - 3px),#000 calc(100% - 2px));
-  animation:nx-ring-spin 1s cubic-bezier(.5,0,.3,1) 0s both,nx-ring-out .35s cubic-bezier(.4,0,.2,1) .8s both}
+  background:conic-gradient(from 0deg,transparent 0 30%,rgba(255,90,31,.25) 60%,var(--org,#FF5A1F) 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+          mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));
+  animation:nx-ring-spin 1.5s cubic-bezier(.45,0,.35,1) 0s both,nx-ring-out .4s cubic-bezier(.4,0,.2,1) 1.2s both}
 
-.nx-mark{position:absolute;inset:0;animation:nx-mark-in .45s cubic-bezier(.2,.7,.2,1) .85s both}
-.nx-halo{position:absolute;inset:0;animation:nx-pulse .5s ease-in-out 1.6s both}
+.nx-mark{position:absolute;inset:0;
+  animation:nx-mark-in .5s cubic-bezier(.2,.7,.2,1) 1.3s both,nx-mark-out .6s cubic-bezier(.4,0,.2,1) 2.85s forwards}
+.nx-halo{position:absolute;inset:0;animation:nx-pulse .8s ease-in-out 2.1s both}
 .nx-glow{position:absolute;inset:0;background:url(/nexa-mark.png) center/contain no-repeat;
   -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 38%,transparent 62%);
           mask-image:linear-gradient(90deg,#000 0%,#000 38%,transparent 62%);
   -webkit-mask-size:260% 100%;mask-size:260% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
-  animation:nx-wipe .8s cubic-bezier(.65,0,.35,1) .85s both}
+  animation:nx-wipe .9s cubic-bezier(.65,0,.35,1) 1.3s both}
 
-@keyframes nx-ring-spin{from{transform:rotate(-120deg) scale(.7);opacity:0}15%{opacity:1}to{transform:rotate(540deg) scale(1);opacity:1}}
-@keyframes nx-ring-out{from{opacity:1;transform:rotate(540deg) scale(1)}to{opacity:0;transform:rotate(600deg) scale(.82)}}
+@keyframes nx-track-in{from{opacity:0}to{opacity:1}}
+@keyframes nx-ring-spin{from{transform:rotate(-90deg) scale(.7);opacity:0}12%{opacity:1}to{transform:rotate(630deg) scale(1);opacity:1}}
+@keyframes nx-ring-out{from{opacity:1}to{opacity:0;transform:scale(.8)}}
 @keyframes nx-mark-in{from{opacity:0;transform:scale(.9);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
 @keyframes nx-wipe{from{-webkit-mask-position:100% 0;mask-position:100% 0}to{-webkit-mask-position:0% 0;mask-position:0% 0}}
-@keyframes nx-pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,90,31,0))}50%{filter:drop-shadow(0 0 26px rgba(255,90,31,.55))}}
-@keyframes nx-exit{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.06);visibility:hidden}}
+@keyframes nx-pulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,90,31,0))}50%{filter:drop-shadow(0 0 34px rgba(255,90,31,.7))}}
+@keyframes nx-mark-out{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(1.14)}}
+@keyframes nx-exit{from{opacity:1}to{opacity:0;visibility:hidden}}
 
-/* Sesi yang sudah melihatnya, atau pengguna yang meminta gerakan dikurangi: langsung ke situs. */
+/* Dilewati: berpindah halaman di dalam situs, atau pengguna meminta gerakan dikurangi. */
 html[data-splash="skip"] .nx-splash{display:none}
 @media (prefers-reduced-motion:reduce){.nx-splash{display:none}}
