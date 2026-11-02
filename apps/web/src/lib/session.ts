@@ -5,6 +5,10 @@ const KEY = 'nexa_session'
 export const SESSION_EVENT = 'nexa-session'
 const announce = () => window.dispatchEvent(new Event(SESSION_EVENT))
 
+/** Status akun berubah (mis. Pro baru aktif): menu dompet memuat ulang datanya. */
+export const ME_CHANGED_EVENT = 'nexa-me-changed'
+export const announceMeChanged = () => window.dispatchEvent(new Event(ME_CHANGED_EVENT))
+
 export function getToken(): string | null {
   try {
     return window.sessionStorage.getItem(KEY)

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { encodeFunctionData, getAddress, parseAbi } from 'viem'
 import { createApiClient, type AlertEvent, type MeResponse, type ProPlanResponse, type TelegramLinkResponse } from '@nexa-ai/api-client'
-import { SESSION_EVENT, clearToken, getToken } from '@/lib/session'
+import { SESSION_EVENT, announceMeChanged, clearToken, getToken } from '@/lib/session'
 
 type Eip1193 = { request(a: { method: string; params?: unknown[] }): Promise<unknown> }
 const erc20 = parseAbi(['function transfer(address to, uint256 value) returns (bool)'])
@@ -74,6 +74,7 @@ export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
     }
     try {
       setMe(await client.me(token))
+      announceMeChanged()
     } catch (err) {
       if (statusOf(err) === '401' || statusOf(err) === '503') clearToken()
       setMe(null)
