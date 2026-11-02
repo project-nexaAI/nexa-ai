@@ -5,6 +5,7 @@ import { getAddress } from 'viem'
 import { createSiweMessage } from 'viem/siwe'
 import { createApiClient, type MeResponse } from '@nexa-ai/api-client'
 import { ME_CHANGED_EVENT, clearToken, getToken, setToken } from '@/lib/session'
+import { revokeWalletAccess } from '@/lib/wallet-access'
 
 type Eip1193 = { request(a: { method: string; params?: unknown[] }): Promise<unknown> }
 
@@ -97,7 +98,8 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
     clearToken()
     setMe(null)
     setOpen(false)
-    if (token) await createApiClient({ baseUrl: apiUrl }).logout(token).catch(() => undefined)
+    // Sesi NEXA dicabut di server, dan izin koneksi di wallet diputus bila wallet mendukungnya (kalau tidak, tidak ada yang berubah).
+    await Promise.all([token ? createApiClient({ baseUrl: apiUrl }).logout(token).catch(() => undefined) : undefined, revokeWalletAccess()])
   }
 
   const h = me?.holder
