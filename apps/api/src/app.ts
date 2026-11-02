@@ -48,6 +48,8 @@ export interface AppConfig {
   db: Db
   /** Basis Blockscout, tanpa slash akhir (mis. https://explorer.testnet.chain.robinhood.com). */
   explorerUrl: string
+  /** Basis Blockscout untuk alamat token Pons (indexer membaca mainnet, sedangkan explorerUrl bisa testnet). Default: explorerUrl. */
+  tokenExplorerUrl?: string
   /** Asal web yang diizinkan CORS (env WEB_ORIGIN; beberapa asal dipisah koma). Kosong = CORS dimatikan. */
   webOrigin?: string
   /** alamat aset (huruf kecil) -> simbol, untuk prediksi yang sudah di-reveal. */
@@ -189,7 +191,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
         creatorTaxBps: r.creatorTaxBps,
         topHolderShareBps: r.topHolderShareBps,
         redFlags: r.redFlags,
-        explorerUrl: `${cfg.explorerUrl}/address/${r.address}`,
+        explorerUrl: `${cfg.tokenExplorerUrl ?? cfg.explorerUrl}/address/${r.address}`,
       })),
     })
     cache(reply)

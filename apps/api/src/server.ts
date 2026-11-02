@@ -35,6 +35,8 @@ const env = z
     HOLDER_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
     SESSION_TTL_HOURS: z.coerce.number().int().min(1).default(24),
     EXPLORER_URL: z.string().url().default('https://explorer.testnet.chain.robinhood.com'),
+    /** Explorer untuk link token Pons: token yang diindeks ada di mainnet, jadi default mainnet (bukan EXPLORER_URL). */
+    TOKEN_EXPLORER_URL: z.string().url().default(CHAINS.mainnet.explorer),
     /** JSON: {"0xalamat": "NVDA"} */
     ASSET_SYMBOLS: z.string().default('{}'),
   })
@@ -96,6 +98,7 @@ const holder =
 const app = buildApp({
   db,
   explorerUrl: env.EXPLORER_URL.replace(/\/$/, ''),
+  tokenExplorerUrl: env.TOKEN_EXPLORER_URL.replace(/\/$/, ''),
   webOrigin: env.WEB_ORIGIN,
   leaderboardMinScored: env.LEADERBOARD_MIN_SCORED,
   paidFeaturesEnabled: env.PAID_FEATURES_ENABLED === 'true',
