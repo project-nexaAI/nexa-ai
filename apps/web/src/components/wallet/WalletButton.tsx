@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getAddress } from 'viem'
 import { createSiweMessage } from 'viem/siwe'
 import { createApiClient, type MeResponse } from '@nexa-ai/api-client'
-import { clearToken, getToken, setToken } from '@/lib/session'
+import { ME_CHANGED_EVENT, clearToken, getToken, setToken } from '@/lib/session'
 
 type Eip1193 = { request(a: { method: string; params?: unknown[] }): Promise<unknown> }
 
@@ -42,6 +42,9 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
 
   useEffect(() => {
     void load()
+    const onChanged = () => void load()
+    window.addEventListener(ME_CHANGED_EVENT, onChanged)
+    return () => window.removeEventListener(ME_CHANGED_EVENT, onChanged)
   }, [load])
 
   // Tutup panel saat klik di luar atau tekan Escape.

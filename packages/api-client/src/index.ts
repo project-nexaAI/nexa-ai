@@ -4,6 +4,7 @@ import alertFixture from '../../../docs/api/fixtures/alert.json'
 import proPlanFixture from '../../../docs/api/fixtures/pro-plan.json'
 import proSubscribeFixture from '../../../docs/api/fixtures/pro-subscribe.json'
 import telegramLinkFixture from '../../../docs/api/fixtures/telegram-link.json'
+import askPlanFixture from '../../../docs/api/fixtures/ask-plan.json'
 import askFixture from '../../../docs/api/fixtures/ask.json'
 import burnFixture from '../../../docs/api/fixtures/burn.json'
 import meFixture from '../../../docs/api/fixtures/me.json'
@@ -28,6 +29,8 @@ import {
   type ProSubscribeResponse,
   type TelegramLinkResponse,
   askResponseSchema,
+  askPlanResponseSchema,
+  type AskPlanResponse,
   burnResponseSchema,
   meResponseSchema,
   nonceResponseSchema,
@@ -66,6 +69,7 @@ export const fixtures = {
   burn: burnFixture,
   signals: signalsFixture,
   ask: askFixture,
+  askPlan: askPlanFixture,
   leaderboard: leaderboardFixture,
   nonce: nonceFixture,
   session: sessionFixture,
@@ -176,6 +180,11 @@ export function createApiClient(opts: ApiClientOptions = {}) {
     await send('POST', '/auth/logout', null, { token, body: {} })
   }
   /** Rencana NEXA Pro (harga, penerima, chain) untuk membangun transfer USDG. */
+  async function getAskPlan(): Promise<AskPlanResponse> {
+    if (opts.useFixtures) return askPlanResponseSchema.parse(askPlanFixture)
+    return send('GET', '/ask/plan', askPlanResponseSchema)
+  }
+
   async function getProPlan(): Promise<ProPlanResponse> {
     if (opts.useFixtures) return proPlanResponseSchema.parse(proPlanFixture)
     return send('GET', '/pro/plan', proPlanResponseSchema)
@@ -221,6 +230,7 @@ export function createApiClient(opts: ApiClientOptions = {}) {
   }
   return {
     getProPlan,
+    getAskPlan,
     proSubscribe,
     linkTelegram,
     unlinkTelegram,

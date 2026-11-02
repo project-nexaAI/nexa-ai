@@ -13,6 +13,9 @@ export interface AskConfig {
   recipient: `0x${string}`
   /** Harga minimum dalam unit terkecil USDG (6 desimal): 1_000_000 = $1. */
   minAmount: bigint
+  /** Chain pembayaran dan datanya untuk menambahkan jaringan di wallet (hanya untuk GET /ask/plan). */
+  chainId?: number
+  chain?: { name: string; rpcUrl: string; explorerUrl: string }
 }
 
 export type PaymentCheck = { ok: true; payer: string; amount: bigint } | { ok: false; reason: 'tx_not_found' | 'tx_failed' | 'no_payment' | 'underpaid' }

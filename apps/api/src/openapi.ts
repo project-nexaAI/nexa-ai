@@ -4,6 +4,7 @@ import {
   signalsWhalesResponseSchema,
   alertEventSchema,
   proPlanResponseSchema,
+  askPlanResponseSchema,
   proSubscribeRequestSchema,
   proSubscribeResponseSchema,
   telegramLinkResponseSchema,
@@ -153,6 +154,12 @@ export function buildOpenApi() {
             '402': err('subscription_required'),
             '503': err('fitur berbayar belum aktif'),
           },
+        },
+      },
+      '/ask/plan': {
+        get: {
+          summary: 'Ask NEXA: harga, penerima USDG, token, dan chain pembayaran, agar web bisa membayar langsung dari wallet. Mati sampai PAID_FEATURES_ENABLED=true.',
+          responses: { '200': ok('Rencana Ask NEXA', askPlanResponseSchema), '503': err('fitur berbayar belum aktif') },
         },
       },
       '/ask': {

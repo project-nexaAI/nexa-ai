@@ -13,6 +13,7 @@ import {
   nonceResponseSchema,
   sessionResponseSchema,
   leaderboardResponseSchema,
+  askPlanResponseSchema,
 } from '../src'
 
 describe('fixture cocok dengan skema response', () => {
@@ -22,6 +23,7 @@ describe('fixture cocok dengan skema response', () => {
   })
   it('prediction', () => expect(() => predictionResponseSchema.parse(fixtures.prediction)).not.toThrow())
   it('rug-radar', () => expect(() => rugRadarResponseSchema.parse(fixtures.rugRadar)).not.toThrow())
+  it('ask-plan', () => expect(() => askPlanResponseSchema.parse(fixtures.askPlan)).not.toThrow())
   it('market', () => expect(() => marketResponseSchema.parse(fixtures.market)).not.toThrow())
   it('burn', () => expect(() => burnResponseSchema.parse(fixtures.burn)).not.toThrow())
   it('leaderboard', () => expect(() => leaderboardResponseSchema.parse(fixtures.leaderboard)).not.toThrow())

@@ -9,6 +9,7 @@ import {
   signalsWhalesResponseSchema,
   type SignalsWhalesResponse,
   proPlanResponseSchema,
+  askPlanResponseSchema,
   proSubscribeRequestSchema,
   proSubscribeResponseSchema,
   telegramLinkResponseSchema,
@@ -484,6 +485,19 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     } finally {
       raw.end()
     }
+  })
+
+  // Rencana Ask NEXA: web membayar langsung dari wallet (tanpa menyalin alamat dan hash secara manual).
+  app.get('/ask/plan', async (_req, reply) => {
+    if (!cfg.paidFeaturesEnabled || !cfg.ask || cfg.ask.chainId === undefined) return reply.code(503).send({ error: 'paid_features_disabled' })
+    cache(reply)
+    return askPlanResponseSchema.parse({
+      price: { raw: cfg.ask.minAmount.toString(), decimals: 6, formatted: formatUnits(cfg.ask.minAmount, 6) },
+      recipient: cfg.ask.recipient,
+      usdgAddress: cfg.ask.usdg,
+      chainId: cfg.ask.chainId,
+      ...(cfg.ask.chain ? { chain: cfg.ask.chain } : {}),
+    })
   })
 
   // Ask NEXA: $1 USDG per laporan, atau kredit gratis bulanan holder $NEXA (butuh sesi login).
