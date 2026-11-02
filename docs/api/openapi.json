@@ -1394,6 +1394,28 @@
                       "exclusiveMinimum": true,
                       "minimum": 0
                     },
+                    "chain": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "rpcUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "explorerUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "rpcUrl",
+                        "explorerUrl"
+                      ],
+                      "additionalProperties": false
+                    },
                     "telegramBot": {
                       "type": "string",
                       "nullable": true

@@ -376,6 +376,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
       recipient: pro!.payment.recipient,
       usdgAddress: pro!.payment.usdg,
       chainId: pro!.chainId,
+      ...(pro!.chain ? { chain: pro!.chain } : {}),
       telegramBot: pro!.telegramBot ?? null,
     })
   })

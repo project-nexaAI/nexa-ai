@@ -234,6 +234,8 @@ export const proPlanResponseSchema = z.object({
   recipient: z.string(),
   usdgAddress: z.string(),
   chainId: z.number().int().positive(),
+  /** Data jaringan untuk wallet_addEthereumChain bila wallet belum mengenal chain ini. */
+  chain: z.object({ name: z.string(), rpcUrl: z.string().url(), explorerUrl: z.string().url() }).optional(),
   /** Username bot Telegram (tanpa @) untuk alert; null bila Telegram belum dikonfigurasi. */
   telegramBot: z.string().nullable(),
 })

@@ -47,3 +47,14 @@ $env:NEXA_LEDGER = "0xEF1fBbd8ea7dC858Dc88332AcD43Ba58b9bD81C0"
 ```
 
 Aset tiruan (deterministik): NVDA `0xaDfc1A4b4F6990753EF12aD5d29a55c718c84Dd0`, ETH `0xfcE985e2175b8667dF234961A3c1687b6A6Bcf0E`. Setelah selesai, ketik "mock sudah deploy": saya memverifikasi `feedOf` on-chain dan mencatat alamat feed.
+
+## Token uji pembayaran testnet (jalankan sendiri, PowerShell)
+
+Agar Pro dan Ask NEXA bisa dicoba di testnet tanpa uang asli. Simulasi sudah sukses; broadcast butuh password keystore.
+
+```powershell
+# Jalankan di: ROOT\contracts
+& "$env:USERPROFILE\.foundry\bin\forge.exe" script script/DeployTestUsdg.s.sol --rpc-url https://rpc.testnet.chain.robinhood.com --account deployer --sender 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D --broadcast
+```
+
+Salin alamat `TestUSDG` dari keluaran, lalu ketik "tUSDG sudah deploy" beserta alamatnya. Saya mengisi env API testnet (`PAYMENT_CHAIN_ID=46630`, `PAYMENT_USDG_ADDRESS`, `PAYMENT_RPC_URL` kosong = RPC testnet) dan men-deploy API. Setelah itu, dari wallet uji panggil `faucet()` pada TestUSDG (1000 tUSDG per panggilan) lewat explorer testnet, atau minta saya `cast send`. Wallet juga butuh sedikit ETH testnet untuk gas (faucet testnet).
