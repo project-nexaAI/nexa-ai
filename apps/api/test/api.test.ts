@@ -171,6 +171,13 @@ describe.skipIf(!dbUp)('API publik', () => {
       expect(body.items[0]?.explorerUrl).toBe(`${EXPLORER}/address/0x3333333333333333333333333333333333333333`)
     })
 
+    it('link token memakai tokenExplorerUrl bila diatur (token mainnet, explorerUrl commit bisa testnet)', async () => {
+      await db.insert(ponsTokens).values({ address: '0x3333333333333333333333333333333333333333', creator: '0xc', name: 'A', symbol: 'AAA', launchedAt: new Date(NOW.getTime() - 5_400_000), blockNumber: 1n })
+      const split = buildApp({ db, explorerUrl: EXPLORER, tokenExplorerUrl: 'https://token-explorer.example.test', now: () => NOW })
+      const body = rugRadarResponseSchema.parse((await split.inject({ method: 'GET', url: '/rug-radar' })).json())
+      expect(body.items[0]?.explorerUrl).toBe('https://token-explorer.example.test/address/0x3333333333333333333333333333333333333333')
+    })
+
     it('kosong tetap valid', async () => {
       expect(rugRadarResponseSchema.parse((await get('/rug-radar')).json()).items).toEqual([])
     })
