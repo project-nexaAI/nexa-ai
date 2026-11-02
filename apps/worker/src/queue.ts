@@ -36,6 +36,12 @@ export interface EnqueueResult {
 
 export class PipelineError extends Error {}
 
+let defaultRiskGuardConfig: Partial<RiskGuardConfig> = {}
+/** Konfigurasi RiskGuard bawaan untuk semua post (mis. approvalMode dari env). Aturan konten tidak pernah bisa dimatikan. */
+export function configureRiskGuard(cfg: Partial<RiskGuardConfig>): void {
+  defaultRiskGuardConfig = cfg
+}
+
 /**
  * Pintu masuk tunggal ke antrian. Urutan wajib brief:
  * (AI sudah menghasilkan teks) -> RiskGuard -> [prediksi: commit terkonfirmasi] -> antrian -> post.
@@ -54,7 +60,7 @@ export async function enqueuePost(db: Db, p: EnqueueParams): Promise<EnqueueResu
   }
 
   // Aturan 1: tidak ada post yang keluar sebelum lolos RiskGuard. Setiap keputusan dicatat.
-  const decision = evaluate(p.input, p.riskguardConfig)
+  const decision = evaluate(p.input, p.riskguardConfig ?? defaultRiskGuardConfig)
   const entry = toLogEntry(p.input, decision)
   await db.insert(riskguardLog).values(entry)
 

@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { CHAINS } from '@nexa-ai/shared'
 import testnetAddresses from '../../../packages/contracts-abi/addresses/testnet.json'
 import { createDb } from '@nexa-ai/db'
+import { configureRiskGuard } from './queue'
+import { createXClient } from './x'
 import { publishDue, revealMatured, type CycleDeps } from './cycle'
 import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
 import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
@@ -26,6 +28,19 @@ const env = z
     NEXA_LEDGER_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
     AGENT_PRIVATE_KEY: optionalPrivateKey,
     X_POST_MODE: z.enum(['dry', 'live']).default('dry'),
+    /** Kredensial X (OAuth 1.0a, akun @NexaAgentX). Diisi pemilik di dashboard; tidak pernah dicatat. Wajib semua bila X_POST_MODE=live. */
+    X_API_KEY: z.string().optional(),
+    X_API_SECRET: z.string().optional(),
+    X_ACCESS_TOKEN: z.string().optional(),
+    X_ACCESS_SECRET: z.string().optional(),
+    /** Batas jumlah post live sepanjang masa di database ini. 0 = tidak ada post live; 'unlimited' = tanpa batas (dinyalakan saat launch). */
+    X_LIVE_POST_CAP: z.union([z.literal('unlimited'), z.coerce.number().int().min(0)]).default(0),
+    /** Jeda minimum antar post live (menit). Arahan head dev: 30. */
+    POST_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(30),
+    /** Jenis post yang boleh keluar ke X, dipisah koma (mis. daily_summary,pons_report). Kosong = semua jenis. */
+    X_POST_KINDS: z.string().optional(),
+    /** all = semua post menunggu persetujuan manusia (30 hari pertama, brief); risky = hanya yang berisiko (sponsored, balasan, laporan risiko, yang diblokir). */
+    APPROVAL_MODE: z.enum(['all', 'risky']).default('all'),
     LOOP_SECONDS: z.coerce.number().int().min(10).default(60),
     /** Prediction of the Day: hanya berjalan bila LLM_API_KEY ada (mock LLM tidak boleh meng-commit apa pun on-chain). */
     /** Kanal cadangan publik; tanpa keduanya tidak ada Telegram dari worker. */
@@ -57,8 +72,21 @@ const env = z
   })
   .parse(process.env)
 
-// Mode live butuh izin eksplisit pemilik proyek: proses ini menolak berjalan live.
-if (env.X_POST_MODE !== 'dry') throw new Error('X_POST_MODE=live belum diizinkan')
+configureRiskGuard({ approvalMode: env.APPROVAL_MODE })
+
+// Mode live hanya diaktifkan pemilik proyek (env di dashboard) dan butuh kredensial X lengkap.
+const xCreds = env.X_API_KEY && env.X_API_SECRET && env.X_ACCESS_TOKEN && env.X_ACCESS_SECRET
+  ? { apiKey: env.X_API_KEY, apiSecret: env.X_API_SECRET, accessToken: env.X_ACCESS_TOKEN, accessSecret: env.X_ACCESS_SECRET }
+  : null
+if (env.X_POST_MODE === 'live' && !xCreds) throw new Error('X_POST_MODE=live butuh X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET')
+const publish = env.X_POST_MODE === 'live' && xCreds
+  ? {
+      x: createXClient(xCreds),
+      liveCap: env.X_LIVE_POST_CAP === 'unlimited' ? Number.POSITIVE_INFINITY : env.X_LIVE_POST_CAP,
+      minGapMs: env.POST_INTERVAL_MINUTES * 60_000,
+      ...(env.X_POST_KINDS ? { kinds: env.X_POST_KINDS.split(',').map((k) => k.trim()).filter(Boolean) } : {}),
+    }
+  : undefined
 
 const { db } = createDb(env.DATABASE_URL)
 
@@ -68,7 +96,8 @@ const deps: CycleDeps | null = ledgerReady
   ? {
       db,
       encKey: env.PREIMAGE_KEY!,
-      mode: 'dry',
+      mode: env.X_POST_MODE,
+      ...(publish ? { publish } : {}),
       ...(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? { backup: new TelegramBot(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID) } : {}),
       ledger: createLedgerClient({
         rpcUrl: env.RPC_URL,
@@ -129,7 +158,7 @@ const reports: ReportDeps | null = llm
   ? {
       db,
       llm,
-      mode: 'dry',
+      mode: env.X_POST_MODE,
       history: createFeedHistory(env.ORACLE_RPC_URL),
       ...(dexSource ? { dex: dexSource } : {}),
       cfg: { summaryHourUtc: env.DAILY_SUMMARY_HOUR_UTC, ponsHourUtc: env.PONS_REPORT_HOUR_UTC, stockAssets, maxAttemptsPerDay: 3, minRetryMs: 15 * 60 * 1000 },
@@ -199,7 +228,7 @@ console.log(
 )
 console.log(
   ledgerReady
-    ? 'worker: commit/reveal aktif (mode post dry)'
+    ? `worker: commit/reveal aktif (mode post ${env.X_POST_MODE}${publish ? `, batas ${env.X_LIVE_POST_CAP} post, jeda ${env.POST_INTERVAL_MINUTES} menit, persetujuan ${env.APPROVAL_MODE}` : ''})`
     : 'worker: commit/reveal NONAKTIF (butuh AGENT_PRIVATE_KEY, NEXA_LEDGER_ADDRESS, PREIMAGE_KEY)',
 )
 

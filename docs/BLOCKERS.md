@@ -58,3 +58,11 @@ Agar Pro dan Ask NEXA bisa dicoba di testnet tanpa uang asli. Simulasi sudah suk
 ```
 
 Salin alamat `TestUSDG` dari keluaran, lalu ketik "tUSDG sudah deploy" beserta alamatnya. Saya mengisi env API testnet (`PAYMENT_CHAIN_ID=46630`, `PAYMENT_USDG_ADDRESS`, `PAYMENT_RPC_URL` kosong = RPC testnet) dan men-deploy API. Setelah itu, dari wallet uji panggil `faucet()` pada TestUSDG (1000 tUSDG per panggilan) lewat explorer testnet, atau minta saya `cast send`. Wallet juga butuh sedikit ETH testnet untuk gas (faucet testnet).
+
+## Kunci X API untuk posting (diisi pemilik di dashboard Railway)
+
+1. Di console.x.com (akun yang mendaftarkan App harus `@NexaAgentX`): buat App bertipe Automated, izin **Read and write**.
+2. Di tab Keys and tokens, buat **API Key and Secret** (Consumer Keys) dan **Access Token and Secret** untuk `@NexaAgentX` (pastikan izin tokennya Read and write; buat ulang token bila izin diubah setelah dibuat).
+3. Isi di service `worker` Railway: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`. Jangan tempel nilainya di chat atau repo.
+4. Kabari saya setelah terisi. Saya mengatur `X_POST_MODE=live`, `X_LIVE_POST_CAP=2` (testnet), `POST_INTERVAL_MINUTES=30`, dan `X_POST_KINDS` hanya jenis data, setelah kamu mengizinkan secara eksplisit.
+5. Mainnet: `X_LIVE_POST_CAP=4`. Setelah uji selesai, kembalikan ke batas terakhir sampai hari launch; saat launch kamu mengizinkan `unlimited`.
