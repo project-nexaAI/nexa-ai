@@ -79,7 +79,7 @@ export function Nav({ base = '' }: { base?: string }) {
         </nav>
         <a href={X_URL} target="_blank" rel="noopener" className="btn btn-org btn-x">
           {'Follow NEXA on X '}
-          <span className="ar">
+          <span className="ar ar-ico">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <use href="#nx-x" />
             </svg>

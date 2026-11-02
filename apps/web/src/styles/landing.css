@@ -33,6 +33,18 @@ em.s{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-
 .btn-ghost:hover{border-color:var(--ink-3)}
 .btn-x svg{width:14px;height:14px}
 
+/* Tombol dengan ikon (Connect wallet, Follow on X): ikon di lingkaran hitam, tanpa putaran panah; sedikit kedalaman agar terasa premium.
+   (Penyimpangan atas desain HTML asli atas permintaan pemilik: panah diganti ikon dompet dan logo X.) */
+.btn{letter-spacing:.005em;transition:background .25s,border-color .25s,color .25s,box-shadow .3s}
+.btn-org{box-shadow:0 10px 26px -14px rgba(255,90,31,.75),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn-org:hover{box-shadow:0 14px 32px -12px rgba(255,90,31,.85),inset 0 1px 0 rgba(255,255,255,.34)}
+.btn-light{box-shadow:0 10px 26px -16px rgba(242,239,234,.5),inset 0 1px 0 rgba(255,255,255,.7)}
+.btn .ar-ico{color:var(--ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:transform .35s var(--ease),box-shadow .3s}
+.btn .ar-ico svg{width:15px;height:15px;display:block}
+.btn .ar-wallet svg{width:17px;height:17px}
+.btn:hover .ar.ar-ico{transform:scale(1.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
 /* reveal */
 [data-reveal]{opacity:0;filter:blur(12px);transform:translateY(24px);transition:opacity 1s var(--ease),filter 1s var(--ease),transform 1s var(--ease)}
 [data-reveal].in{opacity:1;filter:none;transform:none}
