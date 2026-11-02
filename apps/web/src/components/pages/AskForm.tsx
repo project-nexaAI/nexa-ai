@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createApiClient, type AskPlanResponse, type AskResponse } from '@nexa-ai/api-client'
 import { bpsText, fmtAge } from '@/lib/format'
-import { getToken } from '@/lib/session'
+import { SESSION_EVENT, getToken } from '@/lib/session'
 import { PAYMENT_FAILED, sendUsdgPayment, walletMessage } from '@/lib/wallet-pay'
 
 const CREDIT_MESSAGES: Record<string, string> = {
@@ -37,7 +37,13 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
   const [paidHash, setPaidHash] = useState<string | null>(null)
 
   const [signedIn, setSignedIn] = useState(false)
-  useEffect(() => setSignedIn(Boolean(getToken())), [])
+  // Mengikuti tombol wallet di navbar: masuk/keluar langsung terlihat di form ini.
+  useEffect(() => {
+    const sync = () => setSignedIn(Boolean(getToken()))
+    sync()
+    window.addEventListener(SESSION_EVENT, sync)
+    return () => window.removeEventListener(SESSION_EVENT, sync)
+  }, [])
   useEffect(() => {
     let alive = true
     client
@@ -73,7 +79,7 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
 
   /** Satu klik: bayar dari wallet, tunggu konfirmasi, lalu minta laporan. Pembayaran yang sudah ada dipakai lagi. */
   async function payAndAsk() {
-    if (!plan) return
+    if (!plan || !signedIn) return
     setBusy(true)
     setError(null)
     setResult(null)
@@ -116,10 +122,17 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
         </label>
         {plan ? (
           <>
-            <button className="btn btn-org" type="submit" disabled={busy || !ADDRESS.test(address.trim())}>
-              {busy ? (status ?? 'Working…') : paidHash ? 'Get the report (already paid) ' : `Pay ${plan.price.formatted} USDG and get the report `}
-              <span className="ar">→</span>
-            </button>
+            {signedIn ? (
+              <button className="btn btn-org" type="submit" disabled={busy || !ADDRESS.test(address.trim())}>
+                {busy ? (status ?? 'Working…') : paidHash ? 'Get the report (already paid) ' : `Pay ${plan.price.formatted} USDG and get the report `}
+                <span className="ar">→</span>
+              </button>
+            ) : (
+              <div className="pg-empty" style={{ maxWidth: 640 }}>
+                <b>Connect your wallet to continue</b>
+                Use the Connect wallet button in the top bar, then come back to pay. Signing in sends no transaction and costs no gas.
+              </div>
+            )}
             <details className="pg-note" style={{ maxWidth: 640 }}>
               <summary>Already paid? Use a transaction hash instead</summary>
               <label style={{ display: 'block', marginTop: 10 }}>
