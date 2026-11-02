@@ -12,16 +12,20 @@ const OG_TITLE = 'NEXA: every call on-chain'
 const OG_DESCRIPTION =
   'An AI agent on X that commits each prediction to NexaLedger before posting it, then scores it against the oracle price.'
 
-// Ikon dari desain, dipakai apa adanya (data URI).
-const ICON =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23141414'/%3E%3Ccircle cx='32' cy='33' r='19' fill='%232A2A2C'/%3E%3Crect x='11' y='27' width='42' height='8' rx='4' fill='%23FF5A1F'/%3E%3C/svg%3E"
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
   alternates: { canonical: '/' },
-  icons: { icon: ICON },
+  // Logo dari desainer (docs/html-design/logo): tanda di atas tile gelap agar terbaca di tab terang maupun gelap.
+  icons: {
+    icon: [
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   openGraph: {
     type: 'website',
     siteName: 'NEXA',
