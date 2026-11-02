@@ -58,11 +58,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Loader pembuka hanya sekali per sesi dan tidak untuk pengguna yang meminta gerakan dikurangi; diputuskan sebelum cat pertama. */}
+        {/* Loader pembuka: tampil saat pertama dibuka dan saat refresh, dilewati saat berpindah halaman di dalam situs dan bagi pengguna yang meminta gerakan dikurangi; diputuskan sebelum cat pertama. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(sessionStorage.getItem('nexa_splash')||matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.splash='skip'}catch(e){}",
+              "try{var d=document.documentElement,n=performance.getEntriesByType('navigation')[0],r=n&&n.type==='reload';if(matchMedia('(prefers-reduced-motion: reduce)').matches||(!r&&sessionStorage.getItem('nexa_splash')))d.dataset.splash='skip'}catch(e){}",
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
