@@ -6,7 +6,7 @@ import testnetAddresses from '../../../packages/contracts-abi/addresses/testnet.
 import { createDb } from '@nexa-ai/db'
 import { configureRiskGuard } from './queue'
 import { createXClient } from './x'
-import { publishDue, revealMatured, type CycleDeps } from './cycle'
+import { publishDue, revealMatured, type CycleDeps, type PublishDeps } from './cycle'
 import { newDailyState, runDailyPrediction, type DailyDeps } from './daily'
 import { DEFAULT_KEEPER_CONFIG, mirrorPrices, type KeeperDeps, type MirrorFeed } from './keeper'
 import { optionalEncKey, optionalPrivateKey } from './keys'
@@ -94,6 +94,10 @@ const publish = env.X_POST_MODE === 'live' && xCreds
 
 const { db } = createDb(env.DATABASE_URL)
 
+// Kanal cadangan publik (Telegram) dan penerbit X tidak butuh ledger: post data (pulse, laporan) terbit walau commit/reveal nonaktif.
+const backup = env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? new TelegramBot(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID) : undefined
+const publishDeps: PublishDeps = { db, ...(publish ? { publish } : {}), ...(backup ? { backup } : {}) }
+
 // Commit/reveal aktif hanya jika kunci agent, alamat ledger, dan kunci enkripsi semuanya ada.
 const ledgerReady = Boolean(env.AGENT_PRIVATE_KEY && env.NEXA_LEDGER_ADDRESS && env.PREIMAGE_KEY)
 const deps: CycleDeps | null = ledgerReady
@@ -102,7 +106,7 @@ const deps: CycleDeps | null = ledgerReady
       encKey: env.PREIMAGE_KEY!,
       mode: env.X_POST_MODE,
       ...(publish ? { publish } : {}),
-      ...(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID ? { backup: new TelegramBot(env.TELEGRAM_BOT_TOKEN, env.TELEGRAM_CHAT_ID) } : {}),
+      ...(backup ? { backup } : {}),
       ledger: createLedgerClient({
         rpcUrl: env.RPC_URL,
         chainId: env.CHAIN_ID,
@@ -276,14 +280,15 @@ async function tick(): Promise<void> {
     const step = await runPulse(pulse)
     if (step === 'queued' || step === 'blocked' || step === 'error') console.log(`worker: pulse: ${step}`)
   }
+  const posted = await publishDue(publishDeps)
+  if (posted.length) console.log(`worker: posted=${posted.join(',')}`)
   if (!deps) return
   if (daily) {
     const step = await runDailyPrediction(daily)
     if (step === 'queued' || step === 'blocked' || step === 'no_data') console.log(`worker: prediksi harian: ${step}`)
   }
-  const posted = await publishDue(deps)
   const revealed = await revealMatured(deps)
-  if (posted.length || revealed.length) console.log(`worker: posted=${posted.join(',')} revealed=${revealed.join(',')}`)
+  if (revealed.length) console.log(`worker: revealed=${revealed.join(',')}`)
 }
 
 let stopping = false

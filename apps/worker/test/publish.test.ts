@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { costLog, createDb, postQueue, proAlerts } from '@nexa-ai/db'
 import { eq } from 'drizzle-orm'
-import { publishDue, type CycleDeps } from '../src/cycle'
+import { publishDue, type CycleDeps, type PublishDeps } from '../src/cycle'
 import { XApiError, type XClient } from '../src/x'
 
 const url = process.env.TEST_DATABASE_URL ?? 'postgres://nexa:nexa@localhost:5432/nexa_test'
@@ -50,6 +50,14 @@ describe.skipIf(!dbUp)('penerbit X (mode live)', () => {
     await db.delete(postQueue)
     await db.delete(costLog)
     await client.end()
+  })
+
+  it('penerbit hanya butuh db dan kebijakan: terbit tanpa ledger/commit-reveal', async () => {
+    const id = await seed('pulse', 'halo')
+    const { x, sent } = fakeX()
+    const minimal: PublishDeps = { db, publish: { x, liveCap: 2, minGapMs: 30 * MIN, kinds: ['pulse'] } }
+    expect(await publishDue(minimal, T0)).toEqual([id])
+    expect(sent).toEqual(['halo'])
   })
 
   it('tanpa kebijakan penerbitan (tanpa kredensial X) post live menunggu dan siklus tidak gagal', async () => {

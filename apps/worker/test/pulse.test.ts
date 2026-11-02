@@ -96,6 +96,30 @@ afterAll(async () => {
 describe.skipIf(!dbUp)('pulse', () => {
   beforeEach(clean)
 
+  it('topik launch hanya membahas token itu: tidak ada data graduation token lain di prompt', async () => {
+    await seedLaunch()
+    await seedLaunch('0x00000000000000000000000000000000000000c4', 'OAK', 6, { graduatedAt: hoursAgo(2) })
+    const gradText = 'OAK graduated from the Pons bonding curve within the last 24 hours. Creator tax 15.00% (1500 bps), top holder 25.00% (2500 bps).'
+    const llm = new MockLlm(() => json(gradText))
+    expect(await runPulse(make(llm), NOW)).toBe('queued')
+    const prompt = llm.calls[0]!.user
+    // graduation didahulukan dari launch; prompt-nya tidak boleh memuat klaim launch paling ramai
+    expect(prompt).toContain('graduatedWithinLast')
+    expect(prompt).not.toContain('mostActiveLaunch')
+    expect(prompt).not.toContain('graduationsLast24h')
+  })
+
+  it('topik launch: prompt memuat jumlah trade token itu dan tidak memuat jumlah graduation', async () => {
+    await seedLaunch()
+    const llm = new MockLlm(() => json(ponsText))
+    expect(await runPulse(make(llm), NOW)).toBe('queued')
+    const prompt = llm.calls[0]!.user
+    expect(prompt).toContain('"tradesLast24h":4')
+    expect(prompt).toContain('"symbol":"DODO"')
+    expect(prompt).not.toContain('graduationsLast24h')
+    expect(prompt).not.toContain('"count"')
+  })
+
   it('launch paling ramai -> antrian jenis pulse; data nyata masuk prompt, alamat tidak', async () => {
     await seedLaunch()
     const llm = new MockLlm(() => json(ponsText))

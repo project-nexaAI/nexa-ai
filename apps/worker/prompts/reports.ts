@@ -115,3 +115,46 @@ ${JSON.stringify(data)}
 
 Reply with JSON ONLY: {"text": "<post text>"}`
 }
+
+// ------------------------------------------------------------------- pulse: satu token per post
+
+/** Kalimat prompt yang sama untuk dua topik pulse: hanya satu token, tidak ada klaim di luar DATA. */
+const SINGLE_TOKEN_RULES = `Write ONE short post about the single token in DATA, and only about what DATA says. Do not mention other tokens, counts of other tokens, or anything that is not in DATA. If a value is null, leave it out (do not say it is "not known").`
+
+const taxFacts = (t: TokenFacts): string[] => [
+  ...(t.creatorTaxBps !== null ? [pct(t.creatorTaxBps), `${t.creatorTaxBps} bps`] : []),
+  ...(t.topHolderShareBps !== null ? [pct(t.topHolderShareBps), `${t.topHolderShareBps} bps`] : []),
+]
+
+const tokenData = (t: TokenFacts) => ({
+  symbol: t.symbol ?? 'token without a safe symbol to display',
+  creatorTax: t.creatorTaxBps === null ? null : `${pct(t.creatorTaxBps)} (${t.creatorTaxBps} bps)`,
+  topHolderShare: t.topHolderShareBps === null ? null : `${pct(t.topHolderShareBps)} (${t.topHolderShareBps} bps)`,
+  redFlags: t.redFlags,
+})
+
+/** Fakta angka untuk post graduation satu token ("24" = jendela jam tetap pada kalimat prompt). */
+export const graduationFacts = (t: TokenFacts): string[] => ['24', ...taxFacts(t)]
+
+export function buildGraduationPrompt(t: TokenFacts): string {
+  const data = { ...tokenData(t), graduatedWithinLast: '24 hours' }
+  return `A Pons token graduated from its bonding curve within the last 24 hours. ${SINGLE_TOKEN_RULES}
+
+DATA (indexer tool results, the only source of numbers):
+${JSON.stringify(data)}
+
+Reply with JSON ONLY: {"text": "<post text>"}`
+}
+
+/** Fakta angka untuk post launch paling ramai: jumlah trade 24 jam, creator tax, dan porsi pemegang terbesar. */
+export const launchFacts = (t: TokenFacts, trades24h: number): string[] => ['24', String(trades24h), ...taxFacts(t)]
+
+export function buildLaunchPrompt(t: TokenFacts, trades24h: number): string {
+  const data = { ...tokenData(t), tradesLast24h: trades24h, graduated: t.graduated }
+  return `This is the most active Pons launch of the last 24 hours. ${SINGLE_TOKEN_RULES}
+
+DATA (indexer tool results, the only source of numbers):
+${JSON.stringify(data)}
+
+Reply with JSON ONLY: {"text": "<post text>"}`
+}

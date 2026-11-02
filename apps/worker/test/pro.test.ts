@@ -75,10 +75,12 @@ describe.skipIf(!dbUp)('alert Pro dibuat saat post disetujui', () => {
     expect(pending.status).toBe('pending_approval')
     expect(await db.select().from(proAlerts)).toHaveLength(0) // belum disetujui: belum ada alert
 
-    await approvePost(db, pending.id)
+    // Disetujui 40 menit setelah dibuat: jadwal publik tetap 15 menit sejak DISETUJUI (keunggulan Pro tidak hilang).
+    const approvedAt = new Date(NOW.getTime() + 40 * MIN)
+    await approvePost(db, pending.id, approvedAt)
     const [a] = await db.select().from(proAlerts)
     expect(a).toMatchObject({ postId: pending.id, kind: 'daily_summary', content: 'Ringkasan NVDA satu.' })
-    expect(a!.publicAt!.getTime()).toBe(NOW.getTime() + 15 * MIN)
+    expect(a!.publicAt!.getTime()).toBe(approvedAt.getTime() + 15 * MIN)
 
     const blocked = await enqueuePost(db, { ...summary('Sekarang waktunya beli NVDA'), now: NOW })
     expect(blocked.status).toBe('rejected')
