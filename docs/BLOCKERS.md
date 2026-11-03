@@ -85,5 +85,5 @@ Pilihan yang perlu diputuskan:
 
 Sampai ada keputusan, aturan yang berlaku: horizon harus dari post KOL sendiri, dicatat segera (maks. beberapa jam), dengan link post asli.
 
-## Railway mainnet: batas paket gratis (2026-11-03)
-Supabase `nexa-ai-mainnet` sudah dibuat dan dimigrasi, tetapi `railway init -n nexa-ai-mainnet` ditolak: "Free plan resource provision limit exceeded". Workspace punya dua project: `nexa-ai-testnet` (worker, api, indexer) dan `graceful-victory` (dibuat 2026-10-28, bukan milik repo ini). Pilihan: (1) upgrade paket Railway; (2) hapus `graceful-victory` bila tidak dipakai (hanya pemilik yang memutuskan); (3) environment `mainnet` di project testnet (tidak dianjurkan, resource ikut terbagi). Variabel yang akan diisi: `X_POST_MODE=dry`, `X_LIVE_POST_CAP=4`, `PULSE_ENABLED=false` sampai izin live.
+## Railway mainnet: indexer belum dibuat (2026-11-03)
+Setelah `graceful-victory` dihapus, project `nexa-ai-mainnet` dibuat dengan service `worker` dan `api`, tetapi `indexer` ditolak: "Free plan resource provision limit exceeded" (batas jumlah service/resource paket gratis). Tanpa indexer mainnet, DB mainnet tidak terisi dan pulse tidak punya topik. Pilihan: upgrade paket Railway (Hobby), atau uji dulu memakai DB testnet yang sudah diisi indexer testnet (yang membaca mainnet). Catatan bot Telegram: satu bot tidak boleh dibaca dua worker; worker mainnet butuh bot sendiri atau worker testnet dimatikan saat mainnet menyala.

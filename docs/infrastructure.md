@@ -76,5 +76,13 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 
 Branch `mainnet` di GitHub dibuat dari `main` (2026-11-03).
 
-## Railway (mainnet): TERTAHAN
-`railway init -n nexa-ai-mainnet` gagal: "Free plan resource provision limit exceeded". Lihat BLOCKERS.
+## Railway (mainnet)
+
+| Item | Nilai |
+| --- | --- |
+| Project | `nexa-ai-mainnet` (id `22907aae-7708-4f4e-9a56-651dc532a7be`, env `production` `cf0a6d22-5abe-4084-ac06-81b098e88731`), dibuat 2026-11-03. Project lama `graceful-victory` (service `blog-cms`) dihapus atas perintah pemilik untuk membebaskan batas paket gratis |
+| Service | `worker` (f521380a-9268-4313-9055-8b9aeef36733), `api` (a227c978-95b8-4144-b37d-3fc443a36cef); repo `project-nexaAI/nexa-ai`, branch `mainnet`. **`indexer` belum dibuat**: batas paket gratis tercapai lagi (lihat BLOCKERS) |
+| Status | Deploy awal `FAILED` (belum ada kunci; sengaja tidak dijalankan sampai perintah pemilik) |
+| Variabel (nama) worker | `DATABASE_URL`, `CHAIN_ENV=mainnet`, `CHAIN_ID=4663`, `RPC_URL`, `AGENT_ADDRESS`, `TREASURY_ADDRESS`, `LLM_*` (tanpa key), `PAID_FEATURES_ENABLED=false`, `X_POST_MODE=dry`, `X_LIVE_POST_CAP=4`, `X_POST_KINDS=pulse`, `POST_INTERVAL_MINUTES=30`, `APPROVAL_MODE=risky`, `PULSE_ENABLED=false`, `PULSE_INTERVAL_MINUTES=30` |
+| Variabel (nama) api | `DATABASE_URL`, `EXPLORER_URL`, `TOKEN_EXPLORER_URL`, `PAID_FEATURES_ENABLED=false`, `PRO_PRICE_USDG_MICROS=19000000`, `PAYMENT_CHAIN_ID=4663`, `TREASURY_ADDRESS`, `WEB_ORIGIN=https://nexaagent.tech` |
+| Diisi manusia | worker: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `LLM_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PRO_CHAT_ID`; api: `TELEGRAM_BOT_USERNAME` |
