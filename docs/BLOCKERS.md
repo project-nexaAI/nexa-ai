@@ -84,3 +84,6 @@ Pilihan yang perlu diputuskan:
 4. **Tambah aset yang didukung** (butuh feed oracle baru di NexaLedger; perubahan kontrak, di luar brief).
 
 Sampai ada keputusan, aturan yang berlaku: horizon harus dari post KOL sendiri, dicatat segera (maks. beberapa jam), dengan link post asli.
+
+## Railway mainnet: batas paket gratis (2026-11-03)
+Supabase `nexa-ai-mainnet` sudah dibuat dan dimigrasi, tetapi `railway init -n nexa-ai-mainnet` ditolak: "Free plan resource provision limit exceeded". Workspace punya dua project: `nexa-ai-testnet` (worker, api, indexer) dan `graceful-victory` (dibuat 2026-10-28, bukan milik repo ini). Pilihan: (1) upgrade paket Railway; (2) hapus `graceful-victory` bila tidak dipakai (hanya pemilik yang memutuskan); (3) environment `mainnet` di project testnet (tidak dianjurkan, resource ikut terbagi). Variabel yang akan diisi: `X_POST_MODE=dry`, `X_LIVE_POST_CAP=4`, `PULSE_ENABLED=false` sampai izin live.

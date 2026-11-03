@@ -63,3 +63,18 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 - 2026-10-31: service `indexer` dibuat di Railway (repo project-nexaAI/nexa-ai, branch testnet; build `pnpm install --frozen-lockfile`, start `pnpm --filter @nexa-ai/indexer start`). Variabel: DATABASE_URL (Session pooler Supabase, tidak ditampilkan), CHAIN_ENV=mainnet, HIGH_CREATOR_TAX_BPS=500, INDEXER_POLL_SECONDS=5; RPC_URL memakai bawaan mainnet. Membaca mainnet (read-only), menulis ke DB testnet. `api` kini punya WEB_ORIGIN = URL branch testnet Vercel. Migrasi 0004 sudah diterapkan ke Supabase testnet. Status deploy: antre (trial).
 
 **Variabel worker untuk posting X (nama saja, nilai diisi pemilik di dashboard):** `X_POST_MODE`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `X_LIVE_POST_CAP`, `POST_INTERVAL_MINUTES`, `X_POST_KINDS`, `APPROVAL_MODE`.
+
+## Supabase (mainnet)
+
+| Item | Nilai |
+| --- | --- |
+| Project | `nexa-ai-mainnet`, ref `mjautadlenhckogsvkfw` (dibuat 2026-11-03 atas perintah "Siapkan mainnet") |
+| Region | `us-east-1`, sama dengan testnet |
+| Koneksi | Session pooler `aws-0-us-east-1.pooler.supabase.com:5432` |
+| Kredensial | `~/.config/nexa-ai/supabase-mainnet.env` (di luar repo, `chmod 600`, password acak, tidak pernah ditampilkan) |
+| Migrasi | Drizzle sudah dijalankan (2026-11-03). Tabel pg-boss dibuat worker saat pertama jalan |
+
+Branch `mainnet` di GitHub dibuat dari `main` (2026-11-03).
+
+## Railway (mainnet): TERTAHAN
+`railway init -n nexa-ai-mainnet` gagal: "Free plan resource provision limit exceeded". Lihat BLOCKERS.
