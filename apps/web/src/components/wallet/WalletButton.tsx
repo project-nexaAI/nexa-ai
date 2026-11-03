@@ -48,6 +48,26 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
     return () => window.removeEventListener(ME_CHANGED_EVENT, onChanged)
   }, [load])
 
+  // Sesi NEXA berdiri sendiri (token bearer), jadi harus ikut berakhir saat wallet diputus atau berganti akun di MetaMask.
+  const meAddress = me?.address
+  useEffect(() => {
+    const eth = (window as unknown as { ethereum?: Eip1193 & { on?: Function; removeListener?: Function } }).ethereum
+    if (!meAddress || !eth?.on) return
+    const onAccounts = (accounts: unknown) => {
+      const first = Array.isArray(accounts) ? (accounts[0] as string | undefined) : undefined
+      if (first && first.toLowerCase() === meAddress.toLowerCase()) return
+      const token = getToken()
+      clearToken()
+      setMe(null)
+      setOpen(false)
+      if (token) void createApiClient({ baseUrl: apiUrl }).logout(token).catch(() => undefined)
+    }
+    eth.on('accountsChanged', onAccounts)
+    return () => {
+      eth.removeListener?.('accountsChanged', onAccounts)
+    }
+  }, [meAddress, apiUrl])
+
   // Tutup panel saat klik di luar atau tekan Escape.
   useEffect(() => {
     if (!open) return

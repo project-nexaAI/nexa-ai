@@ -63,3 +63,29 @@ Di Git Bash tambahkan `export MSYS_NO_PATHCONV=1` sebelum memakai `vercel api /v
 - 2026-10-31: service `indexer` dibuat di Railway (repo project-nexaAI/nexa-ai, branch testnet; build `pnpm install --frozen-lockfile`, start `pnpm --filter @nexa-ai/indexer start`). Variabel: DATABASE_URL (Session pooler Supabase, tidak ditampilkan), CHAIN_ENV=mainnet, HIGH_CREATOR_TAX_BPS=500, INDEXER_POLL_SECONDS=5; RPC_URL memakai bawaan mainnet. Membaca mainnet (read-only), menulis ke DB testnet. `api` kini punya WEB_ORIGIN = URL branch testnet Vercel. Migrasi 0004 sudah diterapkan ke Supabase testnet. Status deploy: antre (trial).
 
 **Variabel worker untuk posting X (nama saja, nilai diisi pemilik di dashboard):** `X_POST_MODE`, `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `X_LIVE_POST_CAP`, `POST_INTERVAL_MINUTES`, `X_POST_KINDS`, `APPROVAL_MODE`.
+
+## Supabase (mainnet)
+
+| Item | Nilai |
+| --- | --- |
+| Project | `nexa-ai-mainnet`, ref `mjautadlenhckogsvkfw` (dibuat 2026-11-03 atas perintah "Siapkan mainnet") |
+| Region | `us-east-1`, sama dengan testnet |
+| Koneksi | Session pooler `aws-0-us-east-1.pooler.supabase.com:5432` |
+| Kredensial | `~/.config/nexa-ai/supabase-mainnet.env` (di luar repo, `chmod 600`, password acak, tidak pernah ditampilkan) |
+| Migrasi | Drizzle sudah dijalankan (2026-11-03). Tabel pg-boss dibuat worker saat pertama jalan |
+
+Branch `mainnet` di GitHub dibuat dari `main` (2026-11-03).
+
+## Railway (mainnet)
+
+| Item | Nilai |
+| --- | --- |
+| Project | `nexa-ai-mainnet` (id `22907aae-7708-4f4e-9a56-651dc532a7be`, env `production` `cf0a6d22-5abe-4084-ac06-81b098e88731`), dibuat 2026-11-03. Project lama `graceful-victory` (service `blog-cms`) dihapus atas perintah pemilik untuk membebaskan batas paket gratis |
+| Service | `worker` (f521380a-9268-4313-9055-8b9aeef36733, belum dijalankan), `api` (a227c978-95b8-4144-b37d-3fc443a36cef, Online), `indexer` (2563ab00-7b71-439f-8f5c-14ea76fa5d9a, Online); repo `project-nexaAI/nexa-ai`, branch `mainnet`. API publik mainnet: https://api-production-79c7.up.railway.app |
+| Status | Deploy awal `FAILED` (belum ada kunci; sengaja tidak dijalankan sampai perintah pemilik) |
+| Variabel (nama) worker | `DATABASE_URL`, `CHAIN_ENV=mainnet`, `CHAIN_ID=4663`, `RPC_URL`, `AGENT_ADDRESS`, `TREASURY_ADDRESS`, `LLM_*` (tanpa key), `PAID_FEATURES_ENABLED=false`, `X_POST_MODE=dry`, `X_LIVE_POST_CAP=4`, `X_POST_KINDS=pulse`, `POST_INTERVAL_MINUTES=30`, `APPROVAL_MODE=risky`, `PULSE_ENABLED=false`, `PULSE_INTERVAL_MINUTES=30` |
+| Variabel (nama) api | `DATABASE_URL`, `EXPLORER_URL`, `TOKEN_EXPLORER_URL`, `PAID_FEATURES_ENABLED=false`, `PRO_PRICE_USDG_MICROS=19000000`, `PAYMENT_CHAIN_ID=4663`, `TREASURY_ADDRESS`, `WEB_ORIGIN=https://nexaagent.tech` |
+| Diisi manusia | worker: `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET`, `LLM_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_PRO_CHAT_ID`; api: `TELEGRAM_BOT_USERNAME` |
+
+### Pindah ke mainnet (2026-11-03, arahan head dev "gass ke mainnet semua")
+Data indexer (token Pons, trade, holder, whale, snapshot harga, cursor) dan 3 akun KOL disalin dari Supabase testnet ke mainnet (jumlah baris cocok). Data khusus testnet (post, prediksi, pembayaran, sesi) tidak disalin; Supabase testnet dibiarkan sebagai arsip. Worker testnet dihapus, indexer testnet dihentikan; API testnet masih melayani situs sampai `NEXT_PUBLIC_API_URL` di Vercel dipindah ke API mainnet.
