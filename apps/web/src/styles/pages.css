@@ -121,3 +121,21 @@ a.pg-row:hover{border-color:var(--line-2)}
 .pg-feed li{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:6px;font-size:14.5px;line-height:1.55;color:var(--ink-2)}
 .pg-feed .meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 .pg-code{font-family:var(--mono);font-size:12.5px;line-height:1.6;color:var(--ink-2);background:var(--bg-3);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;margin:0;white-space:pre}
+
+/* NEXA vs KOL: halaman "Coming soon" sampai ada KOL yang sesuai */
+.cs{border:1px solid var(--line-2);border-radius:var(--r);padding:44px 28px 30px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;
+  background:radial-gradient(60% 120% at 50% 0,rgba(255,90,31,.08),transparent 70%)}
+.cs-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,90,31,.45);color:var(--org,#FF5A1F);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.cs-badge i{width:7px;height:7px;border-radius:50%;background:var(--org,#FF5A1F);animation:cs-dot 1.6s ease-in-out infinite}
+.cs b{font-weight:300;font-size:clamp(22px,3vw,32px);letter-spacing:-.02em;color:var(--ink)}
+.cs p{color:var(--ink-2);max-width:480px;font-size:15px}
+.cs-list{margin-top:18px;width:100%;max-width:640px;display:flex;flex-direction:column;gap:8px;opacity:.55;
+  -webkit-mask-image:linear-gradient(#000 40%,transparent);mask-image:linear-gradient(#000 40%,transparent)}
+.cs-row{display:grid;grid-template-columns:44px 1fr 90px 60px;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line-2);border-radius:12px;text-align:left}
+.cs-row.nexa{border-color:rgba(255,90,31,.4)}
+.cs-row em{display:block;font-style:normal;color:var(--ink);font-size:15px}
+.cs-row small{color:var(--ink-3);font-size:12px}
+.cs-bar{height:8px;border-radius:4px;background:var(--line-2)}
+.cs-bar.s{width:70%}
+@keyframes cs-dot{0%,100%{opacity:1}50%{opacity:.3}}
+@media (max-width:560px){.cs-row{grid-template-columns:36px 1fr 60px}.cs-row .cs-bar.s{display:none}}
