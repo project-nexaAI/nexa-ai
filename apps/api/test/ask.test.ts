@@ -166,7 +166,7 @@ describe.skipIf(!dbUp)('POST /ask (berbayar)', () => {
     expect(res.statusCode).toBe(200)
     const out = askResponseSchema.parse(res.json())
     expect(out.report).toMatchObject({ symbol: 'TST', creatorTaxBps: 1500, redFlags: ['High creator tax'], trades: { total: 3, buys: 2, sells: 1 } })
-    expect(out.report.unknowns).toContain('konsentrasi holder belum dianalisis')
+    expect(out.report.unknowns).toContain('holder concentration not analyzed yet')
     expect(out.report.ageSeconds).toBe(5 * 3600)
     expect(res.headers['cache-control']).toBe('private, no-store')
     const again = await call(app, body(h(10)))

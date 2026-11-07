@@ -38,7 +38,7 @@ export async function verifyUsdgPayment(cfg: AskConfig, txHash: Hex): Promise<Pa
   return { ok: true, payer: getAddress(transfers[0]!.args.from), amount }
 }
 
-export const ASK_DISCLAIMER = 'Ringkasan data on-chain otomatis. Bukan nasihat keuangan.'
+export const ASK_DISCLAIMER = 'Automated summary of on-chain data. Not financial advice.'
 const MIN_AGE_SECONDS = 3600
 
 export type ReportResult = { kind: 'report'; report: AskResponse['report'] } | { kind: 'too_new' | 'no_data' }
@@ -53,8 +53,8 @@ export async function buildRiskReport(db: Db, address: string, now: Date): Promi
     Number((await db.select({ n: count() }).from(ponsTrades).where(and(eq(ponsTrades.token, t.address), eq(ponsTrades.side, s))))[0]!.n)
   const [buys, sells] = await Promise.all([side('buy'), side('sell')])
   const unknowns: string[] = []
-  if (t.creatorTaxBps === null) unknowns.push('creator tax tidak terbaca')
-  if (t.topHolderShareBps === null) unknowns.push('konsentrasi holder belum dianalisis')
+  if (t.creatorTaxBps === null) unknowns.push('creator tax could not be read')
+  if (t.topHolderShareBps === null) unknowns.push('holder concentration not analyzed yet')
   return {
     kind: 'report',
     report: {
