@@ -15,7 +15,7 @@ Data diambil lewat `@nexa-ai/api-client` (`NEXT_PUBLIC_USE_FIXTURES=true` → fi
 | Feed: "Rug radar" + "Pons V2 launches" | `Feed` | Radar dan baris launch + red flag (label "Illustration") | Launch Pons + red flag | `GET /rug-radar` | **Task**: endpoint belum ada; tampilan masih ilustrasi desain |
 | Feed: "Mentions" | `Feed` | Contoh percakapan (label "Example") | — | — | Statis |
 | How (`#how`) | `How` | Pipeline commit → post → reveal | Statis | — | Statis |
-| Pricing (`#pricing`) | `Pricing` | $19 / $1 / $499 / $750 | Statis (brief) | — | Statis; dibuka minggu 10+ (`PAID_FEATURES_ENABLED`) |
+| Pricing (`#pricing`) | `Pricing` | $7 / $1 / $499 / $750 | Statis (brief) | — | Statis; dibuka minggu 10+ (`PAID_FEATURES_ENABLED`) |
 | Rules (`#rules`) | `Rules` | Karusel aturan RiskGuard | Statis, cermin `packages/riskguard` | — | Statis |
 | Token (`#token`) | `Token` | Aliran fee 30/20, BurnVault | Statis (rasio hardcode) | `GET /burn` untuk burn tracker | **Task**: halaman burn tracker belum ada di desain |
 | Roadmap, CTA, Footer | `Roadmap`, `Cta`, `Footer` | Statis | — | — | Statis |

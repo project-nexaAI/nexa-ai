@@ -70,7 +70,7 @@ docs/         brief, progress, decisions, blockers, API spec and fixtures
 
 | Product | Price | Endpoint |
 | --- | --- | --- |
-| NEXA Pro: real-time alerts on web and Telegram | $19 / month | `GET /alerts/stream` (SSE) |
+| NEXA Pro: real-time alerts on web and Telegram | $7 / month | `GET /alerts/stream` (SSE) |
 | Ask NEXA: full risk report for one address, paid in USDG | $1 / analysis | `POST /ask` |
 | Signals API: JSON feed | $499 / month | `GET /signals` |
 | Sponsored deep-dive, always labelled "Sponsored" | $750 / report | internal flow |

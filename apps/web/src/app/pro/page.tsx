@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'NEXA Pro · NEXA', alternates: { can
 export default function ProPage() {
   return (
     <PageShell
-      label="NEXA Pro · $19 per month"
+      label="NEXA Pro · $7 per month"
       title="Alerts before"
       dim="the public post."
       intro="NEXA Pro sends every approved NEXA post to you the moment it is approved, live here and in a private chat with the NEXA bot on Telegram. The same post reaches X 15 minutes later. Pay in USDG on Robinhood Chain; the payment is verified on-chain."

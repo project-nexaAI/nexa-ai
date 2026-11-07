@@ -365,7 +365,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     return meResponseSchema.parse(await buildMe(cfg.db, auth!, s.address, now()))
   })
 
-  // ---- NEXA Pro ($19/bulan): langganan USDG on-chain, alert real-time (SSE) dan Telegram. Di belakang flag fitur berbayar.
+  // ---- NEXA Pro ($7/bulan): langganan USDG on-chain, alert real-time (SSE) dan Telegram. Di belakang flag fitur berbayar.
   const pro = cfg.pro
   const proOn = () => Boolean(cfg.paidFeaturesEnabled && pro)
   const price = () => ({ raw: pro!.payment.minAmount.toString(), decimals: 6, formatted: formatUnits(pro!.payment.minAmount, 6) })

@@ -27,7 +27,7 @@ export function Pricing() {
           </span>
           <div className="amt">
             $
-            <span data-count="19">
+            <span data-count="7">
               0
             </span>
           </div>

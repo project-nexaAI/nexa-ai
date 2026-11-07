@@ -193,7 +193,7 @@ export function ProPanel({ apiUrl }: { apiUrl: string | undefined }) {
         <div className="pg-kv">
           <div>
             <span className="k">Price</span>
-            <span className="v">{plan ? `$${plan.price.formatted} in USDG` : '$19 in USDG'}</span>
+            <span className="v">{plan ? `$${plan.price.formatted} in USDG` : '$7 in USDG'}</span>
           </div>
           <div>
             <span className="k">Period</span>

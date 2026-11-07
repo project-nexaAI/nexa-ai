@@ -7,9 +7,9 @@ import type { Db } from './app'
 import { verifyUsdgPayment, type AskConfig } from './ask'
 
 export interface ProConfig {
-  /** Pembayaran USDG on-chain; `minAmount` = harga satu periode (19 USDG = 19_000_000). */
+  /** Pembayaran USDG on-chain; `minAmount` = harga satu periode (7 USDG = 7_000_000). */
   payment: AskConfig
-  /** Lama satu periode (brief: $19/bulan = 30 hari). */
+  /** Lama satu periode (brief: $7/bulan = 30 hari). */
   days: number
   /** Chain tempat USDG berada (mainnet 4663), untuk membangun transfer di wallet. */
   chainId: number
