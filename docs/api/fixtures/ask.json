@@ -10,8 +10,8 @@
     "topHolderShareBps": null,
     "trades": { "total": 3, "buys": 2, "sells": 1 },
     "redFlags": ["High creator tax"],
-    "unknowns": ["konsentrasi holder belum dianalisis"],
-    "disclaimer": "Ringkasan data on-chain otomatis. Bukan nasihat keuangan."
+    "unknowns": ["holder concentration not analyzed yet"],
+    "disclaimer": "Automated summary of on-chain data. Not financial advice."
   },
   "paymentTxUrl": "https://robinhoodchain.blockscout.com/tx/0x0000000000000000000000000000000000000000000000000000000000000010"
 }
