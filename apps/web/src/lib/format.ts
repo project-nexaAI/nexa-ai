@@ -16,5 +16,5 @@ export function shortHash(h: string): string {
 }
 
 export function bpsText(bps: number | null): string {
-  return bps === null ? '—' : `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 2)}%`
+  return bps === null ? 'n/a' : `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 2)}%`
 }

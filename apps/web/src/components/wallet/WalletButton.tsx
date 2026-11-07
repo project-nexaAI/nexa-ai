@@ -170,7 +170,7 @@ export function WalletButton({ apiUrl }: { apiUrl: string | undefined }) {
                 <>
                   <div className="wallet-row">
                     <span className="k">Balance</span>
-                    <span className="v">{h.balance ? `${h.balance.formatted} $NEXA` : '—'}</span>
+                    <span className="v">{h.balance ? `${h.balance.formatted} $NEXA` : 'n/a'}</span>
                   </div>
                   <div className="wallet-row">
                     <span className="k">Early alerts</span>

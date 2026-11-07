@@ -25,7 +25,7 @@ function Row({ p }: { p: Prediction }) {
       </div>
       <div className="cell">
         <span className="k">Return</span>
-        <span className="mono-v">{r ? r.returnFormatted : '—'}</span>
+        <span className="mono-v">{r ? r.returnFormatted : 'n/a'}</span>
       </div>
       <span className={`pg-pill ${r ? (r.won ? 'win' : 'loss') : ''}`}>{r ? (r.won ? 'Won' : 'Lost') : 'Pending'}</span>
     </a>
@@ -47,11 +47,11 @@ export default async function ProofPage() {
         <>
           <div className="pg-grid">
             <div className="card pg-stat">
-              <span className="n up">{proof.formatted.winRate ?? '—'}</span>
+              <span className="n up">{proof.formatted.winRate ?? 'n/a'}</span>
               <span className="t">Public win rate</span>
             </div>
             <div className="card pg-stat">
-              <span className="n">{proof.formatted.avgReturn ?? '—'}</span>
+              <span className="n">{proof.formatted.avgReturn ?? 'n/a'}</span>
               <span className="t">Avg return per call</span>
             </div>
             <div className="card pg-stat">

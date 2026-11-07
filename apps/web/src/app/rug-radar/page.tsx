@@ -63,7 +63,7 @@ export default async function RugRadarPage() {
         </>
       )}
       <p className="pg-note" style={{ marginTop: 22 }}>
-        Flags are automated signals from on-chain data, not a verdict. “—” means the value is not known yet. Nothing here is financial advice.
+        Flags are automated signals from on-chain data, not a verdict. “n/a” means the value is not known yet. Nothing here is financial advice.
       </p>
     </PageShell>
   )
