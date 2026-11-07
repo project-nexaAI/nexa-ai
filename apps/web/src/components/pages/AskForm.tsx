@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createApiClient, type AskPlanResponse, type AskResponse } from '@nexa-ai/api-client'
-import { bpsText, fmtAge } from '@/lib/format'
+import { AskReport } from './AskReport'
 import { SESSION_EVENT, getToken } from '@/lib/session'
 import { PAYMENT_FAILED, sendUsdgPayment, walletMessage } from '@/lib/wallet-pay'
 
@@ -178,60 +178,7 @@ export function AskForm({ apiUrl }: { apiUrl: string | undefined }) {
           {error}
         </div>
       ) : null}
-      {result ? (
-        <div className="card pg-card" style={{ marginTop: 20 }} aria-live="polite">
-          <span className="label" style={{ marginBottom: 0 }}>
-            Risk summary
-          </span>
-          <h3>
-            {result.report.symbol ?? 'Unknown token'} {result.report.name ? `· ${result.report.name}` : ''}
-          </h3>
-          <div className="pg-kv">
-            <div>
-              <span className="k">Age</span>
-              <span className="v">{fmtAge(result.report.ageSeconds)}</span>
-            </div>
-            <div>
-              <span className="k">Graduated</span>
-              <span className="v">{result.report.graduated ? 'Yes' : 'No'}</span>
-            </div>
-            <div>
-              <span className="k">Creator tax</span>
-              <span className="v">{bpsText(result.report.creatorTaxBps)}</span>
-            </div>
-            <div>
-              <span className="k">Top holder share</span>
-              <span className="v">{bpsText(result.report.topHolderShareBps)}</span>
-            </div>
-            <div>
-              <span className="k">Trades (buys · sells)</span>
-              <span className="v">
-                {result.report.trades.total} ({result.report.trades.buys} · {result.report.trades.sells})
-              </span>
-            </div>
-          </div>
-          <div className="pg-flags">
-            {result.report.redFlags.length === 0 ? (
-              <span className="pg-flag ok">No red flags found</span>
-            ) : (
-              result.report.redFlags.map((f) => (
-                <span key={f} className="pg-flag">
-                  {f}
-                </span>
-              ))
-            )}
-          </div>
-          {result.report.unknowns.length > 0 ? <p className="pg-note">Not known yet: {result.report.unknowns.join('; ')}.</p> : null}
-          <p className="pg-note">{result.report.disclaimer}</p>
-          {result.paymentTxUrl ? (
-            <a className="pg-link" href={result.paymentTxUrl} target="_blank" rel="noopener">
-              Payment on Blockscout ↗
-            </a>
-          ) : (
-            <p className="pg-note">Free holder credit used.</p>
-          )}
-        </div>
-      ) : null}
+      {result ? <AskReport result={result} /> : null}
     </>
   )
 }

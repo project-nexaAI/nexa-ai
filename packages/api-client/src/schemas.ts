@@ -149,6 +149,63 @@ export const askResponseSchema = z.object({
     trades: z.object({ total: z.number().int().nonnegative(), buys: z.number().int().nonnegative(), sells: z.number().int().nonnegative() }),
     redFlags: z.array(z.string()),
     unknowns: z.array(z.string()),
+    /** Ringkasan satu kata dari `signals`: aturan tetap, bukan prediksi dan bukan saran beli atau jual. */
+    riskLevel: z.enum(['low', 'medium', 'high', 'unknown']),
+    /** Setiap sinyal membawa nilai, penilaian (ok/watch/risk/unknown), dan ambang yang dipakai. */
+    signals: z.array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        value: z.string(),
+        level: z.enum(['ok', 'watch', 'risk', 'unknown']),
+        note: z.string(),
+      }),
+    ),
+    details: z.object({
+      /** Alamat on-chain beserta link Blockscout. */
+      token: z.object({ address: z.string(), url: z.string().url() }),
+      creator: z.object({ address: z.string(), url: z.string().url() }),
+      curve: z.object({ address: z.string(), url: z.string().url() }).nullable(),
+      /** Aset pasangan; `symbol` null bila alamatnya tidak dikenal. */
+      pair: z.object({ address: z.string(), symbol: z.string().nullable(), decimals: z.number().int().nonnegative().nullable() }).nullable(),
+      launchedAt: iso,
+      graduatedAt: iso.nullable(),
+      activity: z.object({
+        uniqueTraders: z.number().int().nonnegative(),
+        uniqueBuyers: z.number().int().nonnegative(),
+        uniqueSellers: z.number().int().nonnegative(),
+        tradesLast1h: z.number().int().nonnegative(),
+        tradesLast24h: z.number().int().nonnegative(),
+        firstTradeAt: iso.nullable(),
+        lastTradeAt: iso.nullable(),
+        /** Volume dalam aset pasangan: nilai mentah (unit terkecil) dan terformat. */
+        volume: z.object({
+          buyRaw: z.string(),
+          sellRaw: z.string(),
+          netRaw: z.string(),
+          buyFormatted: z.string(),
+          sellFormatted: z.string(),
+          netFormatted: z.string(),
+        }),
+        largestTrade: z.object({ side: z.enum(['buy', 'sell']), quoteRaw: z.string(), quoteFormatted: z.string(), trader: z.string(), at: iso }).nullable(),
+      }),
+      creatorActivity: z.object({
+        trades: z.number().int().nonnegative(),
+        buys: z.number().int().nonnegative(),
+        sells: z.number().int().nonnegative(),
+        soldRaw: z.string(),
+        soldFormatted: z.string(),
+      }),
+      /** Null bila riwayat holder tidak lengkap (sama seperti `topHolderShareBps`). */
+      holders: z
+        .object({
+          count: z.number().int().nonnegative(),
+          top5ShareBps: z.number().int().nonnegative(),
+          top10ShareBps: z.number().int().nonnegative(),
+          top: z.array(z.object({ address: z.string(), url: z.string().url(), shareBps: z.number().int().nonnegative() })),
+        })
+        .nullable(),
+    }),
     disclaimer: z.string(),
   }),
   /** Null bila laporan memakai kredit gratis holder. */

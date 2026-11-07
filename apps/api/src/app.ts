@@ -38,6 +38,7 @@ import {
 import { buildMe, createNonce, endSession, monthKey, sessionFrom, verifyLogin, type AuthConfig } from './auth'
 import { kolStats, rankEntries } from './leaderboard'
 import { buildMarket } from './market'
+import { CHAINS } from '@nexa-ai/shared'
 import { buildRiskReport, verifyUsdgPayment, type AskConfig } from './ask'
 import { formatBps, formatUnits, formatWinRate, shortAddress } from './format'
 import { createLinkCode, proStatus, subscribe, unlinkTelegram, type ProConfig } from './pro'
@@ -72,6 +73,8 @@ export interface AppConfig {
 type PredictionRow = typeof predictions.$inferSelect
 const DAY_MS = 86_400_000
 const RECENT_LIMIT = 10
+/** Kontrak Pons/Uniswap yang memegang suplai tetapi bukan holder sungguhan (dikecualikan dari peringkat holder). */
+const POOL_ADDRESSES = [CHAINS.mainnet.pons.hook, CHAINS.mainnet.pons.graduationExecutor, CHAINS.mainnet.pons.factory, CHAINS.mainnet.uniswapV4.poolManager]
 const RADAR_LIMIT = 50
 
 /** Hanya prediksi yang sudah ter-commit on-chain yang pernah terlihat publik; draft tidak. */
@@ -530,7 +533,7 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     }
 
     // Token terlalu baru atau tanpa data: tidak dibahas dan pembayaran/kredit TIDAK dihabiskan.
-    const result = await buildRiskReport(cfg.db, address, now())
+    const result = await buildRiskReport(cfg.db, address, now(), { explorerBase: cfg.tokenExplorerUrl ?? cfg.explorerUrl, excludedHolders: POOL_ADDRESSES })
     if (result.kind !== 'report') return reply.code(422).send({ error: result.kind === 'too_new' ? 'token_too_new' : 'no_data' })
 
     if (txHash) {

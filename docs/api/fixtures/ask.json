@@ -7,10 +7,55 @@
     "ageSeconds": 18000,
     "graduated": false,
     "creatorTaxBps": 1500,
-    "topHolderShareBps": null,
+    "topHolderShareBps": 1250,
     "trades": { "total": 3, "buys": 2, "sells": 1 },
     "redFlags": ["High creator tax"],
-    "unknowns": ["holder concentration not analyzed yet"],
+    "unknowns": [],
+    "riskLevel": "high",
+    "signals": [
+      { "id": "creator_tax", "label": "Creator tax", "value": "15%", "level": "risk", "note": "Watch above 2%, risk above 5%." },
+      { "id": "top_holder", "label": "Largest holder", "value": "12.5%", "level": "watch", "note": "Excludes the bonding curve and pool contracts. Watch from 10%, risk from 20%." },
+      { "id": "top10", "label": "Top 10 holders", "value": "31%", "level": "ok", "note": "Combined share. Watch from 40%, risk from 60%." },
+      { "id": "participation", "label": "Unique traders", "value": "2", "level": "risk", "note": "Few distinct wallets means thin participation. Watch below 10, risk below 3." },
+      { "id": "recent_activity", "label": "Trades in the last 24h", "value": "3", "level": "ok", "note": "No trades in 24 hours means the market is inactive." },
+      { "id": "sell_pressure", "label": "Sell volume vs buy volume", "value": "33.3%", "level": "ok", "note": "Sell volume as a share of buy volume. Watch from 90%." },
+      { "id": "creator_selling", "label": "Creator sells", "value": "0 (0.0% of sell volume)", "level": "ok", "note": "Any sale by the creator wallet is a watch item. Risk from 30% of all sell volume." }
+    ],
+    "details": {
+      "token": { "address": "0x3333333333333333333333333333333333333333", "url": "https://robinhoodchain.blockscout.com/address/0x3333333333333333333333333333333333333333" },
+      "creator": { "address": "0x4444444444444444444444444444444444444444", "url": "https://robinhoodchain.blockscout.com/address/0x4444444444444444444444444444444444444444" },
+      "curve": { "address": "0x5555555555555555555555555555555555555555", "url": "https://robinhoodchain.blockscout.com/address/0x5555555555555555555555555555555555555555" },
+      "pair": { "address": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168", "symbol": "USDG", "decimals": 6 },
+      "launchedAt": "2026-12-01T07:00:00.000Z",
+      "graduatedAt": null,
+      "activity": {
+        "uniqueTraders": 2,
+        "uniqueBuyers": 2,
+        "uniqueSellers": 1,
+        "tradesLast1h": 0,
+        "tradesLast24h": 3,
+        "firstTradeAt": "2026-12-01T07:05:00.000Z",
+        "lastTradeAt": "2026-12-01T10:40:00.000Z",
+        "volume": {
+          "buyRaw": "300000000",
+          "sellRaw": "100000000",
+          "netRaw": "200000000",
+          "buyFormatted": "300",
+          "sellFormatted": "100",
+          "netFormatted": "200"
+        },
+        "largestTrade": { "side": "buy", "quoteRaw": "200000000", "quoteFormatted": "200", "trader": "0x6666666666666666666666666666666666666666", "at": "2026-12-01T07:05:00.000Z" }
+      },
+      "creatorActivity": { "trades": 0, "buys": 0, "sells": 0, "soldRaw": "0", "soldFormatted": "0" },
+      "holders": {
+        "count": 7,
+        "top5ShareBps": 2800,
+        "top10ShareBps": 3100,
+        "top": [
+          { "address": "0x6666666666666666666666666666666666666666", "url": "https://robinhoodchain.blockscout.com/address/0x6666666666666666666666666666666666666666", "shareBps": 1250 }
+        ]
+      }
+    },
     "disclaimer": "Automated summary of on-chain data. Not financial advice."
   },
   "paymentTxUrl": "https://robinhoodchain.blockscout.com/tx/0x0000000000000000000000000000000000000000000000000000000000000010"

@@ -139,3 +139,27 @@ a.pg-row:hover{border-color:var(--line-2)}
 .cs-bar.s{width:70%}
 @keyframes cs-dot{0%,100%{opacity:1}50%{opacity:.3}}
 @media (max-width:560px){.cs-row{grid-template-columns:36px 1fr 60px}.cs-row .cs-bar.s{display:none}}
+
+/* Ask NEXA: laporan rinci */
+.pg-level{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-3)}
+.pg-level .k{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pg-level b{font-weight:500;font-size:18px}
+.pg-level.high b{color:var(--red)}
+.pg-level.medium b{color:var(--amber)}
+.pg-level.low b{color:var(--ink)}
+.pg-level.unknown b{color:var(--ink-3)}
+.pg-signals{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.pg-sig{display:flex;flex-direction:column;gap:5px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg-3);min-width:0}
+.pg-sig .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.pg-sig .top b{font-weight:500;font-size:14px}
+.pg-sig .lv{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pg-sig.watch .lv{color:var(--amber)}
+.pg-sig.risk{border-color:#5A1F14}
+.pg-sig.risk .lv{color:var(--red)}
+.pg-sig .val{font-size:16px;word-break:break-word}
+.pg-sig .note{font-size:12px;line-height:1.45;color:var(--ink-3)}
+.pg-holders{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pg-holders a{display:grid;grid-template-columns:32px 1fr auto;gap:10px;padding:10px 14px;background:var(--bg-3);font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+.pg-holders a + a{border-top:1px solid var(--line)}
+.pg-holders a:hover{color:var(--ink)}
+.pg-links{display:flex;flex-wrap:wrap;gap:8px 20px}
