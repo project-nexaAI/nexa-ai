@@ -2120,6 +2120,348 @@
                             "type": "string"
                           }
                         },
+                        "riskLevel": {
+                          "type": "string",
+                          "enum": [
+                            "low",
+                            "medium",
+                            "high",
+                            "unknown"
+                          ]
+                        },
+                        "signals": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "label": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "string"
+                              },
+                              "level": {
+                                "type": "string",
+                                "enum": [
+                                  "ok",
+                                  "watch",
+                                  "risk",
+                                  "unknown"
+                                ]
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "value",
+                              "level",
+                              "note"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "details": {
+                          "type": "object",
+                          "properties": {
+                            "token": {
+                              "type": "object",
+                              "properties": {
+                                "address": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "format": "uri"
+                                }
+                              },
+                              "required": [
+                                "address",
+                                "url"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "creator": {
+                              "type": "object",
+                              "properties": {
+                                "address": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "format": "uri"
+                                }
+                              },
+                              "required": [
+                                "address",
+                                "url"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "curve": {
+                              "type": "object",
+                              "properties": {
+                                "address": {
+                                  "type": "string"
+                                },
+                                "url": {
+                                  "type": "string",
+                                  "format": "uri"
+                                }
+                              },
+                              "required": [
+                                "address",
+                                "url"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            },
+                            "pair": {
+                              "type": "object",
+                              "properties": {
+                                "address": {
+                                  "type": "string"
+                                },
+                                "symbol": {
+                                  "type": "string",
+                                  "nullable": true
+                                },
+                                "decimals": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "address",
+                                "symbol",
+                                "decimals"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            },
+                            "launchedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "graduatedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "nullable": true
+                            },
+                            "activity": {
+                              "type": "object",
+                              "properties": {
+                                "uniqueTraders": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "uniqueBuyers": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "uniqueSellers": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "tradesLast1h": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "tradesLast24h": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "firstTradeAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                },
+                                "lastTradeAt": {
+                                  "type": "string",
+                                  "format": "date-time",
+                                  "nullable": true
+                                },
+                                "volume": {
+                                  "type": "object",
+                                  "properties": {
+                                    "buyRaw": {
+                                      "type": "string"
+                                    },
+                                    "sellRaw": {
+                                      "type": "string"
+                                    },
+                                    "netRaw": {
+                                      "type": "string"
+                                    },
+                                    "buyFormatted": {
+                                      "type": "string"
+                                    },
+                                    "sellFormatted": {
+                                      "type": "string"
+                                    },
+                                    "netFormatted": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "buyRaw",
+                                    "sellRaw",
+                                    "netRaw",
+                                    "buyFormatted",
+                                    "sellFormatted",
+                                    "netFormatted"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "largestTrade": {
+                                  "type": "object",
+                                  "properties": {
+                                    "side": {
+                                      "type": "string",
+                                      "enum": [
+                                        "buy",
+                                        "sell"
+                                      ]
+                                    },
+                                    "quoteRaw": {
+                                      "type": "string"
+                                    },
+                                    "quoteFormatted": {
+                                      "type": "string"
+                                    },
+                                    "trader": {
+                                      "type": "string"
+                                    },
+                                    "at": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "side",
+                                    "quoteRaw",
+                                    "quoteFormatted",
+                                    "trader",
+                                    "at"
+                                  ],
+                                  "additionalProperties": false,
+                                  "nullable": true
+                                }
+                              },
+                              "required": [
+                                "uniqueTraders",
+                                "uniqueBuyers",
+                                "uniqueSellers",
+                                "tradesLast1h",
+                                "tradesLast24h",
+                                "firstTradeAt",
+                                "lastTradeAt",
+                                "volume",
+                                "largestTrade"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "creatorActivity": {
+                              "type": "object",
+                              "properties": {
+                                "trades": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "buys": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "sells": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "soldRaw": {
+                                  "type": "string"
+                                },
+                                "soldFormatted": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "trades",
+                                "buys",
+                                "sells",
+                                "soldRaw",
+                                "soldFormatted"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "holders": {
+                              "type": "object",
+                              "properties": {
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "top5ShareBps": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "top10ShareBps": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "top": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "address": {
+                                        "type": "string"
+                                      },
+                                      "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                      },
+                                      "shareBps": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      }
+                                    },
+                                    "required": [
+                                      "address",
+                                      "url",
+                                      "shareBps"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                }
+                              },
+                              "required": [
+                                "count",
+                                "top5ShareBps",
+                                "top10ShareBps",
+                                "top"
+                              ],
+                              "additionalProperties": false,
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "token",
+                            "creator",
+                            "curve",
+                            "pair",
+                            "launchedAt",
+                            "graduatedAt",
+                            "activity",
+                            "creatorActivity",
+                            "holders"
+                          ],
+                          "additionalProperties": false
+                        },
                         "disclaimer": {
                           "type": "string"
                         }
@@ -2134,6 +2476,9 @@
                         "trades",
                         "redFlags",
                         "unknowns",
+                        "riskLevel",
+                        "signals",
+                        "details",
                         "disclaimer"
                       ],
                       "additionalProperties": false
