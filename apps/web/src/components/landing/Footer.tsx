@@ -1,6 +1,6 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { NAV_DIRECT, NAV_GROUPS, itemHref } from '@/lib/nav'
-import { X_URL } from '@/lib/site'
+import { TELEGRAM_URL, X_URL } from '@/lib/site'
 
 export function Footer({ base = '' }: { base?: string }) {
   return (
@@ -29,11 +29,11 @@ export function Footer({ base = '' }: { base?: string }) {
           </div>
           {" "}
           <nav className="fcols" aria-label="Footer">
-            {[...NAV_GROUPS, { label: 'NEXA', items: [...NAV_DIRECT, { label: 'Follow on X', href: X_URL }] }].map((g) => (
+            {[...NAV_GROUPS, { label: 'NEXA', items: [...NAV_DIRECT, { label: 'Follow on X', href: X_URL }, { label: 'Telegram', href: TELEGRAM_URL }] }].map((g) => (
               <div key={g.label} className="fcol">
                 <span className="mono">{g.label}</span>
                 {g.items.map((i) => (
-                  <a key={i.label} href={itemHref(i, base)} {...(i.href === X_URL ? { target: '_blank', rel: 'noopener' } : {})}>
+                  <a key={i.label} href={itemHref(i, base)} {...(i.href === X_URL || i.href === TELEGRAM_URL ? { target: '_blank', rel: 'noopener' } : {})}>
                     {i.label}
                   </a>
                 ))}

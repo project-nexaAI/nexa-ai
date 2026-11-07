@@ -84,3 +84,15 @@ Pilihan yang perlu diputuskan:
 4. **Tambah aset yang didukung** (butuh feed oracle baru di NexaLedger; perubahan kontrak, di luar brief).
 
 Sampai ada keputusan, aturan yang berlaku: horizon harus dari post KOL sendiri, dicatat segera (maks. beberapa jam), dengan link post asli.
+
+## Railway mainnet: indexer belum dibuat (2026-11-03)
+Setelah `graceful-victory` dihapus, project `nexa-ai-mainnet` dibuat dengan service `worker` dan `api`, tetapi `indexer` ditolak: "Free plan resource provision limit exceeded" (batas jumlah service/resource paket gratis). Tanpa indexer mainnet, DB mainnet tidak terisi dan pulse tidak punya topik. Pilihan: upgrade paket Railway (Hobby), atau uji dulu memakai DB testnet yang sudah diisi indexer testnet (yang membaca mainnet). Catatan bot Telegram: satu bot tidak boleh dibaca dua worker; worker mainnet butuh bot sendiri atau worker testnet dimatikan saat mainnet menyala.
+
+## Deploy NexaLedger ke mainnet (dry run 2026-11-03, permintaan pemilik untuk head dev)
+Dry run `DeployNexaLedger.s.sol` di chain 4663 berhasil (tanpa broadcast): owner = deployer `0x1f4c…462D`, agent = `0x35Ca…4561`, gas sekitar 1.336.284, biaya sekitar **0,0000537 ETH** (gas price 0,02 gwei). **Berhenti**: saldo ETH mainnet wallet deployer = **0**. Keystore `deployer` tidak bisa diverifikasi alamatnya tanpa password (jalankan manual). Setelah deployer diisi ETH (disarankan ~0,001 ETH) dan Anda siap, jalankan sendiri (butuh password keystore):
+
+```bash
+# Jalankan di: ROOT/contracts
+AGENT_ADDRESS=0x35Ca52DAd343a80A3Be6b09091B74Dd3e5864561 forge script script/DeployNexaLedger.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --account deployer --broadcast
+```
+Setelah itu: isi `NEXA_LEDGER_ADDRESS` (worker), `contracts.NexaLedger` di `addresses/mainnet.json`, `setFeed` untuk NVDA/ETH, dan kirim hash transaksi + nomor blok ke head dev. Audit NexaLedger belum dilakukan (brief minggu 9); kontrak tidak memegang dana.

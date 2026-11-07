@@ -1,5 +1,5 @@
 {
-  "price": { "raw": "19000000", "decimals": 6, "formatted": "19" },
+  "price": { "raw": "7000000", "decimals": 6, "formatted": "7" },
   "durationDays": 30,
   "recipient": "0x00000000000000000000000000000000000000a1",
   "usdgAddress": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",

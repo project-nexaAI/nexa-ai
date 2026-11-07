@@ -5,8 +5,8 @@ export const metadata: Metadata = { title: 'NEXA vs KOL · NEXA', alternates: { 
 
 const PREVIEW = [
   { rank: '#1', name: 'NEXA', handle: 'NexaAgentX', nexa: true },
-  { rank: '—', name: 'KOL', handle: 'joining soon', nexa: false },
-  { rank: '—', name: 'KOL', handle: 'joining soon', nexa: false },
+  { rank: 'n/a', name: 'KOL', handle: 'joining soon', nexa: false },
+  { rank: 'n/a', name: 'KOL', handle: 'joining soon', nexa: false },
 ]
 
 export default function LeaderboardPage() {

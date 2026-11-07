@@ -39,7 +39,7 @@ const USDG = '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168' as const
 const TREASURY = '0x00000000000000000000000000000000000000a1' as const
 const ALICE = getAddress('0x00000000000000000000000000000000000000b2')
 const BOB = getAddress('0x00000000000000000000000000000000000000b3')
-const PRICE = 19_000_000n
+const PRICE = 7_000_000n
 const h = (n: number) => `0x${n.toString(16).padStart(64, '0')}` as `0x${string}`
 const transferAbi = parseAbi(['event Transfer(address indexed from, address indexed to, uint256 value)'])
 
@@ -135,7 +135,7 @@ describe.skipIf(!dbUp)('NEXA Pro: langganan', () => {
     const r = await mk().inject({ method: 'GET', url: '/pro/plan' })
     expect(r.statusCode).toBe(200)
     expect(proPlanResponseSchema.parse(r.json())).toEqual({
-      price: { raw: '19000000', decimals: 6, formatted: '19' },
+      price: { raw: '7000000', decimals: 6, formatted: '7' },
       durationDays: 30,
       recipient: TREASURY,
       usdgAddress: USDG,

@@ -22,9 +22,9 @@ const env = z
     PAYMENT_CHAIN_ID: z.coerce.number().int().default(CHAINS.mainnet.id),
     PAYMENT_USDG_ADDRESS: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional().or(z.literal('')),
     PAYMENT_RPC_URL: z.string().url().optional().or(z.literal('')),
-    /** NEXA Pro: penerima (default = penerima Ask NEXA), harga per periode (unit terkecil, 19000000 = $19), lama periode (hari). */
+    /** NEXA Pro: penerima (default = penerima Ask NEXA), harga per periode (unit terkecil, 7000000 = $7), lama periode (hari). */
     PRO_PAYMENT_RECIPIENT: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional(),
-    PRO_PRICE_USDG_MICROS: z.coerce.bigint().positive().default(19_000_000n),
+    PRO_PRICE_USDG_MICROS: z.coerce.bigint().positive().default(7_000_000n),
     PRO_DAYS: z.coerce.number().int().min(1).default(30),
     /** Username bot Telegram (tanpa @) untuk tautan alert Pro; kosong = tautan Telegram nonaktif. */
     TELEGRAM_BOT_USERNAME: z.string().regex(/^[A-Za-z0-9_]{5,32}$/).optional().or(z.literal('')),
