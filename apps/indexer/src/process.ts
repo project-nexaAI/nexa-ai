@@ -81,6 +81,7 @@ export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{
   let trades = 0
   let graduations = 0
   const decimalsByToken = new Map<string, number>()
+  const curveCache = new Map<string, { address: string; pairToken: string | null } | null>()
 
   for (const log of [...logs].sort(order)) {
     const at = await deps.blockTime(log.blockNumber)
@@ -108,10 +109,17 @@ export async function processLogs(deps: ProcessDeps, logs: PonsLog[]): Promise<{
         .onConflictDoNothing()
         .returning({ address: ponsTokens.address })
       launches += inserted.length
+      curveCache.delete(curve.toLowerCase()) // curve baru dikenal: jangan pakai hasil "tidak ada" yang lama
       continue
     }
 
-    const [row] = await db.select().from(ponsTokens).where(eq(ponsTokens.curve, log.address.toLowerCase()))
+    // Cache per panggilan: satu chunk bisa berisi ribuan trade dari curve yang sama; hanya kolom yang dipakai yang dibaca.
+    const curveKey = log.address.toLowerCase()
+    let row = curveCache.get(curveKey)
+    if (row === undefined) {
+      row = (await db.select({ address: ponsTokens.address, pairToken: ponsTokens.pairToken }).from(ponsTokens).where(eq(ponsTokens.curve, curveKey)))[0] ?? null
+      curveCache.set(curveKey, row)
+    }
     if (!row) continue // bukan curve Pons yang kita kenal (event bertanda tangan sama dari kontrak lain)
 
     if (log.eventName === 'CurveCompleted') {

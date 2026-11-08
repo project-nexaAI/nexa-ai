@@ -56,7 +56,7 @@ export const ponsTokens = pgTable(
     redFlags: jsonb('red_flags').$type<string[]>().notNull().default([]),
     blockNumber: bigint('block_number', { mode: 'bigint' }).notNull(),
   },
-  (t) => [index('pons_tokens_launched_idx').on(t.launchedAt)],
+  (t) => [index('pons_tokens_launched_idx').on(t.launchedAt), index('pons_tokens_curve_idx').on(t.curve)],
 )
 
 export const ponsTrades = pgTable(
@@ -72,7 +72,7 @@ export const ponsTrades = pgTable(
     at: ts('at').notNull(),
     blockNumber: bigint('block_number', { mode: 'bigint' }).notNull(),
   },
-  (t) => [index('pons_trades_token_at_idx').on(t.token, t.at)],
+  (t) => [index('pons_trades_token_at_idx').on(t.token, t.at), index('pons_trades_at_idx').on(t.at)],
 )
 
 /** Posisi terakhir yang sudah diproses indexer (satu baris per nama indexer). */
