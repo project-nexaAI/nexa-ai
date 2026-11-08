@@ -102,10 +102,21 @@ async function fetchLogs(from: bigint, to: bigint): Promise<PonsLog[]> {
 }
 
 /** Token yang transfernya dilacak: token Pons yang baru diluncurkan + token whale. Alamat dipecah per 100 agar getLogs tidak terlalu besar. */
-async function fetchTransfers(d: Db, from: bigint, to: bigint): Promise<TransferLog[]> {
+// Daftar token terlacak di-cache di memori (dulu dibaca ulang dari DB tiap tick = egress besar). Dimuat ulang tiap 10 menit
+// (token yang lewat HOLDER_TRACK_DAYS gugur) dan segera setelah ada launch baru, supaya transfer token baru tidak terlewat.
+const TRACKED_TTL_MS = 600_000
+let trackedCache: { at: number; tokens: string[] } | null = null
+async function trackedTokens(d: Db, refresh: boolean): Promise<string[]> {
+  if (!refresh && trackedCache && Date.now() - trackedCache.at < TRACKED_TTL_MS) return trackedCache.tokens
   const since = new Date(Date.now() - env.HOLDER_TRACK_DAYS * 86_400_000)
   const recent = await d.select({ a: ponsTokens.address }).from(ponsTokens).where(gte(ponsTokens.launchedAt, since))
   const tokens = [...new Set([...recent.map((r) => r.a), ...whaleCfg.map((w) => getAddress(w.address))])]
+  trackedCache = { at: Date.now(), tokens }
+  return tokens
+}
+
+async function fetchTransfers(d: Db, from: bigint, to: bigint, refresh: boolean): Promise<TransferLog[]> {
+  const tokens = await trackedTokens(d, refresh)
   const out: TransferLog[] = []
   for (let i = 0; i < tokens.length; i += 100) {
     const logs = await client.getLogs({ address: tokens.slice(i, i + 100) as `0x${string}`[], event: transferAbi[0], fromBlock: from, toBlock: to })
@@ -150,7 +161,7 @@ async function tick() {
         concentratedBps: env.HOLDER_CONCENTRATED_BPS,
         whale: whaleTokens.size ? { tokens: whaleTokens, minUsd: env.WHALE_MIN_USD, priceE8 } : undefined,
       },
-      await fetchTransfers(d, next, to),
+      await fetchTransfers(d, next, to, pons.launches > 0),
     )
     const burned = await processBurns(d, burnLogs, blockTime)
     await tx

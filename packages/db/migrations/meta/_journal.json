@@ -78,6 +78,13 @@
       "when": 1793537586348,
       "tag": "0010_ambiguous_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794151201776,
+      "tag": "0011_bitter_killmonger",
+      "breakpoints": true
     }
   ]
 }

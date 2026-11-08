@@ -54,7 +54,7 @@ export async function applyTransfers(deps: HolderDeps, logs: TransferLog[]): Pro
 
   // ---- saldo holder (hanya token Pons yang dikenal)
   const tokenSet = [...new Set(sorted.map((l) => getAddress(l.token)))]
-  const known = tokenSet.length ? await db.select().from(ponsTokens).where(inArray(ponsTokens.address, tokenSet)) : []
+  const known = tokenSet.length ? await db.select({ address: ponsTokens.address, curve: ponsTokens.curve, creatorTaxBps: ponsTokens.creatorTaxBps }).from(ponsTokens).where(inArray(ponsTokens.address, tokenSet)) : []
   const knownSet = new Set(known.map((t) => t.address))
 
   const deltas = new Map<string, { token: string; holder: string; delta: bigint }>()
@@ -82,17 +82,19 @@ export async function applyTransfers(deps: HolderDeps, logs: TransferLog[]): Pro
   // ---- konsentrasi + red flag untuk token yang berubah
   const affected = new Set(rows.map((r) => r.token))
   for (const t of known.filter((k) => affected.has(k.address))) {
-    const hs = await db.select().from(tokenHolders).where(eq(tokenHolders.token, t.address))
-    const excl = new Set([...deps.excluded, t.curve ?? ''])
-    let total = 0n
-    let top = 0n
-    let incomplete = false
-    for (const h of hs) {
-      const b = BigInt(h.balance)
-      if (b < 0n) incomplete = true // riwayat tidak lengkap: jangan beri angka
-      total += b
-      if (!excl.has(h.holder.toLowerCase()) && b > top) top = b
-    }
+    // Agregasi di Postgres: hanya satu baris yang dikirim ke indexer (bukan seluruh holder token), supaya egress kecil.
+    const excl = [...new Set([...deps.excluded, (t.curve ?? '').toLowerCase()])].filter(Boolean)
+    const [agg] = await db
+      .select({
+        total: sql<string>`coalesce(sum(${tokenHolders.balance}), 0)`,
+        top: sql<string>`coalesce(max(${tokenHolders.balance}) filter (where lower(${tokenHolders.holder}) not in (${sql.join(excl.map((e) => sql`${e}`), sql`, `)})), 0)`,
+        negatives: sql<number>`count(*) filter (where ${tokenHolders.balance} < 0)::int`,
+      })
+      .from(tokenHolders)
+      .where(eq(tokenHolders.token, t.address))
+    const total = BigInt(agg?.total ?? '0')
+    const top = BigInt(agg?.top ?? '0')
+    const incomplete = Number(agg?.negatives ?? 0) > 0 // riwayat tidak lengkap: jangan beri angka
     const share = incomplete || total <= 0n ? null : Number((top * 10_000n) / total)
     await db
       .update(ponsTokens)
