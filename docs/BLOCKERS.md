@@ -96,3 +96,5 @@ Dry run `DeployNexaLedger.s.sol` di chain 4663 berhasil (tanpa broadcast): owner
 AGENT_ADDRESS=0x35Ca52DAd343a80A3Be6b09091B74Dd3e5864561 forge script script/DeployNexaLedger.s.sol --rpc-url https://rpc.mainnet.chain.robinhood.com --account deployer --broadcast
 ```
 Setelah itu: isi `NEXA_LEDGER_ADDRESS` (worker), `contracts.NexaLedger` di `addresses/mainnet.json`, `setFeed` untuk NVDA/ETH, dan kirim hash transaksi + nomor blok ke head dev. Audit NexaLedger belum dilakukan (brief minggu 9); kontrak tidak memegang dana.
+
+| 13 | Penerima fee creator $NEXA belum diverifikasi (getter di curve tidak ketemu); kemungkinan masih wallet head dev, bukan `CreatorFeeSplitter`. Creator tax 180 bps (checklist minta 0%). Pasangan ETH vs rencana NVDA | Konfirmasi ke head dev: penerima fee, bisa tidaknya dialihkan ke splitter, keputusan ETH vs NVDA | Ya |

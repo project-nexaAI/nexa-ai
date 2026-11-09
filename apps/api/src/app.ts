@@ -1,6 +1,6 @@
 import cors from '@fastify/cors'
 import { createHash } from 'node:crypto'
-import { and, asc, desc, eq, gt, gte, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, sql } from 'drizzle-orm'
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import { apiKeys, askCreditUses, askPayments, burns, ponsTokens, postQueue, predictions, priceSnapshots, proAlerts, whaleTransfers, type createDb } from '@nexa-ai/db'
@@ -240,20 +240,23 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   // Burn tracker: event `Burned` BurnVault. $NEXA 18 desimal. Kosong sampai BurnVault ada dan ter-index.
   const NEXA_DECIMALS = 18
   const units = (raw: bigint) => ({ raw: raw.toString(), decimals: NEXA_DECIMALS, formatted: formatUnits(raw, NEXA_DECIMALS) })
+  // Total dihitung di SQL dan hanya RECENT_LIMIT baris terbaru yang ditarik (egress tetap kecil walau burn ribuan).
+  // Hasil disimpan 60 dtk di memori, jadi trafik web tidak berubah jadi query DB.
+  let burnCache: { at: number; body: BurnResponse } | null = null
   app.get('/burn', async (_req, reply) => {
-    const rows = await cfg.db.select().from(burns).orderBy(desc(burns.at))
-    const total = rows.reduce((a, r) => a + BigInt(r.nexaBurned), 0n)
-    const body: BurnResponse = burnResponseSchema.parse({
-      totalBurned: units(total),
-      burns: rows.slice(0, RECENT_LIMIT).map((r) => ({
-        at: r.at.toISOString(),
-        amount: units(BigInt(r.nexaBurned)),
-        txHash: r.txHash,
-        txUrl: tx(r.txHash),
-      })),
-    })
+    if (!burnCache || Date.now() - burnCache.at > 60_000) {
+      const [agg] = await cfg.db.select({ total: sql<string>`coalesce(sum(${burns.nexaBurned}), 0)::text` }).from(burns)
+      const rows = await cfg.db.select({ at: burns.at, nexaBurned: burns.nexaBurned, txHash: burns.txHash }).from(burns).orderBy(desc(burns.at)).limit(RECENT_LIMIT)
+      burnCache = {
+        at: Date.now(),
+        body: burnResponseSchema.parse({
+          totalBurned: units(BigInt((agg?.total ?? '0').split('.')[0]!)),
+          burns: rows.map((r) => ({ at: r.at.toISOString(), amount: units(BigInt(r.nexaBurned)), txHash: r.txHash, txUrl: tx(r.txHash) })),
+        }),
+      }
+    }
     cache(reply)
-    return body
+    return burnCache.body
   })
 
   // Signals API: berbayar, jadi mati sampai PAID_FEATURES_ENABLED=true; butuh kunci API + batas laju.
