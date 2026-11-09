@@ -24,6 +24,7 @@ void main(){ float d=length(gl_PointCoord-.5); float a=smoothstep(.5,.0,d); gl_F
 /* ===================== HERO: the visor mind ===================== */
 (function hero(){
   const canvas=document.getElementById('hero3d');
+  if(!canvas) return; // hero memakai maskot (MascotStage), bola 3D dimatikan
   const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
   const PR=Math.min(devicePixelRatio,1.75);
   renderer.setPixelRatio(PR);
