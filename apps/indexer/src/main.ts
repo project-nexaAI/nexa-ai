@@ -29,6 +29,12 @@ const env = z
     WHALE_MIN_USD: z.coerce.number().positive().default(100_000),
     /** Alamat BurnVault; kosong = pembaca burn nonaktif (kontrak belum di-deploy). */
     BURN_VAULT_ADDRESS: addr.optional().or(z.literal('')),
+    /** Alamat token $NEXA. Diisi (dan BURN_VAULT_ADDRESS kosong) = burn dibaca dari Transfer ke alamat nol / 0x…dEaD. */
+    NEXA_TOKEN_ADDRESS: addr.optional().or(z.literal('')),
+    /** Opsional: hanya hitung burn dari alamat ini (mis. wallet yang membakar). Kosong = semua burn. */
+    BURN_FROM_ADDRESS: addr.optional().or(z.literal('')),
+    /** Burn di bawah jumlah ini (unit $NEXA utuh) diabaikan: mencegah spam burn debu menggembungkan tabel. */
+    BURN_MIN_NEXA: z.coerce.bigint().nonnegative().default(1n),
   })
   .parse(process.env)
 
@@ -90,6 +96,10 @@ async function priceE8(token: string): Promise<bigint | null> {
 
 const excluded = defaultExcluded([net.pons.hook, net.uniswapV4.poolManager, net.pons.graduationExecutor, factory])
 const burnVault = env.BURN_VAULT_ADDRESS ? (env.BURN_VAULT_ADDRESS as `0x${string}`) : null
+// Tanpa BurnVault: burn dibaca langsung dari token $NEXA. Dengan BurnVault, jalur ini mati agar burn tidak terhitung dua kali.
+const nexaToken = !burnVault && env.NEXA_TOKEN_ADDRESS ? (env.NEXA_TOKEN_ADDRESS as `0x${string}`) : null
+const burnFrom = env.BURN_FROM_ADDRESS ? (env.BURN_FROM_ADDRESS as `0x${string}`) : null
+const BURN_SINKS = ['0x0000000000000000000000000000000000000000', '0x000000000000000000000000000000000000dEaD'] as const
 
 async function fetchLogs(from: bigint, to: bigint): Promise<PonsLog[]> {
   const [launched, curve] = await Promise.all([
@@ -129,6 +139,22 @@ async function fetchTransfers(d: Db, from: bigint, to: bigint, refresh: boolean)
 }
 
 async function fetchBurns(from: bigint, to: bigint): Promise<BurnLog[]> {
+  if (nexaToken) {
+    const logs = await client.getLogs({
+      address: nexaToken,
+      event: transferAbi[0],
+      args: burnFrom ? { from: burnFrom, to: [...BURN_SINKS] } : { to: [...BURN_SINKS] },
+      fromBlock: from,
+      toBlock: to,
+    })
+    // pairSpent tidak bisa diketahui dari Transfer biasa -> 0.
+    const min = env.BURN_MIN_NEXA * 10n ** 18n
+    return logs.flatMap((l) =>
+      l.blockNumber === null || l.logIndex === null || l.transactionHash === null || l.args.value! < min
+        ? []
+        : [{ args: { caller: l.args.from!, pairSpent: 0n, nexaBurned: l.args.value! }, blockNumber: l.blockNumber, logIndex: l.logIndex, transactionHash: l.transactionHash }],
+    )
+  }
   if (!burnVault) return []
   const logs = await client.getLogs({ address: burnVault, event: burnedAbi[0], fromBlock: from, toBlock: to })
   return logs.flatMap((l) =>
@@ -174,7 +200,7 @@ async function tick() {
     console.log(`indexer: blok ${next}-${to}: ${r.launches} launch, ${r.trades} trade, ${r.graduations} graduation, ${r.whales} whale, ${r.burned} burn`)
 }
 
-console.log(`indexer: ${env.CHAIN_ENV}, factory ${factory}, whale ${[...whaleTokens.values()].map((w) => w.symbol).join(',') || '-'}, burn vault ${burnVault ?? 'nonaktif'}`)
+console.log(`indexer: ${env.CHAIN_ENV}, factory ${factory}, whale ${[...whaleTokens.values()].map((w) => w.symbol).join(',') || '-'}, burn ${burnVault ? `vault ${burnVault}` : nexaToken ? `transfer $NEXA ${nexaToken}${burnFrom ? ` dari ${burnFrom}` : ''}` : 'nonaktif'}`)
 for (;;) {
   try {
     await tick()
