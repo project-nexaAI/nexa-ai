@@ -110,8 +110,9 @@ export function MascotStage() {
       }
       im.src = src
     }
-    for (const [r, c] of order) load(open, r, c, `/mascot/g/o_${r}_${c}.webp`, N)
-    for (let r = 0; r < NS; r++) for (let c = 0; c < NS; c++) load(shut, r, c, `/mascot/f_${r}_${c}_b.webp`, NS)
+    // Nama file: o_{kolom}_{baris} (x dulu, lalu y). open[] diindeks [baris*N+kolom].
+    for (const [r, c] of order) load(open, r, c, `/mascot/g/o_${c}_${r}.webp`, N)
+    for (let r = 0; r < NS; r++) for (let c = 0; c < NS; c++) load(shut, r, c, `/mascot/f_${c}_${r}_b.webp`, NS)
 
     // satu frame tajam per saat: pilih sel grid terdekat (dengan histeresis supaya tidak berkedip di batas),
     // pindah antar sel lewat crossfade singkat berbasis WAKTU (bukan posisi), jadi tidak pernah diam di kondisi berbayang
@@ -144,8 +145,10 @@ export function MascotStage() {
       const Z = 1.035
       const c0 = Math.min(N - 2, Math.floor(uu))
       const r0 = Math.min(N - 2, Math.floor(vv))
-      const fx = uu - c0
-      const fy = vv - r0
+      // smoothstep pada bobot: waktu di kondisi campuran lebih singkat -> lebih sering tampil satu frame tajam, tetap kontinu
+      const ss = (v: number) => v * v * (3 - 2 * v)
+      const fx = ss(uu - c0)
+      const fy = ss(vv - r0)
       const cells: [number, number, number][] = [
         [r0, c0, (1 - fx) * (1 - fy)],
         [r0, c0 + 1, fx * (1 - fy)],
@@ -215,12 +218,13 @@ export function MascotStage() {
       cv.width = w * dpr
       cv.height = h * dpr
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      const s = Math.min(1254, Math.round(gc.getBoundingClientRect().width * dpr))
+      const s = Math.min(1350, Math.round(gc.getBoundingClientRect().width * dpr))
       if (s > 0 && gc.width !== s) {
         gc.width = s
         gc.height = s
-        pc.width = 900
-        pc.height = 900
+        // kanvas pose mengikuti ukuran tampil (x DPR) agar tidak diskalakan dua kali oleh browser (lebih tajam)
+        pc.width = s
+        pc.height = s
       }
     }
     resize()
