@@ -18,6 +18,8 @@ Hanya nama dan konfigurasi. **Tidak ada nilai rahasia di sini.**
 Deploy preview pertama (tanpa API; data dari fixture): `https://nexa-ai-82vl300k6-fauzanbayu123-1072s-projects.vercel.app`
 (dilindungi Deployment Protection: buka dengan login Vercel).
 
+Preview 2026-11-09 (maskot hero, commit ada7c45): `https://nexa-ai-5jzddg9ot-fauzanbayu123-1072s-projects.vercel.app` (Ready; aset `/mascot/*` terunggah, 200). Belum dipromosikan ke production.
+
 Perintah deploy ulang (dari ROOT):
 
 ```bash
