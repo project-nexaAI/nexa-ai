@@ -134,44 +134,55 @@ export function MascotStage() {
       if (!pctx) return
       const uu = ((Math.max(-1, Math.min(1, lx)) + 1) / 2) * (N - 1)
       const vv = ((Math.max(-1, Math.min(1, ly)) + 1) / 2) * (N - 1)
-      const nc = pick(curC, lx)
-      const nr = pick(curR, ly)
-      const ok = (r: number, c: number) => !!open[r * N + c]
-      if ((nc !== curC || nr !== curR) && ok(nr, nc)) {
-        fromR = curR
-        fromC = curC
-        // lompatan jauh (kursor disentak): langsung ganti frame, jangan campur dua pose yang berjauhan
-        const far = Math.max(Math.abs(nr - curR), Math.abs(nc - curC)) > 2
-        curC = nc
-        curR = nr
-        fadeAt = far ? -1e9 : now
-      }
-      const t = Math.min(1, (now - fadeAt) / FADE)
-      const e = t * t * (3 - 2 * t)
+      // blend bilinear 4 frame tetangka: posisi kontinu -> gerak mulus tanpa lompatan antar sel.
+      // Grid 13x13 sangat rapat sehingga selisih antar frame kecil dan hasil blend tidak berbayang.
+      void pick; void FADE; void STEP; void fromR; void fromC; void fadeAt; void curR; void curC
       pctx.clearRect(0, 0, pc.width, pc.height)
       pctx.imageSmoothingEnabled = true
       pctx.imageSmoothingQuality = 'high'
-      // geser halus di antara dua frame: selisih posisi kursor terhadap pusat sel menggeser gambar sedikit,
-      // jadi gerak terasa kontinu walau gambarnya melompat per sel (tanpa pencampuran, tetap tajam)
       const W = pc.width
       const Z = 1.035
-      const put = (im: HTMLImageElement, r: number, c: number, a: number) => {
-        const sx = (uu - c) * STEP * W
-        const sy = (vv - r) * STEP * W
-        pctx.globalAlpha = a
-        pctx.drawImage(im, -(W * (Z - 1)) / 2 + sx, -(W * (Z - 1)) / 2 + sy, W * Z, W * Z)
-        pctx.globalAlpha = 1
+      const c0 = Math.min(N - 2, Math.floor(uu))
+      const r0 = Math.min(N - 2, Math.floor(vv))
+      const fx = uu - c0
+      const fy = vv - r0
+      const cells: [number, number, number][] = [
+        [r0, c0, (1 - fx) * (1 - fy)],
+        [r0, c0 + 1, fx * (1 - fy)],
+        [r0 + 1, c0, (1 - fx) * fy],
+        [r0 + 1, c0 + 1, fx * fy],
+      ]
+      // gambar dari bobot terbesar; alpha kumulatif = w / (jumlah bobot sejauh ini) agar hasil tepat proporsional
+      cells.sort((a, b) => b[2] - a[2])
+      let acc = 0
+      let cr = MID
+      let cc = MID
+      let best = -1
+      for (const [r, c, w] of cells) {
+        const im = open[r * N + c]
+        if (!im || w <= 0.001) continue
+        acc += w
+        if (w > best) {
+          best = w
+          cr = r
+          cc = c
+        }
+        pctx.globalAlpha = w / acc
+        pctx.drawImage(im, -(W * (Z - 1)) / 2, -(W * (Z - 1)) / 2, W * Z, W * Z)
       }
-      const to = open[curR * N + curC]
-      const fr = open[fromR * N + fromC]
-      if (fr && e < 1) put(fr, fromR, fromC, 1)
-      if (to) put(to, curR, curC, e)
+      pctx.globalAlpha = 1
+      if (best < 0) {
+        const im = open[MID * N + MID]
+        if (im) pctx.drawImage(im, -(W * (Z - 1)) / 2, -(W * (Z - 1)) / 2, W * Z, W * Z)
+      }
+      const curR2 = cr
+      const curC2 = cc
       if (now >= nextBlink) {
         blinkAt = now
         nextBlink = now + 2500 + Math.random() * 3500
       }
       const k = blinkAt < 0 ? 1 : (now - blinkAt) / 170
-      const cl = shut[Math.round(curR / 2) * NS + Math.round(curC / 2)]
+      const cl = shut[Math.round(curR2 / 2) * NS + Math.round(curC2 / 2)]
       if (k >= 0 && k < 1 && cl) {
         pctx.globalAlpha = Math.sin(Math.PI * k)
         pctx.drawImage(cl, 0, 0, pc.width, pc.height)
@@ -233,16 +244,26 @@ export function MascotStage() {
 
     let lx = 0
     let ly = 0
+    let sx1 = 0
+    let sy1 = 0
     let raf = 0
-    const start = performance.now()
+    let prev = performance.now()
+    const start = prev
     const tick = (now: number) => {
       const t = (now - start) / 1000
+      const dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000))
+      prev = now
       const idle = now - lastMove > 2500
       // gerak otomatis: kanan-kiri lebar, atas-bawah lebih kecil, periode berbeda supaya tidak berulang
       const tx = idle ? Math.sin(t * 0.5) : mx
       const ty = idle ? Math.sin(t * 0.37 + 1.2) * 0.85 : my
-      lx += (tx - lx) * 0.12
-      ly += (ty - ly) * 0.12
+      // smoothing dua tahap berbasis waktu (independen refresh rate): ease-in & ease-out halus
+      const a1 = 1 - Math.exp(-dt * 9)
+      const a2 = 1 - Math.exp(-dt * 6)
+      sx1 += (tx - sx1) * a1
+      sy1 += (ty - sy1) * a1
+      lx += (sx1 - lx) * a2
+      ly += (sy1 - ly) * a2
       el.style.setProperty('--lx', lx.toFixed(3))
       el.style.setProperty('--ly', ly.toFixed(3))
 
