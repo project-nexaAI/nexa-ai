@@ -8,8 +8,10 @@ import { processBurns, type BurnLog } from './burns'
 import { applyTransfers, defaultExcluded, type TransferLog, type WhaleToken } from './holders'
 import { processLogs, type PonsLog, type TokenMeta } from './process'
 
-const addr = z.string().regex(/^0x[0-9a-fA-F]{40}$/)
-const env = z
+// Nilai env sering ditempel dengan spasi/tanda kutip di dashboard: dibuang dulu sebelum divalidasi.
+const clean = (v: unknown) => (typeof v === 'string' ? v.trim().replace(/^["']+|["']+$/g, '').trim() : v)
+const addr = z.preprocess(clean, z.string().regex(/^0x[0-9a-fA-F]{40}$/))
+const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1),
     RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
@@ -36,7 +38,14 @@ const env = z
     /** Burn di bawah jumlah ini (unit $NEXA utuh) diabaikan: mencegah spam burn debu menggembungkan tabel. */
     BURN_MIN_NEXA: z.coerce.bigint().nonnegative().default(1n),
   })
-  .parse(process.env)
+
+const parsedEnv = envSchema.safeParse(process.env)
+if (!parsedEnv.success) {
+  // Hanya nama variabel dan alasan; nilainya tidak pernah dicetak.
+  for (const i of parsedEnv.error.issues) console.error(`indexer: env tidak valid: ${i.path.join('.') || '(root)'} - ${i.message}`)
+  process.exit(1)
+}
+const env = parsedEnv.data
 
 const STATE = 'pons'
 const net = CHAINS[env.CHAIN_ENV]
