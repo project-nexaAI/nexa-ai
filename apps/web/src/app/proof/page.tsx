@@ -34,7 +34,7 @@ function Row({ p }: { p: Prediction }) {
   )
 }
 
-type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> }
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function ProofPage(props: Props) {
   const rawParams = await Promise.resolve(props.searchParams)

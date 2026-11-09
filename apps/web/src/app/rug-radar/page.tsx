@@ -9,7 +9,7 @@ import { bpsText, fmtAge } from '@/lib/format'
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Rug radar · NEXA', alternates: { canonical: '/rug-radar' } }
 
-type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> }
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> }
 
 export default async function RugRadarPage(props: Props) {
   const rawParams = await Promise.resolve(props.searchParams)
