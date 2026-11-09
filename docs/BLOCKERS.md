@@ -27,6 +27,78 @@
 | 23 | **Keeper harga testnet** dibuat (`apps/worker/src/keeper.ts`): menyalin harga Chainlink mainnet NVDA/ETH ke feed tiruan testnet (push saat heartbeat 6 jam habis atau harga bergeser >= 0,5%). Butuh **wallet khusus keeper** (BUKAN agent, deployer, atau treasury; agent hanya boleh commit/reveal) dengan ~0,002 ETH testnet. Perkiraan gas: 2 feed x 4 push/hari ~ murah (~0,00002 ETH per push). Tanpa `KEEPER_PRIVATE_KEY` worker memberi log "keeper NONAKTIF" | Buat wallet baru (mis. akun baru di MetaMask), isi saldo dari faucet, lalu isi `KEEPER_PRIVATE_KEY` di Railway worker (Variables). Jangan kirim key ke chat | Menunggu pemilik |
 | 12 | **Disimpan untuk dipertimbangkan (2026-11-02):** halaman `/privacy` dan `/terms` (dibandingkan dengan apevisor.tech). Rencana: draf bahasa Inggris, non-kustodian (NEXA tidak memegang kunci/dana pengguna), klausul khusus NEXA (data on-chain tidak bisa dihapus, prediksi bisa salah, tidak membahas harga/ajakan beli $NEXA, konten Sponsored, tanpa refund dan tanpa perpanjangan otomatis, pembayaran dari wallet yang sama dengan login), data yang dikumpulkan (alamat wallet, hash pembayaran, alamat kontrak di Ask NEXA, chat ID Telegram, log server), pihak ketiga (Supabase, Railway, Vercel, RPC, Chainlink, Telegram, X, Xiaomi MiMo). Tidak meniru kekurangan Apevisor (tanpa hukum berlaku/penyelesaian sengketa, judul non-kustodian padahal kustodian). | Pemilik memutuskan lalu memberi: nama pengelola, email kontak privasi, hukum yang berlaku + tempat sengketa, lama retensi data. Sebaiknya ditinjau orang hukum sebelum publik | Ditunda |
 
+## Deploy Elysium testnet (chain 99801) — jalankan sendiri
+
+### E1 — Cek nonce deployer di 99801 (WAJIB sebelum deploy)
+
+```bash
+# Jalankan di: ROOT
+cast nonce 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D --rpc-url https://testnet-rpc.elysium.kinetiq.xyz
+```
+
+Harus **sama** dengan nonce saat ledger di-deploy di Robinhood (nonce itu menghasilkan `0xEF1f…81C0`). Jika sudah > 0, alamat ledger di 99801 akan berbeda (aman, hanya kehilangan cerita "satu alamat"). Laporkan hasilnya sebelum deploy.
+
+### E2 — Faucet HYPE testnet
+
+Isi ke deployer `0x1f4cD14B5CDD15436950d626CBCb0e21084F462D`, agent `0x35Ca52DAd343a80A3Be6b09091B74Dd3e5864561`, dan alamat keeper baru (buat wallet baru, bukan agent/deployer/treasury). Faucet: https://elysium.kinetiq.xyz/testnet-faucet
+
+### E3 — Deploy NexaLedger di 99801 (butuh password keystore)
+
+```bash
+# Jalankan di: ROOT/contracts (DEPLOY LEBIH DULU, sebelum kontrak apa pun)
+forge script script/DeployNexaLedger.s.sol \
+  --rpc-url https://testnet-rpc.elysium.kinetiq.xyz \
+  --chain 99801 \
+  --account deployer \
+  --sender 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D \
+  --broadcast
+```
+
+Setelah selesai, ketik "Elysium ledger deploy": saya membaca alamat dari broadcast JSON, verifikasi on-chain, lalu isi `addresses/elysium-testnet.json`.
+
+### E4 — Deploy mock feed HYPE + ETH, lalu setFeed
+
+```bash
+# Jalankan di: ROOT/contracts (setelah E3, NEXA_LEDGER = alamat dari E3)
+export NEXA_LEDGER=<alamat-NexaLedger-dari-E3>
+forge script script/DeployElysiumMocks.s.sol \
+  --rpc-url https://testnet-rpc.elysium.kinetiq.xyz \
+  --chain 99801 \
+  --account deployer \
+  --sender 0x1f4cD14B5CDD15436950d626CBCb0e21084F462D \
+  --broadcast
+```
+
+Setelah selesai, ketik "Elysium mocks deploy": saya isi `MockFeedHYPE`, `MockFeedETH`, `MockAssetHYPE`, `MockAssetETH` di `addresses/elysium-testnet.json`.
+
+### E5 — Verifikasi kontrak di Blockscout Elysium
+
+```bash
+# Jalankan di: ROOT/contracts (setelah E3 dan E4)
+forge verify-contract <alamat-NexaLedger> src/NexaLedger.sol:NexaLedger \
+  --chain 99801 \
+  --verifier blockscout \
+  --verifier-url https://elysium.kinetiq.xyz/api/ \
+  --watch
+# Ulangi untuk MockAggregator HYPE dan ETH
+```
+
+### E6 — Supabase + Railway Elysium (dibuat pemilik)
+
+Buat project Supabase `nexa-ai-elysium-testnet` (region ap-southeast-1) dan project Railway `nexa-ai-elysium-testnet` dengan service `worker-elysium-testnet` dan `api-elysium-testnet`. Migrasi Drizzle dijalankan saat service pertama kali diaktifkan. Setelah dibuat, kabari saya untuk mengisi env.
+
+Env yang perlu diisi pemilik di Railway (JANGAN di repo/chat):
+- `AGENT_PRIVATE_KEY` (wallet agent `0x35Ca…4561`) di service `worker-elysium-testnet`
+- `KEEPER_PRIVATE_KEY` (wallet keeper baru dari E2) di service `worker-elysium-testnet`
+- `LLM_API_KEY`, `TELEGRAM_BOT_TOKEN` (bot BARU, terpisah dari bot Robinhood — satu bot tidak boleh dibaca dua worker)
+- `DATABASE_URL` (dari Supabase Elysium)
+
+### E7 — Alamat launchpad Elysium (riset)
+
+Pump.fun, Ascend, dan Montra di Elysium testnet belum dikonfirmasi. Cek: https://elysium.kinetiq.xyz/docs/contract-addresses dan docs masing-masing launchpad. Indexer event launch/trade/graduation baru dibuat setelah alamat dikonfirmasi.
+
+---
+
 ## Perintah deploy testnet (jalankan sendiri)
 
 ```bash

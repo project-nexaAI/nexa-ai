@@ -1,5 +1,5 @@
 import type { Address, Hex } from 'viem'
-import type { FeedReader } from './oracle'
+import type { FeedReader, FeedReading } from './oracle'
 
 /**
  * KEEPER TESTNET. Robinhood Chain Testnet tidak punya feed Chainlink, jadi NexaLedger testnet memakai MockAggregator.
@@ -12,9 +12,18 @@ import type { FeedReader } from './oracle'
  */
 export interface MirrorFeed {
   symbol: string
-  /** Feed Chainlink asli di mainnet. */
-  source: Address
-  /** MockAggregator di testnet. */
+  /**
+   * Feed Chainlink asli di mainnet (null jika httpSource dipakai).
+   * Jika null, httpSource harus diisi.
+   */
+  source: Address | null
+  /**
+   * Sumber harga HTTP alternatif untuk aset tanpa Chainlink (mis. Hyperliquid untuk HYPE di Elysium).
+   * Dipanggil tanpa argumen; mengembalikan FeedReading dengan 8 desimal.
+   * Diprioritaskan di atas source jika keduanya ada.
+   */
+  httpSource?: () => Promise<FeedReading>
+  /** MockAggregator di testnet target. */
   target: Address
 }
 
@@ -56,7 +65,12 @@ export async function mirrorPrices(d: KeeperDeps): Promise<MirrorResult[]> {
   for (const m of d.mirrors) {
     let src
     try {
-      src = await d.readSource(m.source)
+      if (m.httpSource) {
+        src = await m.httpSource()
+      } else {
+        if (!m.source) { out.push({ symbol: m.symbol, action: 'source_error' }); continue }
+        src = await d.readSource(m.source)
+      }
     } catch {
       out.push({ symbol: m.symbol, action: 'source_error' })
       continue

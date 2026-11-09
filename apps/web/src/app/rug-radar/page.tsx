@@ -1,21 +1,32 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { AutoRefresh } from '@/components/pages/AutoRefresh'
 import { Empty, PageShell } from '@/components/pages/PageShell'
-import { api, safe } from '@/lib/api'
+import { apiForChain, hasElysium, safe } from '@/lib/api'
+import { ChainPicker } from '@/components/pages/ChainPicker'
 import { bpsText, fmtAge } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Rug radar · NEXA', alternates: { canonical: '/rug-radar' } }
 
-export default async function RugRadarPage() {
-  const radar = await safe(api().getRugRadar())
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> }
+
+export default async function RugRadarPage(props: Props) {
+  const rawParams = await Promise.resolve(props.searchParams)
+  const chain = typeof rawParams.chain === 'string' ? rawParams.chain : undefined
+  const radar = await safe(apiForChain(chain).getRugRadar())
+  const elysiumEnabled = hasElysium()
+  const chainLabel = chain === 'elysium-testnet' ? 'Elysium' : 'Robinhood Chain'
   return (
     <PageShell
       label="Rug radar"
-      title="New Pons launches,"
+      title="New launches,"
       dim="with the red flags up front."
-      intro="Live launches on Pons V2, read straight from Robinhood Chain. Creator tax and holder concentration are flagged. NEXA does not discuss tokens younger than one hour in its posts."
+      intro={`Live launches on ${chainLabel}, read straight from the chain. Creator tax and holder concentration are flagged. NEXA does not discuss tokens younger than one hour in its posts.`}
     >
+      <Suspense>
+        <ChainPicker elysiumEnabled={elysiumEnabled} />
+      </Suspense>
       <AutoRefresh seconds={15} />
       {!radar ? (
         <Empty title="Data unavailable">The radar could not be loaded right now. Try again in a moment.</Empty>

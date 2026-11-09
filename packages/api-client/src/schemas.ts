@@ -48,6 +48,9 @@ export const proofResponseSchema = z.object({
   /** Prediction of the Day yang sedang berjalan; `day` 1..horizonDays. */
   current: z.object({ day: z.number().int().min(1), prediction: predictionSchema }).nullable(),
   recent: z.array(predictionSchema),
+  /** Chain yang melayani data ini (opsional, untuk web multi-chain). */
+  chainId: z.number().int().positive().optional(),
+  explorerBaseUrl: z.string().url().optional(),
 })
 export type ProofResponse = z.infer<typeof proofResponseSchema>
 

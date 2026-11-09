@@ -1,0 +1,14 @@
+{
+  "network": "elysium-testnet",
+  "deployer": "0x1f4cD14B5CDD15436950d626CBCb0e21084F462D",
+  "agent": "0x35Ca52DAd343a80A3Be6b09091B74Dd3e5864561",
+  "treasury": null,
+  "contracts": {
+    "NexaLedger": null,
+    "MockFeedHYPE": null,
+    "MockFeedETH": null,
+    "MockAssetHYPE": null,
+    "MockAssetETH": null
+  },
+  "_note": "Diisi setelah deploy (perintah ada di docs/BLOCKERS.md bagian Elysium). NexaLedger harus transaksi pertama deployer di 99801 agar alamatnya sama dengan Robinhood."
+}

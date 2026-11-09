@@ -3,6 +3,7 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { z } from 'zod'
 import { CHAINS } from '@nexa-ai/shared'
 import testnetAddresses from '../../../packages/contracts-abi/addresses/testnet.json'
+import elysiumTestnetAddresses from '../../../packages/contracts-abi/addresses/elysium-testnet.json'
 import { createDb } from '@nexa-ai/db'
 import { configureRiskGuard } from './queue'
 import { createXClient } from './x'
@@ -14,7 +15,7 @@ import { createLedgerClient } from './ledger'
 import { dispatchProAlerts, pollTelegram } from './pro'
 import { TelegramApi, TelegramBot } from './telegram'
 import { OpenAiCompatibleLlm, pricingFromEnv } from './llm'
-import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader } from './oracle'
+import { MAINNET_ORACLE_ASSETS, createFeedHistory, createFeedReader, createHyperliquidReader } from './oracle'
 import { createDexClient, makeDexSource } from './dex'
 import { recordMarketSnapshots, type MarketDeps } from './market'
 import { runDailyReports, type ReportDeps } from './reports'
@@ -208,14 +209,47 @@ let lastMarketAt = 0
 
 // Keeper harga testnet: menyalin harga Chainlink mainnet ke feed tiruan agar reveal prediksi bisa berjalan.
 const mirrorSchema = z.array(z.object({ symbol: z.string(), source: z.string().regex(/^0x[0-9a-fA-F]{40}$/), target: z.string().regex(/^0x[0-9a-fA-F]{40}$/) }))
-const defaultMirrors = (): MirrorFeed[] => {
+
+/** Default mirrors untuk Robinhood testnet (46630): NVDA + ETH dari Chainlink mainnet. */
+const defaultRobinhoodTestnetMirrors = (): MirrorFeed[] => {
   const c = testnetAddresses.contracts as Record<string, string | undefined>
   const out: MirrorFeed[] = []
   if (CHAINS.mainnet.chainlink.nvdaUsd && c.MockFeedNVDA) out.push({ symbol: 'NVDA', source: CHAINS.mainnet.chainlink.nvdaUsd, target: c.MockFeedNVDA as `0x${string}` })
   if (CHAINS.mainnet.chainlink.ethUsd && c.MockFeedETH) out.push({ symbol: 'ETH', source: CHAINS.mainnet.chainlink.ethUsd, target: c.MockFeedETH as `0x${string}` })
   return out
 }
-const mirrors = (env.KEEPER_FEEDS ? mirrorSchema.parse(JSON.parse(env.KEEPER_FEEDS)) : env.CHAIN_ID === 46630 ? defaultMirrors() : []) as MirrorFeed[]
+
+/**
+ * Default mirrors untuk Elysium testnet (99801):
+ * - HYPE: dari Hyperliquid public API (tidak ada Chainlink di Elysium)
+ * - ETH: dari Chainlink mainnet Robinhood
+ */
+const defaultElysiumTestnetMirrors = (): MirrorFeed[] => {
+  const c = elysiumTestnetAddresses.contracts as Record<string, string | null | undefined>
+  const out: MirrorFeed[] = []
+  if (c.MockFeedHYPE) out.push({
+    symbol: 'HYPE',
+    source: null,
+    httpSource: createHyperliquidReader('HYPE'),
+    target: c.MockFeedHYPE as `0x${string}`,
+  })
+  if (CHAINS.mainnet.chainlink.ethUsd && c.MockFeedETH) out.push({
+    symbol: 'ETH',
+    source: CHAINS.mainnet.chainlink.ethUsd,
+    target: c.MockFeedETH as `0x${string}`,
+  })
+  return out
+}
+
+const mirrors = (
+  env.KEEPER_FEEDS
+    ? (mirrorSchema.parse(JSON.parse(env.KEEPER_FEEDS)) as MirrorFeed[])
+    : env.CHAIN_ID === 46630
+      ? defaultRobinhoodTestnetMirrors()
+      : env.CHAIN_ID === 99801
+        ? defaultElysiumTestnetMirrors()
+        : []
+) as MirrorFeed[]
 const pushAbi = [{ type: 'function', name: 'push', stateMutability: 'nonpayable', inputs: [{ name: 'answer', type: 'int256' }, { name: 'updatedAt', type: 'uint256' }], outputs: [{ type: 'uint80' }] }] as const
 
 let keeper: KeeperDeps | null = null

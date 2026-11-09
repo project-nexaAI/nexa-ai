@@ -2,6 +2,34 @@ import { createPublicClient, formatUnits, http, parseAbi, type Address } from 'v
 import { CHAINS, type NetworkName } from '@nexa-ai/shared'
 import type { PredictionCandidate } from '../prompts/persona'
 
+// ── Hyperliquid HTTP source (untuk Elysium testnet, tidak ada Chainlink) ─────
+
+/**
+ * Membuat FeedReader berbasis HTTP dari Hyperliquid public API.
+ * Dipakai oleh keeper Elysium untuk HYPE/USD (tidak ada feed Chainlink di Elysium).
+ * Mengembalikan FeedReading dengan 8 desimal (sama dengan MockAggregator).
+ * `symbol` harus sesuai dengan kunci di respons allMids Hyperliquid (mis. "HYPE").
+ */
+export function createHyperliquidReader(symbol = 'HYPE'): () => Promise<FeedReading> {
+  return async () => {
+    const res = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'allMids' }),
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) throw new Error(`Hyperliquid API error: ${res.status}`)
+    const data = (await res.json()) as Record<string, string>
+    const price = data[symbol]
+    if (!price) throw new Error(`Hyperliquid: simbol ${symbol} tidak ditemukan`)
+    const priceFloat = parseFloat(price)
+    if (!isFinite(priceFloat) || priceFloat <= 0) throw new Error(`Hyperliquid: harga ${symbol} tidak valid: ${price}`)
+    const decimals = 8
+    const answer = BigInt(Math.round(priceFloat * 10 ** decimals))
+    return { answer, decimals, updatedAt: BigInt(Math.floor(Date.now() / 1000)) }
+  }
+}
+
 const feedAbi = parseAbi([
   'function decimals() view returns (uint8)',
   'function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)',

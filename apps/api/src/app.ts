@@ -49,6 +49,12 @@ export interface AppConfig {
   db: Db
   /** Basis Blockscout, tanpa slash akhir (mis. https://explorer.testnet.chain.robinhood.com). */
   explorerUrl: string
+  /** Path separator tx di explorer ('/tx/' Robinhood, '/transaction/' Elysium). Default: '/tx/'. */
+  explorerTxPath?: string
+  /** Chain ID yang dilayani service ini (untuk validasi ?chain= dan respons). Default: 4663. */
+  chainId?: number
+  /** Slug chain API ('robinhood', 'elysium-testnet'). Default: 'robinhood'. */
+  chainSlugValue?: string
   /** Basis Blockscout untuk alamat token Pons (indexer membaca mainnet, sedangkan explorerUrl bisa testnet). Default: explorerUrl. */
   tokenExplorerUrl?: string
   /** Asal web yang diizinkan CORS (env WEB_ORIGIN; beberapa asal dipisah koma). Kosong = CORS dimatikan. */
@@ -84,7 +90,10 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
   const app = Fastify({ logger: false })
   const now = () => (cfg.now ? cfg.now() : new Date())
   const symbols = cfg.symbols ?? {}
-  const tx = (hash: string) => `${cfg.explorerUrl}/tx/${hash}`
+  const txPath = (cfg.explorerTxPath ?? '/tx/')
+  const tx = (hash: string) => `${cfg.explorerUrl}${txPath}${hash}`
+  const serviceChainSlug = cfg.chainSlugValue ?? 'robinhood'
+  const serviceChainId = cfg.chainId ?? 4663
 
   if (cfg.webOrigin) void app.register(cors, { origin: cfg.webOrigin.split(',').map((o) => o.trim().replace(/\/$/, '')).filter(Boolean), methods: ['GET', 'POST'], allowedHeaders: ['content-type', 'x-api-key', 'authorization', 'last-event-id'] })
 
@@ -135,9 +144,24 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
 
   const cache = (reply: { header: (k: string, v: string) => unknown }) => reply.header('cache-control', 'public, max-age=15')
 
-  app.get('/healthz', async () => ({ ok: true }))
+  app.get('/healthz', async () => ({ ok: true, chainId: serviceChainId, chain: serviceChainSlug }))
 
-  app.get('/proof', async (_req, reply) => {
+  /**
+   * Validasi ?chain= param: harus cocok dengan slug chain yang dilayani service ini.
+   * Misalnya, service Elysium (chainSlug='elysium-testnet') menolak ?chain=robinhood.
+   * Tanpa param = klien lama / tidak peduli chain; selalu diterima.
+   */
+  function validateChain(req: FastifyRequest, reply: FastifyReply): boolean {
+    const chain = (req.query as Record<string, string | undefined>).chain
+    if (chain !== undefined && chain !== serviceChainSlug) {
+      void reply.code(400).send({ error: 'wrong_chain', expected: serviceChainSlug, got: chain })
+      return false
+    }
+    return true
+  }
+
+  app.get('/proof', async (req, reply) => {
+    if (!validateChain(req, reply)) return
     const rows = await publicRows(cfg.db)
     const scoredRows = rows.filter((r) => r.status === 'revealed' && alignedBps(r) !== null)
     const open = rows.filter((r) => r.status !== 'revealed')
@@ -165,12 +189,15 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
       },
       current,
       recent: rows.slice(0, RECENT_LIMIT).map(toPrediction),
+      chainId: serviceChainId,
+      explorerBaseUrl: cfg.explorerUrl,
     })
     cache(reply)
     return body
   })
 
   app.get('/predictions/:id', async (req, reply) => {
+    if (!validateChain(req, reply)) return
     const parsed = z.object({ id: z.coerce.number().int().nonnegative() }).safeParse(req.params)
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_id' })
     const [row] = await publicRows(cfg.db).then((rs) => rs.filter((r) => r.ledgerId === parsed.data.id))
@@ -179,7 +206,8 @@ export function buildApp(cfg: AppConfig): FastifyInstance {
     return predictionResponseSchema.parse(toPrediction(row))
   })
 
-  app.get('/rug-radar', async (_req, reply) => {
+  app.get('/rug-radar', async (req, reply) => {
+    if (!validateChain(req, reply)) return
     const rows = await cfg.db.select().from(ponsTokens).orderBy(desc(ponsTokens.launchedAt)).limit(RADAR_LIMIT)
     const t = now()
     const body: RugRadarResponse = rugRadarResponseSchema.parse({

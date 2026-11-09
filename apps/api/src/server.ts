@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { createDb } from '@nexa-ai/db'
 import { createPublicClient, http } from 'viem'
-import { CHAINS } from '@nexa-ai/shared'
+import { CHAINS, chainSlug } from '@nexa-ai/shared'
 import { buildApp } from './app'
 import { resolvePaymentNetwork } from './payment-network'
 
@@ -35,6 +35,10 @@ const env = z
     HOLDER_RPC_URL: z.string().url().default(CHAINS.mainnet.rpc),
     SESSION_TTL_HOURS: z.coerce.number().int().min(1).default(24),
     EXPLORER_URL: z.string().url().default('https://explorer.testnet.chain.robinhood.com'),
+    /** Path separator tx di explorer; '/tx/' untuk Robinhood, '/transaction/' untuk Elysium. */
+    EXPLORER_TX_PATH: z.string().default('/tx/'),
+    /** Chain ID yang dilayani service ini (untuk validasi ?chain= param). Default mainnet Robinhood. */
+    CHAIN_ID: z.coerce.number().int().default(CHAINS.mainnet.id),
     /** Explorer untuk link token Pons: token yang diindeks ada di mainnet, jadi default mainnet (bukan EXPLORER_URL). */
     TOKEN_EXPLORER_URL: z.string().url().default(CHAINS.mainnet.explorer),
     /** JSON: {"0xalamat": "NVDA"} */
@@ -98,6 +102,9 @@ const holder =
 const app = buildApp({
   db,
   explorerUrl: env.EXPLORER_URL.replace(/\/$/, ''),
+  explorerTxPath: env.EXPLORER_TX_PATH.startsWith('/') ? env.EXPLORER_TX_PATH : `/${env.EXPLORER_TX_PATH}`,
+  chainId: env.CHAIN_ID,
+  chainSlugValue: chainSlug(env.CHAIN_ID),
   tokenExplorerUrl: env.TOKEN_EXPLORER_URL.replace(/\/$/, ''),
   webOrigin: env.WEB_ORIGIN,
   leaderboardMinScored: env.LEADERBOARD_MIN_SCORED,

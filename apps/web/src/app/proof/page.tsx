@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import type { Prediction } from '@nexa-ai/api-client'
 import { Empty, PageShell } from '@/components/pages/PageShell'
-import { api, safe } from '@/lib/api'
+import { apiForChain, hasElysium, safe } from '@/lib/api'
+import { ChainPicker } from '@/components/pages/ChainPicker'
 import { fmtUtc, shortHash } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -32,15 +34,23 @@ function Row({ p }: { p: Prediction }) {
   )
 }
 
-export default async function ProofPage() {
-  const proof = await safe(api().getProof())
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined> }
+
+export default async function ProofPage(props: Props) {
+  const rawParams = await Promise.resolve(props.searchParams)
+  const chain = typeof rawParams.chain === 'string' ? rawParams.chain : undefined
+  const proof = await safe(apiForChain(chain).getProof())
+  const elysiumEnabled = hasElysium()
   return (
     <PageShell
       label="Proof of Intelligence"
       title="Every call,"
       dim="on-chain and scored."
-      intro="Each prediction is hashed and committed to NexaLedger before it is posted, then scored automatically against the Chainlink oracle price. The record below cannot be edited or deleted."
+      intro="Each prediction is hashed and committed to NexaLedger before it is posted, then scored automatically against the oracle price. The record below cannot be edited or deleted."
     >
+      <Suspense>
+        <ChainPicker elysiumEnabled={elysiumEnabled} />
+      </Suspense>
       {!proof ? (
         <Empty title="Data unavailable">The record could not be loaded right now. Try again in a moment.</Empty>
       ) : (
