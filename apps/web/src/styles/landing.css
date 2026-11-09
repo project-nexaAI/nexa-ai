@@ -90,12 +90,9 @@ em.s{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-
 /* ===== contract address ===== */
 .ca{display:inline-flex;width:fit-content;align-self:flex-start;align-items:center;gap:10px;max-width:100%;margin:18px 0 0;padding:8px 14px;border:1px solid rgba(255,106,43,.38);border-radius:999px;background:rgba(255,90,31,.1);font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:var(--org-2);transition:background .2s,border-color .2s}
 .ca:hover{background:rgba(255,90,31,.2);border-color:rgba(255,106,43,.7)}
-.ca-k{color:var(--ink-3);letter-spacing:.12em;font-size:11px}
-.ca-short{display:none}
-.ca-ar{opacity:.7}
 .pg-head .ca,.fbrand .ca{margin:0 0 20px}
 .fbrand .ca{margin:16px 0 0}
-@media (max-width:520px){.ca-full{display:none}.ca-short{display:inline}}
+@media (max-width:520px){.ca{font-size:10.5px;padding:8px 11px;letter-spacing:0}}
 
 /* ===== hero ===== */
 .hero{position:relative;height:250vh}
