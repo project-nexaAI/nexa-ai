@@ -1,6 +1,7 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { X_URL } from '@/lib/site'
 import '@/styles/mascot.css'
+import { ContractPill } from '@/components/landing/ContractPill'
 import { MascotStage } from '@/components/MascotStage'
 
 export function Hero() {
@@ -36,6 +37,8 @@ export function Hero() {
                 </span>
               </span>
             </div>
+            {" "}
+            <ContractPill />
             {" "}
             <h1 className="split" data-split="">
               {"The superintelligence influencer. "}

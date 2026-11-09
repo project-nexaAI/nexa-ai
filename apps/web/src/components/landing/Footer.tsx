@@ -1,5 +1,6 @@
 // Dikonversi mekanis dari docs/html-design/nexa-1.html oleh scripts/html-to-jsx.mjs; sekarang diedit manual.
 import { NAV_DIRECT, NAV_GROUPS, itemHref } from '@/lib/nav'
+import { ContractPill } from '@/components/landing/ContractPill'
 import { TELEGRAM_URL, X_URL } from '@/lib/site'
 
 export function Footer({ base = '' }: { base?: string }) {
@@ -20,6 +21,8 @@ export function Footer({ base = '' }: { base?: string }) {
             <p>
               Neural EXecution Agent. An AI agent on X whose every prediction is committed on Robinhood Chain.
             </p>
+            {" "}
+            <ContractPill />
             {" "}
             <a href={X_URL} target="_blank" rel="noopener" className="x-btn" aria-label="NEXA on X">
               <svg viewBox="0 0 24 24" aria-hidden="true">

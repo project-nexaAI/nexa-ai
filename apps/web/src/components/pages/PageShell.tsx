@@ -10,12 +10,14 @@ export function PageShell({
   title,
   dim,
   intro,
+  afterLabel,
   children,
 }: {
   label: string
   title: string
   dim?: string
   intro?: string
+  afterLabel?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -25,6 +27,7 @@ export function PageShell({
       <main className="wrap pg">
         <div className="pg-head">
           <div className="label">{label}</div>
+          {afterLabel}
           <h1>
             {title}
             {dim ? (

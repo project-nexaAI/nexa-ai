@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ContractPill } from '@/components/landing/ContractPill'
 import { Empty, PageShell } from '@/components/pages/PageShell'
 import { api, safe } from '@/lib/api'
 import { fmtUtc, shortHash } from '@/lib/format'
@@ -11,6 +12,7 @@ export default async function BurnPage() {
   return (
     <PageShell
       label="Burn tracker"
+      afterLabel={<ContractPill />}
       title="$NEXA burned,"
       dim="verifiable on-chain."
       intro="30% of creator fees and 20% of protocol fees go to the BurnVault, which buys $NEXA and burns it. The ratios are hardcoded in the contract. The vault has no way to withdraw funds."
